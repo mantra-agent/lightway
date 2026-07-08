@@ -3,115 +3,764 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Mantra — Your personal intelligence system" />
+    <meta name="description" content="Mantra is a personal intelligence system. It remembers what matters, connects the dots, and keeps you moving toward the things you actually care about." />
     <meta property="og:title" content="Mantra" />
-    <meta property="og:description" content="Your personal intelligence system" />
+    <meta property="og:description" content="Your personal intelligence system. It remembers what matters, connects the dots, and keeps you moving." />
     <meta property="og:type" content="website" />
-    <title>Mantra</title>
+    <title>Mantra — Your Personal Intelligence System</title>
     <link rel="stylesheet" href="/styles.css" />
     <style>
-      .page {
+      /* ── Base ── */
+      .home-page {
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        min-height: 100svh;
-        padding: 48px 24px;
-        gap: 48px;
-        text-align: center;
         color: #fff;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        line-height: 1.6;
       }
 
-      .logo img {
-        display: block;
-        width: min(28vw, 180px);
-        min-width: 112px;
-        height: auto;
-      }
-
-      .hero {
+      .home-page section {
+        width: 100%;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 20px;
-        max-width: 600px;
+        padding: 80px 24px;
       }
 
-      .hero h1 {
-        font-size: clamp(2rem, 5vw, 3.5rem);
+      .home-page .inner {
+        width: 100%;
+        max-width: 800px;
+      }
+
+      .home-page h2 {
+        font-size: clamp(1.5rem, 4vw, 2.25rem);
         font-weight: 600;
-        line-height: 1.1;
-        margin: 0;
+        line-height: 1.15;
+        margin: 0 0 16px;
         letter-spacing: -0.02em;
+        color: #fff;
       }
 
-      .hero p {
-        font-size: clamp(1rem, 2.5vw, 1.25rem);
-        line-height: 1.6;
+      .home-page h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin: 0 0 8px;
+        color: #fff;
+      }
+
+      .home-page p {
         margin: 0;
-        color: rgba(255, 255, 255, 0.7);
-        max-width: 480px;
+        color: rgba(255,255,255,0.7);
       }
 
-      .values {
+      .home-page a {
+        color: #fff;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
+
+      /* ── Nav ── */
+      .home-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
         display: flex;
-        gap: 40px;
-        flex-wrap: wrap;
-        justify-content: center;
-        max-width: 640px;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 24px;
+        background: rgba(0,0,0,0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
       }
 
-      .value {
+      .home-nav img {
+        height: 28px;
+        width: auto;
+      }
+
+      .home-nav .nav-link {
         font-size: 0.875rem;
-        color: rgba(255, 255, 255, 0.5);
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
         font-weight: 500;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        transition: color 0.2s;
       }
 
-      .cta {
-        margin-top: 8px;
+      .home-nav .nav-link:hover {
+        color: #fff;
       }
 
-      .cta a {
+      /* ── Hero ── */
+      .hero-section {
+        min-height: 100svh;
+        justify-content: center;
+        text-align: center;
+        padding-top: 120px;
+      }
+
+      .hero-section .inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        max-width: 720px;
+      }
+
+      .hero-logo img {
+        display: block;
+        width: min(20vw, 120px);
+        min-width: 72px;
+        height: auto;
+        margin-bottom: 16px;
+      }
+
+      .hero-section h1 {
+        font-size: clamp(2rem, 5.5vw, 3.5rem);
+        font-weight: 700;
+        line-height: 1.08;
+        margin: 0;
+        letter-spacing: -0.025em;
+        color: #fff;
+      }
+
+      .hero-section .subhead {
+        font-size: clamp(1rem, 2.5vw, 1.2rem);
+        line-height: 1.65;
+        color: rgba(255,255,255,0.65);
+        max-width: 560px;
+      }
+
+      /* ── CTA Button ── */
+      .cta-btn {
         display: inline-block;
-        padding: 14px 32px;
+        padding: 16px 36px;
         background: #fff;
         color: #000;
         text-decoration: none;
         font-weight: 600;
-        font-size: 0.9375rem;
+        font-size: 1rem;
         border-radius: 8px;
-        transition: opacity 0.2s;
+        transition: opacity 0.2s, transform 0.2s;
+        letter-spacing: -0.01em;
       }
 
-      .cta a:hover {
-        opacity: 0.85;
+      .cta-btn:hover {
+        opacity: 0.88;
+        transform: translateY(-1px);
+      }
+
+      .micro-copy {
+        font-size: 0.8125rem;
+        color: rgba(255,255,255,0.4);
+        margin-top: 8px;
+      }
+
+      /* ── Gap / Bridge Section ── */
+      .gap-section {
+        border-top: 1px solid rgba(255,255,255,0.06);
+      }
+
+      .gap-section .inner {
+        display: flex;
+        flex-direction: column;
+        gap: 40px;
+      }
+
+      .pain-point strong {
+        color: #fff;
+        font-weight: 600;
+      }
+
+      .pain-point p {
+        font-size: 1.0625rem;
+        line-height: 1.7;
+      }
+
+      /* ── Pillars Section ── */
+      .pillars-section {
+        border-top: 1px solid rgba(255,255,255,0.06);
+      }
+
+      .pillars-section .section-intro {
+        font-size: 1.0625rem;
+        color: rgba(255,255,255,0.6);
+        margin-bottom: 48px;
+      }
+
+      .pillar-cards {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+
+      .pillar-card {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        padding: 32px;
+      }
+
+      .pillar-card h3 {
+        font-size: 1.25rem;
+        margin-bottom: 12px;
+      }
+
+      .pillar-card .description {
+        font-size: 1rem;
+        line-height: 1.7;
+        color: rgba(255,255,255,0.65);
+        margin-bottom: 20px;
+      }
+
+      .pillar-card .outcomes {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 20px;
+      }
+
+      .pillar-card .outcomes li {
+        font-size: 0.9375rem;
+        color: rgba(255,255,255,0.6);
+        padding: 6px 0 6px 20px;
+        position: relative;
+      }
+
+      .pillar-card .outcomes li::before {
+        content: "→";
+        position: absolute;
+        left: 0;
+        color: rgba(255,255,255,0.3);
+      }
+
+      .pillar-card .quote {
+        font-style: italic;
+        font-size: 0.9375rem;
+        color: rgba(255,255,255,0.45);
+        padding-left: 16px;
+        border-left: 2px solid rgba(255,255,255,0.12);
+      }
+
+      @media (min-width: 640px) {
+        .pillar-cards {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      /* ── Differentiation Section ── */
+      .diff-section {
+        border-top: 1px solid rgba(255,255,255,0.06);
+      }
+
+      .diff-section .closing {
+        margin-top: 40px;
+        font-size: 1.0625rem;
+        line-height: 1.7;
+        color: rgba(255,255,255,0.7);
+      }
+
+      .diff-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 40px;
+        font-size: 0.9375rem;
+      }
+
+      .diff-table th {
+        text-align: left;
+        padding: 14px 16px;
+        font-weight: 600;
+        font-size: 0.8125rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: rgba(255,255,255,0.4);
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+      }
+
+      .diff-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        vertical-align: top;
+      }
+
+      .diff-table td:first-child {
+        color: rgba(255,255,255,0.5);
+        font-weight: 500;
+        width: 30%;
+      }
+
+      .diff-table td:last-child {
+        color: rgba(255,255,255,0.8);
+      }
+
+      @media (max-width: 639px) {
+        .diff-table {
+          font-size: 0.8125rem;
+        }
+        .diff-table th,
+        .diff-table td {
+          padding: 10px 8px;
+        }
+      }
+
+      /* ── How It Works ── */
+      .how-section {
+        border-top: 1px solid rgba(255,255,255,0.06);
+        text-align: center;
+      }
+
+      .steps {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 40px;
+        margin-top: 48px;
+      }
+
+      .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .step-number {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 1px solid rgba(255,255,255,0.2);
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: rgba(255,255,255,0.6);
+        flex-shrink: 0;
+      }
+
+      .step h3 {
+        font-size: 1.125rem;
+        margin: 0;
+      }
+
+      .step p {
+        font-size: 0.9375rem;
+        color: rgba(255,255,255,0.55);
+        max-width: 320px;
+      }
+
+      @media (min-width: 768px) {
+        .steps {
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 32px;
+        }
+      }
+
+      /* ── Social Proof ── */
+      .proof-section {
+        border-top: 1px solid rgba(255,255,255,0.06);
+        text-align: center;
+      }
+
+      .testimonials {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 40px;
+        margin-top: 48px;
+      }
+
+      .testimonial {
+        max-width: 480px;
+        margin: 0 auto;
+      }
+
+      .testimonial blockquote {
+        margin: 0;
+        font-size: 1.0625rem;
+        font-style: italic;
+        line-height: 1.7;
+        color: rgba(255,255,255,0.6);
+      }
+
+      .testimonial cite {
+        display: block;
+        margin-top: 12px;
+        font-size: 0.875rem;
+        font-style: normal;
+        color: rgba(255,255,255,0.35);
+      }
+
+      @media (min-width: 768px) {
+        .testimonials {
+          grid-template-columns: 1fr 1fr 1fr;
+        }
+        .testimonial {
+          max-width: none;
+        }
+      }
+
+      /* ── FAQ ── */
+      .faq-section {
+        border-top: 1px solid rgba(255,255,255,0.06);
+      }
+
+      .faq-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        margin-top: 40px;
+      }
+
+      .faq-item {
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        padding: 24px 0;
+      }
+
+      .faq-item:first-child {
+        border-top: 1px solid rgba(255,255,255,0.06);
+      }
+
+      .faq-q {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #fff;
+        margin: 0 0 10px;
+        cursor: default;
+      }
+
+      .faq-a {
+        font-size: 0.9375rem;
+        line-height: 1.7;
+        color: rgba(255,255,255,0.55);
+        margin: 0;
+      }
+
+      /* ── Final CTA ── */
+      .final-cta-section {
+        border-top: 1px solid rgba(255,255,255,0.06);
+        text-align: center;
+        padding: 100px 24px;
+      }
+
+      .final-cta-section .inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .final-cta-section h2 {
+        font-size: clamp(1.75rem, 4.5vw, 2.75rem);
+        font-weight: 700;
+        letter-spacing: -0.025em;
+      }
+
+      .final-cta-section .subhead {
+        color: rgba(255,255,255,0.55);
+        font-size: 1.0625rem;
+        max-width: 480px;
+      }
+
+      .contact-line {
+        font-size: 0.8125rem;
+        color: rgba(255,255,255,0.3);
+        margin-top: 8px;
+      }
+
+      .contact-line a {
+        color: rgba(255,255,255,0.5);
+        text-decoration: none;
+      }
+
+      .contact-line a:hover {
+        color: rgba(255,255,255,0.7);
+      }
+
+      /* ── Footer ── */
+      .home-footer {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 48px 24px;
+        border-top: 1px solid rgba(255,255,255,0.06);
+      }
+
+      .home-footer img {
+        height: 24px;
+        width: auto;
+        opacity: 0.4;
+      }
+
+      .footer-links {
+        display: flex;
+        gap: 24px;
+        font-size: 0.8125rem;
+      }
+
+      .footer-links a {
+        color: rgba(255,255,255,0.35);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+
+      .footer-links a:hover {
+        color: rgba(255,255,255,0.6);
+      }
+
+      .footer-copy {
+        font-size: 0.75rem;
+        color: rgba(255,255,255,0.2);
+        margin: 0;
+      }
+
+      .footer-tagline {
+        font-size: 0.8125rem;
+        color: rgba(255,255,255,0.25);
+        font-style: italic;
+        margin: 0;
       }
     </style>
   </head>
   <body>
-    <main class="page">
-      <div class="logo">
-        <img src="/brand/mantra-logo.png" alt="Mantra" width="1254" height="1254" />
-      </div>
+    <!-- Nav -->
+    <nav class="home-nav" aria-label="Main">
+      <a href="/"><img src="/brand/mantra-logo.png" alt="Mantra" width="1254" height="1254" /></a>
+      <a class="nav-link" href="/coaches/">For Coaches</a>
+    </nav>
 
-      <div class="hero">
-        <h1>Your personal intelligence system.</h1>
-        <p>Mantra synthesizes your memory, strategy, relationships, and execution into one operating layer. Think clearer. Move faster. Grow compounding leverage.</p>
-      </div>
+    <main class="home-page">
 
-      <div class="values">
-        <span class="value">Memory</span>
-        <span class="value">Strategy</span>
-        <span class="value">Relationships</span>
-        <span class="value">Execution</span>
-      </div>
+      <!-- Section 1: Hero -->
+      <section class="hero-section" aria-label="Hero">
+        <div class="inner">
+          <div class="hero-logo">
+            <img src="/brand/mantra-logo.png" alt="Mantra" width="1254" height="1254" />
+          </div>
+          <h1>Your life is complex. Your system should be intelligent.</h1>
+          <p class="subhead">Mantra is a personal intelligence system. It remembers what matters, connects the dots, and keeps you moving toward the things you actually care about.</p>
+          <div>
+            <a class="cta-btn" href="#cta">See What Mantra Remembers →</a>
+            <p class="micro-copy">No credit card. No setup. Just show me.</p>
+          </div>
+        </div>
+      </section>
 
-      <div class="cta">
-        <a href="mailto:ray@mantra.app">Learn More</a>
-      </div>
+      <!-- Section 2: The Gap -->
+      <section class="gap-section" aria-label="The gap">
+        <div class="inner">
+          <h2>You already know something is off.</h2>
+          <div class="pain-point">
+            <p><strong>You have seventeen apps and no system.</strong> Notes here. Tasks there. Contacts somewhere. Calendar events that mean nothing because the context disappeared two weeks ago. You spend more time maintaining your tools than using them.</p>
+          </div>
+          <div class="pain-point">
+            <p><strong>You remember the wrong things.</strong> You can recall a random conversation from 2019 but not the name of the person you met last Tuesday who could change your career. Your brain is a beautiful pattern machine with terrible storage.</p>
+          </div>
+          <div class="pain-point">
+            <p><strong>You're always catching up.</strong> Monday starts with the feeling that something slipped. By Friday, you've reacted to everything and initiated nothing. Your goals are real, but they live in your head, where they compete with groceries and deadlines and noise.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Four Pillars -->
+      <section class="pillars-section" aria-label="What a personal intelligence system actually does">
+        <div class="inner">
+          <h2>What a personal intelligence system actually does</h2>
+          <p class="section-intro">Mantra synthesizes your memory, strategy, relationships, and execution into one living layer. Not four features. One system that thinks with you.</p>
+
+          <div class="pillar-cards">
+            <div class="pillar-card">
+              <h3>Memory that compounds</h3>
+              <p class="description">Your conversations, decisions, notes, and lessons don't disappear into app silos. They accumulate. Mantra remembers what you've read, who you've talked to, what you committed to, and why it mattered. Over time, it gets smarter because your history gets richer.</p>
+              <ul class="outcomes">
+                <li>Search across everything you've ever captured, by meaning, not keywords</li>
+                <li>Surface a relevant note from three months ago exactly when you need it</li>
+                <li>Never walk into a meeting without full context on the person and the history</li>
+              </ul>
+              <p class="quote">"I mentioned something offhand in January. Three months later, Mantra connected it to a decision I was making. I would never have remembered."</p>
+            </div>
+
+            <div class="pillar-card">
+              <h3>Strategy that stays alive</h3>
+              <p class="description">Goals don't die because they're bad goals. They die because nothing keeps them visible. Mantra turns your intentions into living objects: tracked, broken down, connected to your daily choices, and reviewed on a rhythm you set.</p>
+              <ul class="outcomes">
+                <li>Morning priorities that connect to weekly, monthly, and quarterly goals</li>
+                <li>Progress that's visible over time, not trapped in your head</li>
+                <li>Strategic clarity that survives the noise of a busy week</li>
+              </ul>
+              <p class="quote">"I stopped setting goals on January 1st and forgetting them by February. They just... stayed."</p>
+            </div>
+
+            <div class="pillar-card">
+              <h3>Relationships that don't go cold</h3>
+              <p class="description">You know who matters. But "I should reach out to them" turns into "I can't believe it's been six months." Mantra tracks your relationships: who you've talked to, what you discussed, what you owe each other, and when it's been too long.</p>
+              <ul class="outcomes">
+                <li>Know the last time you spoke with anyone and what you talked about</li>
+                <li>Follow-up reminders that feel natural, not robotic</li>
+                <li>Context on every person before every meeting, automatically</li>
+              </ul>
+              <p class="quote">"I walked into a dinner with someone I hadn't seen in a year and remembered exactly where we left off. They thought I was a genius. I just had Mantra."</p>
+            </div>
+
+            <div class="pillar-card">
+              <h3>Execution that follows through</h3>
+              <p class="description">Ideas are cheap. Execution is the bottleneck. Mantra captures what you decide, turns it into trackable commitments, and keeps the loop closed. Not with notifications and guilt. With visibility and momentum.</p>
+              <ul class="outcomes">
+                <li>Action items that don't evaporate when the meeting ends</li>
+                <li>A clear view of what's in progress, what's waiting, and what's stuck</li>
+                <li>Weekly and daily rhythms that keep you honest without becoming a chore</li>
+              </ul>
+              <p class="quote">"I used to end every week wondering what I actually accomplished. Now I know. And so does my system."</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 4: Negative Differentiation -->
+      <section class="diff-section" aria-label="What Mantra is not">
+        <div class="inner">
+          <h2>Not another app to check.</h2>
+
+          <table class="diff-table">
+            <thead>
+              <tr>
+                <th>What you might compare it to</th>
+                <th>What Mantra actually is</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Note-taking apps</td>
+                <td>Notes are inputs. Mantra is the intelligence layer that makes them useful. You capture once and the system connects, surfaces, and reminds.</td>
+              </tr>
+              <tr>
+                <td>CRMs</td>
+                <td>CRMs track deals. Mantra tracks people you care about, conversations that matter, and relationships that shape your life, not your pipeline.</td>
+              </tr>
+              <tr>
+                <td>Todo apps</td>
+                <td>Todos are lists. Mantra connects tasks to goals, goals to strategy, and strategy to your actual life. The difference between a checklist and a system.</td>
+              </tr>
+              <tr>
+                <td>AI assistants</td>
+                <td>Assistants wait for instructions. Mantra learns your context over time and works with you proactively. It's not a chatbot. It's a mind that grows alongside yours.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="closing">The tools you have are fine at what they do. The problem is that none of them talk to each other, and none of them know you. Mantra does both.</p>
+        </div>
+      </section>
+
+      <!-- Section 5: How It Works -->
+      <section class="how-section" aria-label="How it works">
+        <div class="inner">
+          <h2>Three steps. No onboarding marathon.</h2>
+
+          <div class="steps">
+            <div class="step">
+              <div class="step-number">1</div>
+              <h3>Tell it what matters</h3>
+              <p>Share your goals, your priorities, the people in your world. Mantra doesn't need your entire life story. A few minutes of context and it starts working.</p>
+            </div>
+
+            <div class="step">
+              <div class="step-number">2</div>
+              <h3>Live your life</h3>
+              <p>Take notes, capture thoughts, log conversations, check in on your goals. Or don't. Mantra meets you where you are.</p>
+            </div>
+
+            <div class="step">
+              <div class="step-number">3</div>
+              <h3>Watch it compound</h3>
+              <p>Over weeks and months, Mantra builds a richer model of your priorities, your patterns, and your world. What starts as a simple capture tool becomes the most useful system you've ever had.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 6: Social Proof -->
+      <section class="proof-section" aria-label="What people are saying">
+        <div class="inner">
+          <h2>What people are saying</h2>
+
+          <div class="testimonials">
+            <div class="testimonial">
+              <blockquote>"I've tried every productivity system. Mantra is the first one that actually works the way I think."</blockquote>
+              <cite>Founder</cite>
+            </div>
+
+            <div class="testimonial">
+              <blockquote>"Six months in and I can't imagine going back. It's like having a chief of staff who never forgets anything."</blockquote>
+              <cite>Executive</cite>
+            </div>
+
+            <div class="testimonial">
+              <blockquote>"The relationship tracking alone changed my networking. I actually follow up now. And I remember why I should."</blockquote>
+              <cite>Consultant</cite>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 7: FAQ -->
+      <section class="faq-section" aria-label="Frequently asked questions">
+        <div class="inner">
+          <h2>Frequently asked questions</h2>
+
+          <div class="faq-list">
+            <div class="faq-item">
+              <p class="faq-q">Is this just another AI chatbot?</p>
+              <p class="faq-a">No. Mantra is a system, not a chat window. It has memory that compounds over time, understands your goals and relationships, and works proactively alongside you. You can talk to it, but that's one of many ways to interact.</p>
+            </div>
+
+            <div class="faq-item">
+              <p class="faq-q">What happens to my data?</p>
+              <p class="faq-a">Your data is yours. Mantra doesn't train on your information, sell it, or share it. You can export or delete everything at any time. Privacy isn't a feature. It's the foundation.</p>
+            </div>
+
+            <div class="faq-item">
+              <p class="faq-q">How is this different from Notion / Obsidian / Apple Notes?</p>
+              <p class="faq-a">Those are excellent capture tools. Mantra is what happens after you capture. It connects your notes to your goals, your goals to your relationships, and your relationships to your calendar. It doesn't replace your notes app. It makes your notes useful.</p>
+            </div>
+
+            <div class="faq-item">
+              <p class="faq-q">Do I need to spend a lot of time setting it up?</p>
+              <p class="faq-a">No. Start with a few goals and priorities. Mantra starts working immediately and gets smarter over time. There's no "right way" to use it, and you don't need to reorganize your life to get value.</p>
+            </div>
+
+            <div class="faq-item">
+              <p class="faq-q">What does it cost?</p>
+              <p class="faq-a">We're currently offering early access. Reach out to learn about pricing and availability.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 8: Final CTA -->
+      <section class="final-cta-section" aria-label="Get started">
+        <div class="inner">
+          <h2>Your life deserves a system as intelligent as you are.</h2>
+          <p class="subhead">See what a personal intelligence system feels like. No commitment. No credit card.</p>
+          <a class="cta-btn" href="#cta">See What Mantra Remembers →</a>
+          <p class="contact-line">Questions? <a href="mailto:hello@mantra.app">hello@mantra.app</a></p>
+        </div>
+      </section>
+
     </main>
+
+    <!-- Section 9: Footer -->
+    <footer class="home-footer">
+      <img src="/brand/mantra-logo.png" alt="Mantra" width="1254" height="1254" />
+      <nav class="footer-links">
+        <a href="/home/">Home</a>
+        <a href="/coaches/">Coaches</a>
+        <a href="mailto:hello@mantra.app">Contact</a>
+      </nav>
+      <p class="footer-tagline">Your personal intelligence system.</p>
+      <p class="footer-copy">© 2026 Mantra</p>
+    </footer>
   </body>
 </html>
