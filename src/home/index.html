@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Mantra — Your personal intelligence system" />
+    <meta property="og:title" content="Mantra" />
+    <meta property="og:description" content="Your personal intelligence system" />
+    <meta property="og:type" content="website" />
+    <title>Mantra</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      .page {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100svh;
+        padding: 48px 24px;
+        gap: 48px;
+        text-align: center;
+        color: #fff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+
+      .logo img {
+        display: block;
+        width: min(28vw, 180px);
+        min-width: 112px;
+        height: auto;
+      }
+
+      .hero {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        max-width: 600px;
+      }
+
+      .hero h1 {
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        font-weight: 600;
+        line-height: 1.1;
+        margin: 0;
+        letter-spacing: -0.02em;
+      }
+
+      .hero p {
+        font-size: clamp(1rem, 2.5vw, 1.25rem);
+        line-height: 1.6;
+        margin: 0;
+        color: rgba(255, 255, 255, 0.7);
+        max-width: 480px;
+      }
+
+      .values {
+        display: flex;
+        gap: 40px;
+        flex-wrap: wrap;
+        justify-content: center;
+        max-width: 640px;
+      }
+
+      .value {
+        font-size: 0.875rem;
+        color: rgba(255, 255, 255, 0.5);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        font-weight: 500;
+      }
+
+      .cta {
+        margin-top: 8px;
+      }
+
+      .cta a {
+        display: inline-block;
+        padding: 14px 32px;
+        background: #fff;
+        color: #000;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        border-radius: 8px;
+        transition: opacity 0.2s;
+      }
+
+      .cta a:hover {
+        opacity: 0.85;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <div class="logo">
+        <img src="/brand/mantra-logo.png" alt="Mantra" width="1254" height="1254" />
+      </div>
+
+      <div class="hero">
+        <h1>Your personal intelligence system.</h1>
+        <p>Mantra synthesizes your memory, strategy, relationships, and execution into one operating layer. Think clearer. Move faster. Grow compounding leverage.</p>
+      </div>
+
+      <div class="values">
+        <span class="value">Memory</span>
+        <span class="value">Strategy</span>
+        <span class="value">Relationships</span>
+        <span class="value">Execution</span>
+      </div>
+
+      <div class="cta">
+        <a href="mailto:ray@mantra.app">Learn More</a>
+      </div>
+    </main>
+  </body>
+</html>
