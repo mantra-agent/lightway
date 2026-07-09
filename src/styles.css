@@ -364,6 +364,10 @@ body {
     transform: scaleY(1);
     transition: none;
   }
+  .roller-line {
+    color: hsl(220 10% 92%) !important;
+    transition: none !important;
+  }
 }
 
 @media (max-width: 639px) {

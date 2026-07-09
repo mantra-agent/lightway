@@ -315,6 +315,235 @@
         }
       }
 
+      /* ── Capability Roller ── */
+      .roller-section {
+        text-align: center;
+        overflow: hidden;
+      }
+
+      .roller-section h2 {
+        margin-bottom: 48px;
+      }
+
+      .roller-track {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        max-width: 640px;
+        margin: 0 auto;
+      }
+
+      .roller-line {
+        font-size: clamp(1.125rem, 2.5vw, 1.375rem);
+        font-weight: 500;
+        line-height: 1.6;
+        color: hsl(220 10% 25%);
+        padding: 10px 0;
+        transition: color 0.4s ease, opacity 0.4s ease;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      @media (max-width: 639px) {
+        .roller-line {
+          white-space: normal;
+          padding: 8px 0;
+        }
+      }
+
+      .roller-line.roller-active {
+        color: hsl(220 10% 92%);
+      }
+
+      /* ── Autonomy ── */
+      .autonomy-section .inner {
+        text-align: center;
+      }
+
+      .autonomy-section .auto-subhead {
+        font-size: 1.125rem;
+        color: hsl(220 10% 55%);
+        max-width: 560px;
+        margin: 16px auto 40px;
+        line-height: 1.625;
+      }
+
+      .auto-beats {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+        text-align: left;
+      }
+
+      @media (min-width: 640px) {
+        .auto-beats {
+          grid-template-columns: 1fr 1fr;
+          gap: 32px;
+        }
+      }
+
+      .auto-beat {
+        padding: 20px 0;
+        border-top: 1px solid hsl(222 16% 12%);
+      }
+
+      .auto-beat h3 {
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: hsl(200 60% 55%);
+        margin: 0 0 8px;
+      }
+
+      .auto-beat p {
+        font-size: 0.9375rem;
+        line-height: 1.6;
+        color: hsl(220 10% 55%);
+      }
+
+      /* ── Integrations ── */
+      .integrations-section .inner {
+        text-align: center;
+      }
+
+      .integrations-section .int-subhead {
+        font-size: 1.125rem;
+        color: hsl(220 10% 55%);
+        max-width: 520px;
+        margin: 16px auto 48px;
+        line-height: 1.625;
+      }
+
+      .int-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2px;
+        background: hsl(222 16% 10%);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      @media (min-width: 640px) {
+        .int-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      .int-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 28px 16px;
+        background: hsl(222 16% 5%);
+      }
+
+      .int-cell .int-icon {
+        font-size: 1.5rem;
+        line-height: 1;
+      }
+
+      .int-cell .int-label {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: hsl(220 10% 55%);
+        text-align: center;
+      }
+
+      /* ── Ambient / Voice ── */
+      .ambient-section .inner {
+        text-align: center;
+      }
+
+      .ambient-section .amb-subhead {
+        font-size: 1.125rem;
+        color: hsl(220 10% 55%);
+        max-width: 520px;
+        margin: 16px auto 0;
+        line-height: 1.625;
+      }
+
+      .amb-surfaces {
+        display: flex;
+        justify-content: center;
+        gap: 48px;
+        margin-top: 48px;
+        flex-wrap: wrap;
+      }
+
+      .amb-surface {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .amb-surface .amb-icon {
+        font-size: 2rem;
+        line-height: 1;
+        opacity: 0.7;
+      }
+
+      .amb-surface .amb-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: hsl(220 10% 55%);
+      }
+
+      .amb-surface .amb-desc {
+        font-size: 0.8125rem;
+        color: hsl(220 10% 35%);
+        max-width: 140px;
+        text-align: center;
+        line-height: 1.4;
+      }
+
+      /* ── Trust ── */
+      .trust-section .inner {
+        text-align: center;
+      }
+
+      .trust-section .trust-subhead {
+        font-size: 1.125rem;
+        color: hsl(220 10% 55%);
+        max-width: 520px;
+        margin: 16px auto 40px;
+        line-height: 1.625;
+      }
+
+      .trust-points {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        text-align: left;
+        max-width: 560px;
+        margin: 0 auto;
+      }
+
+      .trust-point {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .trust-point .trust-icon {
+        font-size: 1.25rem;
+        line-height: 1.4;
+        flex-shrink: 0;
+      }
+
+      .trust-point p {
+        font-size: 0.9375rem;
+        line-height: 1.6;
+        color: hsl(220 10% 55%);
+      }
+
+      .trust-point strong {
+        color: hsl(220 10% 80%);
+      }
+
       /* ── How It Works ── */
       .how-section {
         text-align: center;
@@ -630,7 +859,146 @@
         </div>
       </section>
 
-      <!-- Section 5: How It Works -->
+      <!-- Section 5: Capability Roller -->
+      <section class="roller-section premium-divider" aria-label="What your life looks like with Mantra">
+        <div class="inner">
+          <h2>What your life looks like with Mantra.</h2>
+          <div class="roller-track">
+            <div class="roller-line">Remember the name of the person you met last Tuesday.</div>
+            <div class="roller-line">Walk into every meeting with full context on everyone in the room.</div>
+            <div class="roller-line">See your spending against the goal it threatens.</div>
+            <div class="roller-line">Follow through on what you said you'd do.</div>
+            <div class="roller-line">Know who you haven't talked to in too long.</div>
+            <div class="roller-line">Search across everything you've ever captured, by meaning.</div>
+            <div class="roller-line">Wake up to a briefing built from your calendar, goals, and people.</div>
+            <div class="roller-line">Capture an idea on a walk and find it structured when you sit down.</div>
+            <div class="roller-line">Track whether your life is bending toward your goals.</div>
+            <div class="roller-line">Watch your daily habits compound into the person you set out to become.</div>
+            <div class="roller-line">Get flagged when your sleep dips before your biggest presentation.</div>
+            <div class="roller-line">See your patterns become visible over weeks and months.</div>
+            <div class="roller-line">Model complex decisions with real scenarios, not gut feelings.</div>
+            <div class="roller-line">Never lose a commitment, a connection, or a good idea again.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 6: Autonomy -->
+      <section class="autonomy-section premium-divider reveal" aria-label="Autonomy">
+        <div class="inner">
+          <h2>It works while you sleep.</h2>
+          <p class="auto-subhead">Most tools wait for instructions. Mantra doesn't. It operates on your agenda, surfaces what matters before you ask, and handles the work you'd forget to do.</p>
+          <div class="auto-beats">
+            <div class="auto-beat reveal stagger-1">
+              <h3>Morning</h3>
+              <p>A briefing assembled from your calendar, goals, people, and projects. Ready before your coffee.</p>
+            </div>
+            <div class="auto-beat reveal stagger-2">
+              <h3>Overnight</h3>
+              <p>Memory consolidates. News scans. Relationship maintenance queued. The system gets smarter while you rest.</p>
+            </div>
+            <div class="auto-beat reveal stagger-3">
+              <h3>Background</h3>
+              <p>Email triaged. Follow-ups tracked. Stale relationships flagged. Recurring work handled without you touching it.</p>
+            </div>
+            <div class="auto-beat reveal stagger-4">
+              <h3>Self-improving</h3>
+              <p>Workflows get sharper each time they run. New capabilities form around what you actually need. Month six is not month one.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 7: Integration Depth -->
+      <section class="integrations-section premium-divider reveal" aria-label="Integrations">
+        <div class="inner">
+          <h2>Plugs into what you already use.</h2>
+          <p class="int-subhead">No migration. No new inbox. The intelligence layer forms underneath the tools you already trust.</p>
+          <div class="int-grid">
+            <div class="int-cell reveal stagger-1">
+              <span class="int-icon">📧</span>
+              <span class="int-label">Email</span>
+            </div>
+            <div class="int-cell reveal stagger-2">
+              <span class="int-icon">📅</span>
+              <span class="int-label">Calendar</span>
+            </div>
+            <div class="int-cell reveal stagger-3">
+              <span class="int-icon">🏦</span>
+              <span class="int-label">Bank Accounts</span>
+            </div>
+            <div class="int-cell reveal stagger-4">
+              <span class="int-icon">❤️</span>
+              <span class="int-label">Health Data</span>
+            </div>
+            <div class="int-cell reveal stagger-5">
+              <span class="int-icon">👥</span>
+              <span class="int-label">Contacts</span>
+            </div>
+            <div class="int-cell reveal stagger-6">
+              <span class="int-icon">📰</span>
+              <span class="int-label">News Sources</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 8: Voice & Ambient -->
+      <section class="ambient-section premium-divider reveal" aria-label="Ambient computing">
+        <div class="inner">
+          <h2>The interface disappears.</h2>
+          <p class="amb-subhead">Talk to it on a walk. Glance at it through your glasses. Text it from a cab. One intelligence, every surface.</p>
+          <div class="amb-surfaces">
+            <div class="amb-surface reveal stagger-1">
+              <span class="amb-icon">💻</span>
+              <span class="amb-label">Web</span>
+              <span class="amb-desc">Full depth, any browser</span>
+            </div>
+            <div class="amb-surface reveal stagger-2">
+              <span class="amb-icon">📱</span>
+              <span class="amb-label">Mobile</span>
+              <span class="amb-desc">Your pocket, your context</span>
+            </div>
+            <div class="amb-surface reveal stagger-3">
+              <span class="amb-icon">🎙️</span>
+              <span class="amb-label">Voice</span>
+              <span class="amb-desc">Speak it once, it's captured</span>
+            </div>
+            <div class="amb-surface reveal stagger-4">
+              <span class="amb-icon">👓</span>
+              <span class="amb-label">Glasses</span>
+              <span class="amb-desc">See the world, stay connected</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 9: Trust & Privacy -->
+      <section class="trust-section premium-divider reveal" aria-label="Trust and privacy">
+        <div class="inner">
+          <h2>Your data works for you. Only you.</h2>
+          <p class="trust-subhead">A system this intimate earns its place or gets deleted. Trust is the product.</p>
+          <div class="trust-points">
+            <div class="trust-point reveal stagger-1">
+              <span class="trust-icon">🔒</span>
+              <p><strong>You own everything.</strong> Your data is never sold, shared, or used to train anything outside your own system.</p>
+            </div>
+            <div class="trust-point reveal stagger-2">
+              <span class="trust-icon">🛡️</span>
+              <p><strong>Everything it knows, you gave it.</strong> Explicit permissions for every integration. Nothing happens without your choice.</p>
+            </div>
+            <div class="trust-point reveal stagger-3">
+              <span class="trust-icon">🔑</span>
+              <p><strong>Strict isolation.</strong> Your world is yours alone. No user can see, search, or access another's data.</p>
+            </div>
+            <div class="trust-point reveal stagger-4">
+              <span class="trust-icon">📤</span>
+              <p><strong>Export or delete everything.</strong> At any time. No lock-in, no dark patterns, no retention games.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 10: How It Works -->
       <section class="how-section premium-divider reveal" aria-label="How it works">
         <div class="inner">
           <h2>Three steps. No onboarding marathon.</h2>
@@ -975,7 +1343,32 @@
         });
 
         // ══════════════════════════════════
-        // LAYER 4: Scroll Progress
+        // LAYER 4: Capability Roller
+        // ══════════════════════════════════
+
+        var rollerLines = document.querySelectorAll('.roller-line');
+        if (rollerLines.length > 0) {
+          var rollerSection = document.querySelector('.roller-section');
+          // Each line lights up as the user scrolls through the section
+          rollerLines.forEach(function(line, i) {
+            ScrollTrigger.create({
+              trigger: rollerSection,
+              start: function() {
+                var fraction = i / rollerLines.length;
+                return 'top+=' + (fraction * 100) + '% center';
+              },
+              end: function() {
+                var fraction = (i + 1) / rollerLines.length;
+                return 'top+=' + (fraction * 100) + '% center';
+              },
+              onEnter: function() { line.classList.add('roller-active'); },
+              onLeaveBack: function() { line.classList.remove('roller-active'); }
+            });
+          });
+        }
+
+        // ══════════════════════════════════
+        // LAYER 5: Scroll Progress
         // ══════════════════════════════════
 
         var progressBar = document.querySelector('.scroll-progress-bar');
