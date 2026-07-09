@@ -298,12 +298,20 @@ body {
 }
 
 /* ── FOUT Prevention for SplitType ── */
+/* Title starts hidden, JS adds .split-ready on init.
+   CSS-only failsafe: auto-reveal after 2s if JS never fires. */
+@keyframes heroTitleFallback {
+  to { visibility: visible; }
+}
+
 .hero-section h1 {
   visibility: hidden;
+  animation: heroTitleFallback 0s 2s forwards;
 }
 
 .hero-section h1.split-ready {
   visibility: visible;
+  animation: none;
 }
 
 /* ── Pillar Hue Shift Property ── */
