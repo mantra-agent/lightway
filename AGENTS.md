@@ -38,7 +38,23 @@ FOUT prevention: Hero `h1` has `visibility: hidden` in CSS, switched to `visible
 
 ## Brand
 
-- Black background (#000)
-- Blue accent: #4A90D9 / #2B5EA7
+- Surface background: #0F0F14 (home), #000 (coaches/splash)
+- Primary accent: #6366F1 (Indigo 500) — used on /home
+- Legacy blue accent: #4A90D9 / #2B5EA7 — used on /coaches
+- Domain accents: warm (#F59E0B), green (#22C55E), blue (#3B82F6), rose (#F43F5E)
 - Mantra logo at `brand/mantra-logo.png`
 - Clean, minimal, premium dark design
+
+## Page Architecture
+
+### /home (Landing Page 2.0)
+- **No GSAP/ScrollTrigger/SplitType.** Pure CSS animations + vanilla JS IntersectionObserver + rAF parallax.
+- 6-section story arc: Hero → Intelligence Layer → Capabilities (kinetic scroll) → Emergence → Compounding → Trust+CTA
+- Parallax via `data-parallax-speed` attributes and a single rAF scroll handler
+- Kinetic capability sequence: 15 lines with scroll-driven active/past states via IntersectionObserver viewport zones
+- Vignettes: HTML/CSS product UI mockups, not images
+- CTA constant: `https://app.trymantra.ai` (swap to waitlist URL when ready)
+
+### /coaches
+- Uses GSAP + ScrollTrigger + SplitType (CDN)
+- Uses shared styles.css reveal system

@@ -3,24 +3,47 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Mantra helps you reach your full potential. Your life is complex. Mantra makes it feel as intelligent as you are." />
-    <meta property="og:title" content="Mantra" />
-    <meta property="og:description" content="Mantra helps you reach your full potential. Your life is complex. Mantra makes it feel as intelligent as you are." />
+    <meta name="description" content="Mantra is the intelligence layer underneath everything you're already doing. One system that remembers, connects, and compounds." />
+    <meta property="og:title" content="Mantra — Your life deserves better than twelve apps and a notebook." />
+    <meta property="og:description" content="Mantra is the intelligence layer underneath everything you're already doing. One system that remembers, connects, and compounds." />
     <meta property="og:type" content="website" />
-    <title>Mantra — Reach Your Full Potential</title>
+    <title>Mantra — Personal Intelligence System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
     <style>
+      /* ══════════════════════════════════════════
+         HOME PAGE 2.0 — Ground-Up Reimagine
+         ══════════════════════════════════════════ */
+
+      /* ── Design Tokens ── */
+      :root {
+        --brand-primary: #6366F1;
+        --brand-primary-hover: #5558E6;
+        --brand-surface: #0F0F14;
+        --brand-surface-elevated: #1A1A24;
+        --brand-surface-subtle: #14141C;
+        --brand-text-primary: #F5F5F7;
+        --brand-text-secondary: #A1A1AA;
+        --brand-text-tertiary: #71717A;
+        --brand-accent-warm: #F59E0B;
+        --brand-accent-green: #22C55E;
+        --brand-accent-blue: #3B82F6;
+        --brand-accent-rose: #F43F5E;
+        --brand-gradient-start: #6366F1;
+        --brand-gradient-end: #8B5CF6;
+      }
+
       /* ── Base ── */
       .home-page {
         display: flex;
         flex-direction: column;
-        align-items: center;
-        color: hsl(220 10% 92%);
+        background: var(--brand-surface);
+        color: var(--brand-text-primary);
         font-family: 'Inter', sans-serif;
-        line-height: 1.5;
+        line-height: 1.7;
+        font-size: 1.125rem;
       }
 
       .home-page section {
@@ -28,39 +51,37 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 80px 24px;
+        padding: 128px 24px;
       }
 
-      .home-page .inner {
-        width: 100%;
-        max-width: 800px;
+      .home-page h1 {
+        font-size: clamp(2.5rem, 5vw, 4.5rem);
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        margin: 0;
+        color: var(--brand-text-primary);
       }
 
       .home-page h2 {
-        font-size: clamp(1.5rem, 4vw, 2.25rem);
-        font-weight: 700;
-        line-height: 1.15;
-        margin: 0 0 16px;
-        letter-spacing: -0.02em;
-        color: hsl(220 10% 92%);
+        font-size: clamp(1.5rem, 3vw, 2.5rem);
+        font-weight: 600;
+        line-height: 1.2;
+        margin: 0 0 24px;
+        color: var(--brand-text-primary);
       }
 
       .home-page h3 {
-        font-size: 1.125rem;
+        font-size: clamp(1.25rem, 2vw, 1.75rem);
         font-weight: 600;
-        margin: 0 0 8px;
-        color: hsl(220 10% 92%);
+        margin: 0 0 12px;
+        color: var(--brand-text-primary);
       }
 
       .home-page p {
         margin: 0;
-        color: hsl(220 10% 55%);
-      }
-
-      .home-page a {
-        color: hsl(220 10% 92%);
-        text-decoration: underline;
-        text-underline-offset: 2px;
+        color: var(--brand-text-secondary);
+        max-width: 42rem;
       }
 
       /* ── Nav ── */
@@ -74,7 +95,7 @@
         justify-content: space-between;
         align-items: center;
         padding: 16px 24px;
-        background: rgba(0,0,0,0.85);
+        background: rgba(15, 15, 20, 0.85);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
       }
@@ -84,1317 +105,1219 @@
         width: auto;
       }
 
-      .home-nav .nav-link {
+      .home-nav .cta-btn {
+        padding: 10px 24px;
         font-size: 0.875rem;
-        font-weight: 500;
-        color: hsl(220 10% 55%);
+        background: var(--brand-primary);
+      }
+
+      .home-nav .cta-btn:hover {
+        background: var(--brand-primary-hover);
+      }
+
+      /* ── Section Label ── */
+      .section-label {
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--brand-text-tertiary);
+        margin: 0 0 16px;
+      }
+
+      /* ── CTA Buttons ── */
+      .cta-primary {
+        display: inline-block;
+        padding: 16px 32px;
+        background: var(--brand-primary);
+        color: #fff;
         text-decoration: none;
-        transition: color 0.2s;
+        font-weight: 600;
+        font-size: 1.125rem;
+        border-radius: 12px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        border: none;
+        cursor: pointer;
       }
 
-      .home-nav .nav-link:hover {
-        color: hsl(220 10% 92%);
+      .cta-primary:hover {
+        background: var(--brand-primary-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
       }
 
-      /* ── Hero ── */
+      .cta-primary.cta-large {
+        padding: 20px 40px;
+        font-size: 1.25rem;
+        border-radius: 16px;
+        animation: ctaPulse 3s ease-in-out infinite;
+      }
+
+      @keyframes ctaPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        50% { box-shadow: 0 0 24px 4px rgba(99, 102, 241, 0.15); }
+      }
+
+      /* ══════════════════════════════════════════
+         SECTION 1: HERO
+         ══════════════════════════════════════════ */
       .hero-section {
-        min-height: 100svh;
+        min-height: 100vh;
         justify-content: center;
         text-align: center;
-        padding-top: 120px;
-        padding-bottom: 48px;
         position: relative;
-        overflow-x: hidden; /* contain orb bleed horizontally */
+        overflow: hidden;
+        padding-top: 80px;
       }
 
-      /* Hero orbs — living intelligence animation */
-      .hero-section::before {
-        content: '';
+      .hero-orb-bg {
         position: absolute;
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 50vw;
+        height: 50vw;
+        max-width: 800px;
+        max-height: 800px;
+        background: radial-gradient(circle, var(--brand-gradient-start) 0%, transparent 70%);
+        opacity: 0.08;
         border-radius: 50%;
-        filter: blur(80px);
+        filter: blur(60px);
         pointer-events: none;
-        mix-blend-mode: screen;
-        width: 500px;
-        height: 500px;
-        top: 30%;
-        left: 45%;
-        background: radial-gradient(circle, hsla(200 80% 50% / 0.12) 0%, transparent 70%);
-        animation: orbDrift1 12s ease-in-out infinite alternate;
+        will-change: transform;
       }
 
-      .hero-section::after {
-        content: '';
-        position: absolute;
-        border-radius: 50%;
-        filter: blur(80px);
-        pointer-events: none;
-        mix-blend-mode: screen;
-        width: 350px;
-        height: 350px;
-        top: 45%;
-        left: 55%;
-        background: radial-gradient(circle, hsla(200 70% 55% / 0.08) 0%, transparent 70%);
-        animation: orbDrift2 15s ease-in-out infinite alternate;
-      }
-
-      @media (max-width: 639px) {
-        .hero-section::before {
-          width: 300px;
-          height: 300px;
-          filter: blur(100px);
-        }
-        .hero-section::after {
-          width: 210px;
-          height: 210px;
-          filter: blur(100px);
-        }
-      }
-
-      .hero-section .inner {
+      .hero-content {
+        position: relative;
+        z-index: 1;
+        max-width: 48rem;
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 24px;
-        max-width: 720px;
-        position: relative;
       }
 
-      .hero-logo img {
-        display: block;
-        width: min(20vw, 120px);
-        min-width: 72px;
-        height: auto;
-        margin-bottom: 16px;
+      .hero-content h1 {
+        visibility: visible !important; /* override shared styles.css FOUT prevention */
+        opacity: 0;
+        transform: translateY(24px);
+        animation: fadeUp 0.6s ease-out 0.1s forwards;
       }
 
-      .hero-section h1 {
-        font-size: clamp(2.25rem, 5.5vw, 3.5rem);
-        font-weight: 700;
-        line-height: 1.08;
-        margin: 0;
-        letter-spacing: -0.025em;
-        background: linear-gradient(135deg, hsl(220 10% 92%) 0%, hsl(200 40% 75%) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-      }
-
-      /* SplitType wraps words in spans — they need the gradient too */
-      .hero-section h1 .word {
-        background: inherit;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-      }
-
-      .hero-section .subhead {
-        font-size: clamp(1rem, 2.5vw, 1.2rem);
-        line-height: 1.625;
-        color: hsl(220 10% 55%);
-        max-width: 560px;
-      }
-
-      .micro-copy {
-        font-size: 0.75rem;
-        color: hsl(220 10% 40%);
-        margin-top: 8px;
-      }
-
-      /* ── Gap / Bridge Section ── */
-      .gap-section .inner {
-        display: flex;
-        flex-direction: column;
-        gap: 32px;
-      }
-
-      .pain-point strong {
-        color: hsl(220 10% 92%);
-        font-weight: 600;
-      }
-
-      .pain-point p {
-        font-size: 1.125rem;
-        line-height: 1.625;
-      }
-
-      /* ── Pillars Section ── */
-      .pillars-section .section-intro {
-        font-size: 1.125rem;
-        color: hsl(220 10% 55%);
-        margin-bottom: 48px;
-      }
-
-      .pillar-cards {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 24px;
-      }
-
-      .pillar-card {
-        background: hsl(222 20% 11%);
-        border: 1px solid hsl(222 16% 16%);
-        border-radius: 8px;
-        padding: 28px;
-      }
-
-      .pillar-card h3 {
+      .hero-content .hero-sub {
+        opacity: 0;
+        transform: translateY(24px);
+        animation: fadeUp 0.6s ease-out 0.3s forwards;
         font-size: 1.25rem;
-        margin-bottom: 10px;
+        line-height: 1.6;
+        color: var(--brand-text-secondary);
+        max-width: 38rem;
       }
 
-      .pillar-card .description {
-        font-size: 1rem;
-        line-height: 1.625;
-        color: hsl(220 10% 55%);
+      .hero-content .cta-primary {
+        opacity: 0;
+        transform: translateY(24px);
+        animation: fadeUp 0.6s ease-out 0.5s forwards;
+      }
+
+      @keyframes fadeUp {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ══════════════════════════════════════════
+         SECTION 2: THE INTELLIGENCE LAYER
+         ══════════════════════════════════════════ */
+      .intelligence-section {
+        background: var(--brand-surface-subtle);
+      }
+
+      .intelligence-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 64px;
+        max-width: 64rem;
+        width: 100%;
+        align-items: center;
+      }
+
+      .intelligence-text {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .intelligence-text p {
+        line-height: 1.7;
+      }
+
+      /* Vignette: Morning Briefing */
+      .vignette-briefing {
+        max-width: 420px;
+        background: var(--brand-surface-elevated);
+        border-radius: 16px;
+        padding: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 0.9375rem;
+        line-height: 1.65;
+        color: var(--brand-text-secondary);
+        opacity: 0;
+        transform: translateX(40px);
+        transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        justify-self: center;
+      }
+
+      .vignette-briefing.visible {
+        opacity: 1;
+        transform: translateX(0);
+      }
+
+      .vignette-briefing .vignette-greeting {
+        color: var(--brand-text-primary);
+        font-weight: 600;
         margin-bottom: 16px;
       }
 
-      .pillar-card .outcome {
-        font-size: 0.875rem;
-        color: hsl(220 10% 45%);
-        padding-left: 20px;
-        position: relative;
+      .vignette-briefing ol {
+        margin: 0;
+        padding: 0 0 0 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
       }
 
-      .pillar-card .outcome::before {
-        content: "→";
-        position: absolute;
-        left: 0;
-        color: hsla(200 80% 50% / 0.5);
+      .vignette-briefing li {
+        padding-left: 4px;
       }
 
-      @media (min-width: 640px) {
-        .pillar-cards {
-          grid-template-columns: 1fr 1fr;
-        }
+      /* ══════════════════════════════════════════
+         SECTION 3: CAPABILITIES (KINETIC)
+         ══════════════════════════════════════════ */
+      .capabilities-section {
+        background: var(--brand-surface);
       }
 
-      /* ── Differentiation Section ── */
-      .diff-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 40px;
-        font-size: 0.875rem;
-      }
-
-      .diff-table th {
-        text-align: left;
-        padding: 14px 16px;
-        font-weight: 600;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: hsl(220 10% 40%);
-        border-bottom: 1px solid hsl(222 16% 16%);
-      }
-
-      .diff-table td {
-        padding: 14px 16px;
-        border-bottom: 1px solid hsla(222 16% 16% / 0.6);
-        vertical-align: top;
-      }
-
-      .diff-table td:first-child {
-        color: hsl(220 10% 45%);
-        font-weight: 500;
-        width: 30%;
-      }
-
-      .diff-table td:last-child {
-        color: hsl(220 10% 75%);
-      }
-
-      @media (max-width: 639px) {
-        .diff-table {
-          font-size: 0.75rem;
-        }
-        .diff-table th,
-        .diff-table td {
-          padding: 10px 8px;
-        }
-      }
-
-      /* ── Capability Roller ── */
-      .roller-section {
+      .capabilities-header {
         text-align: center;
-        overflow: hidden;
-      }
-
-      .roller-section h2 {
+        max-width: 48rem;
         margin-bottom: 48px;
       }
 
-      .roller-track {
+      /* Kinetic Capability Sequence */
+      .capability-sequence {
+        max-width: 40rem;
+        width: 100%;
         display: flex;
         flex-direction: column;
-        gap: 0;
-        max-width: 640px;
-        margin: 0 auto;
+        gap: 1.75rem;
+        margin-bottom: 64px;
       }
 
-      .roller-line {
-        font-size: clamp(1.125rem, 2.5vw, 1.375rem);
-        font-weight: 500;
-        line-height: 1.6;
-        color: hsl(220 10% 25%);
-        padding: 10px 0;
-        transition: color 0.4s ease, opacity 0.4s ease;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      @media (max-width: 639px) {
-        .roller-line {
-          white-space: normal;
-          padding: 8px 0;
-        }
-      }
-
-      .roller-line.roller-active {
-        color: hsl(220 10% 92%);
-      }
-
-      /* ── Autonomy ── */
-      .autonomy-section .inner {
-        text-align: center;
-      }
-
-      .autonomy-section .auto-subhead {
+      .capability-line {
         font-size: 1.125rem;
-        color: hsl(220 10% 55%);
-        max-width: 560px;
-        margin: 16px auto 40px;
-        line-height: 1.625;
+        line-height: 1.6;
+        color: var(--brand-text-secondary);
+        opacity: 0.15;
+        transform: translateY(8px);
+        transition: opacity 0.4s ease-out, transform 0.4s ease-out;
       }
 
-      .auto-beats {
+      .capability-line.cap-active {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .capability-line.cap-past {
+        opacity: 0.4;
+        transform: translateY(0);
+      }
+
+      .capability-line strong {
+        color: var(--brand-text-primary);
+        transition: color 0.4s ease-out;
+      }
+
+      .capability-line.cap-active strong,
+      .capability-line.cap-past strong {
+        color: var(--accent-color, var(--brand-primary));
+      }
+
+      /* Vignette Grid */
+      .vignette-grid {
         display: grid;
-        grid-template-columns: 1fr;
-        gap: 24px;
-        text-align: left;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        max-width: 64rem;
+        width: 100%;
+        margin-bottom: 48px;
       }
 
-      @media (min-width: 640px) {
-        .auto-beats {
-          grid-template-columns: 1fr 1fr;
-          gap: 32px;
-        }
+      .vignette-card {
+        background: var(--brand-surface-elevated);
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        opacity: 0;
+        transform: scale(0.96);
+        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
       }
 
-      .auto-beat {
-        padding: 20px 0;
-        border-top: 1px solid hsl(222 16% 12%);
+      .vignette-card.visible {
+        opacity: 1;
+        transform: scale(1);
       }
 
-      .auto-beat h3 {
+      .vignette-card:nth-child(2) { transition-delay: 150ms; }
+      .vignette-card:nth-child(3) { transition-delay: 300ms; }
+      .vignette-card:nth-child(4) { transition-delay: 450ms; }
+
+      .vignette-body {
+        padding: 24px;
         font-size: 0.875rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: hsl(200 60% 55%);
-        margin: 0 0 8px;
-      }
-
-      .auto-beat p {
-        font-size: 0.9375rem;
         line-height: 1.6;
-        color: hsl(220 10% 55%);
+        color: var(--brand-text-secondary);
       }
 
-      /* ── Integrations ── */
-      .integrations-section .inner {
-        text-align: center;
+      .vignette-caption {
+        padding: 16px 24px;
+        font-size: 0.875rem;
+        color: var(--brand-text-tertiary);
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
       }
 
-      .integrations-section .int-subhead {
-        font-size: 1.125rem;
-        color: hsl(220 10% 55%);
-        max-width: 520px;
-        margin: 16px auto 48px;
-        line-height: 1.625;
-      }
-
-      .int-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 2px;
-        background: hsl(222 16% 10%);
-        border-radius: 8px;
-        overflow: hidden;
-      }
-
-      @media (min-width: 640px) {
-        .int-grid {
-          grid-template-columns: repeat(3, 1fr);
-        }
-      }
-
-      .int-cell {
+      /* Vignette A: Goals Dashboard */
+      .vignette-goals .goal-item {
         display: flex;
-        flex-direction: column;
         align-items: center;
         gap: 10px;
-        padding: 28px 16px;
-        background: hsl(222 16% 5%);
+        padding: 8px 0;
       }
 
-      .int-cell .int-icon {
-        font-size: 1.5rem;
-        line-height: 1;
+      .vignette-goals .goal-item + .goal-item {
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
       }
 
-      .int-cell .int-label {
-        font-size: 0.8125rem;
+      .goal-badge {
+        font-size: 0.6875rem;
+        padding: 2px 8px;
+        border-radius: 4px;
         font-weight: 500;
-        color: hsl(220 10% 55%);
-        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        white-space: nowrap;
       }
 
-      /* ── Ambient / Voice ── */
-      .ambient-section .inner {
-        text-align: center;
+      .badge-on-track {
+        background: rgba(34, 197, 94, 0.15);
+        color: var(--brand-accent-green);
       }
 
-      .ambient-section .amb-subhead {
-        font-size: 1.125rem;
-        color: hsl(220 10% 55%);
-        max-width: 520px;
-        margin: 16px auto 0;
-        line-height: 1.625;
+      .badge-active {
+        background: rgba(99, 102, 241, 0.15);
+        color: var(--brand-primary);
       }
 
-      .amb-surfaces {
-        display: flex;
-        justify-content: center;
-        gap: 48px;
-        margin-top: 48px;
-        flex-wrap: wrap;
-      }
-
-      .amb-surface {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .amb-surface .amb-icon {
-        font-size: 2rem;
-        line-height: 1;
-        opacity: 0.7;
-      }
-
-      .amb-surface .amb-label {
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: hsl(220 10% 55%);
-      }
-
-      .amb-surface .amb-desc {
+      .goal-label {
         font-size: 0.8125rem;
-        color: hsl(220 10% 35%);
-        max-width: 140px;
-        text-align: center;
-        line-height: 1.4;
+        color: var(--brand-text-secondary);
       }
 
-      /* ── Trust ── */
-      .trust-section .inner {
-        text-align: center;
+      .goal-horizon {
+        font-size: 0.6875rem;
+        color: var(--brand-text-tertiary);
+        margin-left: auto;
+        white-space: nowrap;
       }
 
-      .trust-section .trust-subhead {
-        font-size: 1.125rem;
-        color: hsl(220 10% 55%);
-        max-width: 520px;
-        margin: 16px auto 40px;
-        line-height: 1.625;
-      }
-
-      .trust-points {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        text-align: left;
-        max-width: 560px;
-        margin: 0 auto;
-      }
-
-      .trust-point {
-        display: flex;
-        gap: 12px;
-        align-items: flex-start;
-      }
-
-      .trust-point .trust-icon {
-        font-size: 1.25rem;
-        line-height: 1.4;
-        flex-shrink: 0;
-      }
-
-      .trust-point p {
-        font-size: 0.9375rem;
-        line-height: 1.6;
-        color: hsl(220 10% 55%);
-      }
-
-      .trust-point strong {
-        color: hsl(220 10% 80%);
-      }
-
-      /* ── How It Works ── */
-      .how-section {
-        text-align: center;
-      }
-
-      .steps {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 40px;
-        margin-top: 48px;
-      }
-
-      .step {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .step-number {
+      /* Vignette B: Relationship Graph */
+      .vignette-people .person-row {
         display: flex;
         align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        border: 1px solid hsl(222 16% 20%);
-        font-size: 0.875rem;
-        font-weight: 600;
-        color: hsl(220 10% 55%);
-        flex-shrink: 0;
+        justify-content: space-between;
+        padding: 8px 0;
       }
 
-      .step h3 {
-        font-size: 1.125rem;
-        margin: 0;
+      .vignette-people .person-row + .person-row {
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
       }
 
-      .step p {
-        font-size: 0.875rem;
-        color: hsl(220 10% 45%);
-        max-width: 320px;
+      .person-name {
+        font-size: 0.8125rem;
+        color: var(--brand-text-primary);
+        font-weight: 500;
       }
 
-      @media (min-width: 768px) {
-        .steps {
-          grid-template-columns: 1fr 1fr 1fr;
-          gap: 32px;
-        }
-      }
-
-      /* ── Social Proof ── */
-      .proof-section {
-        text-align: center;
-      }
-
-      .testimonials {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 40px;
-        margin-top: 48px;
-      }
-
-      .testimonial {
-        max-width: 480px;
-        margin: 0 auto;
-      }
-
-      .testimonial blockquote {
-        margin: 0;
-        font-size: 1.125rem;
-        font-style: italic;
-        line-height: 1.625;
-        color: hsl(220 10% 55%);
-      }
-
-      .testimonial cite {
-        display: block;
-        margin-top: 12px;
-        font-size: 0.875rem;
-        font-style: normal;
-        color: hsl(220 10% 35%);
-      }
-
-      @media (min-width: 768px) {
-        .testimonials {
-          grid-template-columns: 1fr 1fr 1fr;
-        }
-        .testimonial {
-          max-width: none;
-        }
-      }
-
-      /* ── FAQ ── */
-      .faq-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-        margin-top: 40px;
-      }
-
-      .faq-item {
-        border-bottom: 1px solid hsla(222 16% 16% / 0.6);
-        padding: 24px 0;
-      }
-
-      .faq-item:first-child {
-        border-top: 1px solid rgba(255,255,255,0.06);
-      }
-
-      .faq-q {
-        font-size: 1rem;
-        font-weight: 600;
-        color: hsl(220 10% 92%);
-        margin: 0 0 10px;
-        cursor: default;
-      }
-
-      .faq-a {
-        font-size: 0.875rem;
-        line-height: 1.625;
-        color: hsl(220 10% 45%);
-        margin: 0;
-      }
-
-      /* ── Final CTA ── */
-      .final-cta-section {
-        text-align: center;
-        padding: 100px 24px;
-      }
-
-      .final-cta-section .inner {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
-      }
-
-      .final-cta-section h2 {
-        font-size: clamp(1.75rem, 4.5vw, 2.75rem);
-        font-weight: 700;
-        letter-spacing: -0.025em;
-      }
-
-      .final-cta-section .subhead {
-        color: hsl(220 10% 45%);
-        font-size: 1.125rem;
-        max-width: 480px;
-      }
-
-      .contact-line {
+      .person-status {
         font-size: 0.75rem;
-        color: rgba(255,255,255,0.3);
+        font-weight: 500;
+      }
+
+      .status-overdue { color: var(--brand-accent-rose); }
+      .status-recent { color: var(--brand-accent-green); }
+      .status-neutral { color: var(--brand-text-tertiary); }
+
+      /* Vignette C: Decision */
+      .vignette-decision .decision-title {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--brand-text-primary);
+        margin-bottom: 12px;
+      }
+
+      .decision-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .decision-tab {
+        font-size: 0.75rem;
+        padding: 4px 12px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--brand-text-tertiary);
+      }
+
+      .decision-tab.tab-active {
+        background: rgba(99, 102, 241, 0.15);
+        color: var(--brand-primary);
+      }
+
+      .decision-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.75rem;
+        color: var(--brand-text-tertiary);
+      }
+
+      .traffic-light {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--brand-accent-warm);
+      }
+
+      /* Vignette D: Autonomous Briefing */
+      .vignette-auto .auto-header {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--brand-text-primary);
+        margin-bottom: 8px;
+      }
+
+      .vignette-auto .auto-body {
+        font-size: 0.8125rem;
+        color: var(--brand-text-secondary);
+        line-height: 1.6;
+      }
+
+      .vignette-auto .auto-tag {
+        display: inline-block;
+        font-size: 0.6875rem;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: rgba(99, 102, 241, 0.12);
+        color: var(--brand-primary);
         margin-top: 8px;
       }
 
-      .contact-line a {
-        color: hsl(220 10% 45%);
-        text-decoration: none;
+      /* ══════════════════════════════════════════
+         SECTION 4: EMERGENCE
+         ══════════════════════════════════════════ */
+      .emergence-section {
+        background: var(--brand-surface-subtle);
+        position: relative;
+        overflow: hidden;
       }
 
-      .contact-line a:hover {
-        color: hsl(220 10% 55%);
+      .emergence-section .grid-bg {
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        background-size: 48px 48px;
+        pointer-events: none;
+        will-change: transform;
       }
 
-      /* ── Footer ── */
-      .home-footer {
+      .emergence-content {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+        max-width: 42rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+      }
+
+      .emergence-content p {
+        text-align: left;
+        line-height: 1.8;
+      }
+
+      /* Connection Map */
+      .connection-map {
+        position: relative;
         width: 100%;
+        max-width: 480px;
+        height: 360px;
+        margin-top: 48px;
+      }
+
+      .map-node {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        z-index: 2;
+      }
+
+      .map-node .node-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--brand-text-secondary);
+      }
+
+      .map-node.node-center .node-dot {
+        width: 24px;
+        height: 24px;
+        background: var(--brand-primary);
+      }
+
+      .map-node .node-label {
+        font-size: 0.75rem;
+        color: var(--brand-text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        white-space: nowrap;
+      }
+
+      .map-node.node-center .node-label {
+        font-size: 0.8125rem;
+        color: var(--brand-text-primary);
+        font-weight: 600;
+      }
+
+      .map-lines {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+      }
+
+      .map-lines line {
+        stroke: rgba(255, 255, 255, 0.08);
+        stroke-width: 1;
+      }
+
+      .map-pulse {
+        r: 3;
+        fill: var(--brand-primary);
+        opacity: 0.2;
+      }
+
+      /* ══════════════════════════════════════════
+         SECTION 5: COMPOUNDING
+         ══════════════════════════════════════════ */
+      .compounding-section {
+        background: var(--brand-surface);
+      }
+
+      .compounding-header {
+        text-align: center;
+        max-width: 42rem;
+        margin-bottom: 48px;
+      }
+
+      .compounding-cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        max-width: 64rem;
+        width: 100%;
+      }
+
+      .compound-card {
+        background: var(--brand-surface-elevated);
+        border-radius: 16px;
+        padding: 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        opacity: 0;
+        transform: translateY(40px);
+        transition: opacity 0.6s ease-out, transform 0.6s ease-out, box-shadow 0.6s ease-out;
+      }
+
+      .compound-card.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .compound-card:nth-child(2) { transition-delay: 200ms; }
+      .compound-card:nth-child(3) { transition-delay: 400ms; }
+
+      .compound-card h3 {
+        font-size: 1rem;
+        color: var(--brand-text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin: 0;
+      }
+
+      .compound-card p {
+        color: var(--brand-text-secondary);
+        font-size: 1rem;
+        line-height: 1.7;
+        margin: 0;
+      }
+
+      .compound-card p:last-child {
+        color: var(--brand-text-primary);
+      }
+
+      .compound-card .card-accent {
+        width: 100%;
+        height: 2px;
+        border-radius: 1px;
+        background: var(--brand-primary);
+      }
+
+      .compound-card:nth-child(1) .card-accent { opacity: 0.3; }
+      .compound-card:nth-child(2) .card-accent { opacity: 0.6; }
+      .compound-card:nth-child(3) .card-accent { opacity: 1; }
+
+      .compound-card:nth-child(3).visible {
+        box-shadow: 0 0 40px rgba(99, 102, 241, 0.08);
+      }
+
+      /* ══════════════════════════════════════════
+         SECTION 6: TRUST + CTA
+         ══════════════════════════════════════════ */
+      .trust-section {
+        background: var(--brand-surface-subtle);
+      }
+
+      .trust-content {
+        text-align: center;
+        max-width: 42rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+      }
+
+      .trust-content p {
+        text-align: center;
+        line-height: 1.8;
+      }
+
+      .trust-indicators {
+        display: flex;
+        gap: 3rem;
+        margin-top: 16px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .trust-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .trust-indicator svg {
+        width: 20px;
+        height: 20px;
+        color: var(--brand-text-tertiary);
+        stroke-width: 1.5;
+      }
+
+      .trust-indicator span {
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--brand-text-tertiary);
+      }
+
+      /* Final CTA Block */
+      .final-cta {
+        text-align: center;
+        padding-top: 80px;
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 16px;
-        padding: 48px 24px;
-        border-top: 1px solid rgba(255,255,255,0.06);
       }
 
-      .home-footer img {
-        height: 24px;
-        width: auto;
-        opacity: 0.4;
+      .final-cta h2 {
+        margin-bottom: 8px;
       }
 
-      .footer-links {
-        display: flex;
-        gap: 24px;
-        font-size: 0.75rem;
+      .cta-sub {
+        font-size: 0.875rem;
+        color: var(--brand-text-tertiary);
       }
 
-      .footer-links a {
-        color: hsl(220 10% 35%);
-        text-decoration: none;
-        transition: color 0.2s;
+      /* ══════════════════════════════════════════
+         RESPONSIVE
+         ══════════════════════════════════════════ */
+      @media (max-width: 1023px) {
+        .intelligence-grid {
+          grid-template-columns: 1fr;
+          gap: 40px;
+        }
+
+        .vignette-briefing {
+          max-width: 100%;
+        }
+
+        .compounding-cards {
+          grid-template-columns: 1fr;
+          max-width: 32rem;
+        }
       }
 
-      .footer-links a:hover {
-        color: hsl(220 10% 55%);
+      @media (max-width: 767px) {
+        .home-page section {
+          padding: 80px 20px;
+        }
+
+        .vignette-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .connection-map {
+          height: 280px;
+          max-width: 100%;
+        }
+
+        .trust-indicators {
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .hero-content .hero-sub {
+          font-size: 1.0625rem;
+        }
       }
 
-      .footer-copy {
-        font-size: 0.75rem;
-        color: rgba(255,255,255,0.2);
-        margin: 0;
+      @media (max-width: 479px) {
+        .trust-indicators {
+          align-items: flex-start;
+        }
       }
 
-      .footer-tagline {
-        font-size: 0.75rem;
-        color: rgba(255,255,255,0.25);
-        font-style: italic;
-        margin: 0;
+      /* ══════════════════════════════════════════
+         REDUCED MOTION
+         ══════════════════════════════════════════ */
+      @media (prefers-reduced-motion: reduce) {
+        .hero-content h1,
+        .hero-content .hero-sub,
+        .hero-content .cta-primary {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+          visibility: visible !important;
+        }
+
+        .capability-line {
+          opacity: 1 !important;
+          transform: none !important;
+          transition: none !important;
+        }
+
+        .capability-line strong {
+          color: var(--accent-color, var(--brand-primary)) !important;
+          transition: none !important;
+        }
+
+        .vignette-briefing,
+        .vignette-card,
+        .compound-card {
+          opacity: 1 !important;
+          transform: none !important;
+          transition: none !important;
+        }
+
+        .hero-orb-bg {
+          transform: translate(-50%, -50%) !important;
+        }
+
+        .grid-bg {
+          transform: none !important;
+        }
+
+        .cta-primary.cta-large {
+          animation: none;
+        }
+
+        .map-pulse {
+          display: none;
+        }
       }
     </style>
   </head>
+
   <body>
-    <!-- Nav -->
-    <nav class="home-nav" aria-label="Main">
-      <a href="/"><img src="/brand/mantra-logo.png" alt="Mantra" width="1254" height="1254" /></a>
-    </nav>
-
-    <main class="home-page">
-
-      <!-- Section 1: Hero -->
-      <section class="hero-section" aria-label="Hero">
-        <div class="hero-orb"></div>
-        <div class="inner">
-          <div class="hero-logo">
-            <img src="/brand/mantra-logo.png" alt="Mantra" width="1254" height="1254" />
-          </div>
-          <h1>Reach your full potential.</h1>
-          <p class="subhead">Your life is complex. Mantra makes it feel as intelligent as you are.</p>
-          <div>
-            <a class="cta-btn" href="https://mono-prod-8d22.up.railway.app/">Start With Mantra →</a>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section 2: The Gap -->
-      <section class="gap-section premium-divider reveal" aria-label="The gap">
-        <div class="inner">
-          <h2>You already know something is off.</h2>
-          <div class="pain-point" data-pain-index="0">
-            <p><strong>You have seventeen apps and no system.</strong> Notes in one place, tasks in another, contacts somewhere else. None of them talk to each other. None of them know you.</p>
-          </div>
-          <div class="pain-point" data-pain-index="1">
-            <p><strong>You remember the wrong things.</strong> A random conversation from 2019, but not the person you met last Tuesday who could change your career. Your brain is a pattern machine with terrible storage.</p>
-          </div>
-          <div class="pain-point" data-pain-index="2">
-            <p><strong>You're always catching up.</strong> Monday starts with the feeling that something slipped. By Friday, you've reacted to everything and initiated nothing.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section 3: Four Pillars -->
-      <section class="pillars-section premium-divider reveal" aria-label="What a personal intelligence system actually does" id="pillars">
-        <div class="inner">
-          <h2>What a personal intelligence system actually does</h2>
-          <p class="section-intro">Not four features. One system that thinks with you.</p>
-
-          <div class="pillar-cards">
-            <div class="pillar-card card-hover reveal stagger-1">
-              <h3>Memory that compounds</h3>
-              <p class="description">Your conversations, decisions, and lessons accumulate instead of disappearing into app silos. It gets smarter over time because your history gets richer.</p>
-            </div>
-
-            <div class="pillar-card card-hover reveal stagger-2">
-              <h3>Strategy that stays alive</h3>
-              <p class="description">Goals don't die because they're bad goals. They die because nothing keeps them visible. Turn your intentions into living objects, connected to your daily choices.</p>
-            </div>
-
-            <div class="pillar-card card-hover reveal stagger-3">
-              <h3>Relationships that don't go cold</h3>
-              <p class="description">"I should reach out" turns into "I can't believe it's been six months." Know who you've talked to, what you discussed, and when it's been too long.</p>
-            </div>
-
-            <div class="pillar-card card-hover reveal stagger-4">
-              <h3>Execution that follows through</h3>
-              <p class="description">Ideas are cheap. Execution is the bottleneck. Capture what you decide, turn it into commitments, and close the loop. Not with guilt. With momentum.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section 4: Negative Differentiation -->
-      <section class="diff-section premium-divider reveal" aria-label="What Mantra is not">
-        <div class="inner">
-          <h2>Not another app to check.</h2>
-
-          <table class="diff-table">
-            <thead>
-              <tr>
-                <th>What you might compare it to</th>
-                <th>What Mantra actually is</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Note apps</td>
-                <td>Notes are inputs. Mantra is what makes them useful.</td>
-              </tr>
-              <tr>
-                <td>CRMs</td>
-                <td>CRMs track deals. Track the people who actually shape your life.</td>
-              </tr>
-              <tr>
-                <td>Todo apps</td>
-                <td>Todos are lists. Connect your tasks to goals to strategy to your actual life.</td>
-              </tr>
-              <tr>
-                <td>AI assistants</td>
-                <td>Assistants wait for instructions. A system that learns your context works alongside you.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- Section 5: Capability Roller -->
-      <section class="roller-section premium-divider" aria-label="What your life looks like with Mantra">
-        <div class="inner">
-          <h2>What your life looks like with Mantra.</h2>
-          <div class="roller-track">
-            <div class="roller-line">Remember the name of the person you met last Tuesday.</div>
-            <div class="roller-line">Walk into every meeting with full context on everyone in the room.</div>
-            <div class="roller-line">See your spending against the goal it threatens.</div>
-            <div class="roller-line">Follow through on what you said you'd do.</div>
-            <div class="roller-line">Know who you haven't talked to in too long.</div>
-            <div class="roller-line">Search across everything you've ever captured, by meaning.</div>
-            <div class="roller-line">Wake up to a briefing built from your calendar, goals, and people.</div>
-            <div class="roller-line">Capture an idea on a walk and find it structured when you sit down.</div>
-            <div class="roller-line">Track whether your life is bending toward your goals.</div>
-            <div class="roller-line">Watch your daily habits compound into the person you set out to become.</div>
-            <div class="roller-line">Get flagged when your sleep dips before your biggest presentation.</div>
-            <div class="roller-line">See your patterns become visible over weeks and months.</div>
-            <div class="roller-line">Model complex decisions with real scenarios, not gut feelings.</div>
-            <div class="roller-line">Never lose a commitment, a connection, or a good idea again.</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section 6: Autonomy -->
-      <section class="autonomy-section premium-divider reveal" aria-label="Autonomy">
-        <div class="inner">
-          <h2>It works while you sleep.</h2>
-          <p class="auto-subhead">Most tools wait for instructions. Mantra doesn't. It operates on your agenda, surfaces what matters before you ask, and handles the work you'd forget to do.</p>
-          <div class="auto-beats">
-            <div class="auto-beat reveal stagger-1">
-              <h3>Morning</h3>
-              <p>A briefing assembled from your calendar, goals, people, and projects. Ready before your coffee.</p>
-            </div>
-            <div class="auto-beat reveal stagger-2">
-              <h3>Overnight</h3>
-              <p>Memory consolidates. News scans. Relationship maintenance queued. The system gets smarter while you rest.</p>
-            </div>
-            <div class="auto-beat reveal stagger-3">
-              <h3>Background</h3>
-              <p>Email triaged. Follow-ups tracked. Stale relationships flagged. Recurring work handled without you touching it.</p>
-            </div>
-            <div class="auto-beat reveal stagger-4">
-              <h3>Self-improving</h3>
-              <p>Workflows get sharper each time they run. New capabilities form around what you actually need. Month six is not month one.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section 7: Integration Depth -->
-      <section class="integrations-section premium-divider reveal" aria-label="Integrations">
-        <div class="inner">
-          <h2>Plugs into what you already use.</h2>
-          <p class="int-subhead">No migration. No new inbox. The intelligence layer forms underneath the tools you already trust.</p>
-          <div class="int-grid">
-            <div class="int-cell reveal stagger-1">
-              <span class="int-icon">📧</span>
-              <span class="int-label">Email</span>
-            </div>
-            <div class="int-cell reveal stagger-2">
-              <span class="int-icon">📅</span>
-              <span class="int-label">Calendar</span>
-            </div>
-            <div class="int-cell reveal stagger-3">
-              <span class="int-icon">🏦</span>
-              <span class="int-label">Bank Accounts</span>
-            </div>
-            <div class="int-cell reveal stagger-4">
-              <span class="int-icon">❤️</span>
-              <span class="int-label">Health Data</span>
-            </div>
-            <div class="int-cell reveal stagger-5">
-              <span class="int-icon">👥</span>
-              <span class="int-label">Contacts</span>
-            </div>
-            <div class="int-cell reveal stagger-6">
-              <span class="int-icon">📰</span>
-              <span class="int-label">News Sources</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section 8: Voice & Ambient -->
-      <section class="ambient-section premium-divider reveal" aria-label="Ambient computing">
-        <div class="inner">
-          <h2>The interface disappears.</h2>
-          <p class="amb-subhead">Talk to it on a walk. Glance at it through your glasses. Text it from a cab. One intelligence, every surface.</p>
-          <div class="amb-surfaces">
-            <div class="amb-surface reveal stagger-1">
-              <span class="amb-icon">💻</span>
-              <span class="amb-label">Web</span>
-              <span class="amb-desc">Full depth, any browser</span>
-            </div>
-            <div class="amb-surface reveal stagger-2">
-              <span class="amb-icon">📱</span>
-              <span class="amb-label">Mobile</span>
-              <span class="amb-desc">Your pocket, your context</span>
-            </div>
-            <div class="amb-surface reveal stagger-3">
-              <span class="amb-icon">🎙️</span>
-              <span class="amb-label">Voice</span>
-              <span class="amb-desc">Speak it once, it's captured</span>
-            </div>
-            <div class="amb-surface reveal stagger-4">
-              <span class="amb-icon">👓</span>
-              <span class="amb-label">Glasses</span>
-              <span class="amb-desc">See the world, stay connected</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section 9: Trust & Privacy -->
-      <section class="trust-section premium-divider reveal" aria-label="Trust and privacy">
-        <div class="inner">
-          <h2>Your data works for you. Only you.</h2>
-          <p class="trust-subhead">A system this intimate earns its place or gets deleted. Trust is the product.</p>
-          <div class="trust-points">
-            <div class="trust-point reveal stagger-1">
-              <span class="trust-icon">🔒</span>
-              <p><strong>You own everything.</strong> Your data is never sold, shared, or used to train anything outside your own system.</p>
-            </div>
-            <div class="trust-point reveal stagger-2">
-              <span class="trust-icon">🛡️</span>
-              <p><strong>Everything it knows, you gave it.</strong> Explicit permissions for every integration. Nothing happens without your choice.</p>
-            </div>
-            <div class="trust-point reveal stagger-3">
-              <span class="trust-icon">🔑</span>
-              <p><strong>Strict isolation.</strong> Your world is yours alone. No user can see, search, or access another's data.</p>
-            </div>
-            <div class="trust-point reveal stagger-4">
-              <span class="trust-icon">📤</span>
-              <p><strong>Export or delete everything.</strong> At any time. No lock-in, no dark patterns, no retention games.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section 10: How It Works -->
-      <section class="how-section premium-divider reveal" aria-label="How it works">
-        <div class="inner">
-          <h2>Three steps. No onboarding marathon.</h2>
-
-          <div class="steps">
-            <div class="step reveal stagger-1">
-              <div class="step-number">1</div>
-              <h3>Tell it what matters</h3>
-              <p>Your goals, your people, your priorities. A few minutes of context and it starts working.</p>
-            </div>
-
-            <div class="step reveal stagger-2">
-              <div class="step-number">2</div>
-              <h3>Live your life</h3>
-              <p>Capture thoughts, check in on goals, or don't. It meets you where you are.</p>
-            </div>
-
-            <div class="step reveal stagger-3">
-              <div class="step-number">3</div>
-              <h3>Watch it compound</h3>
-              <p>Over weeks and months, your patterns become visible and your system gets smarter.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- FAQ -->
-      <section class="faq-section premium-divider reveal" aria-label="Frequently asked questions">
-        <div class="inner">
-          <h2>Questions</h2>
-
-          <div class="faq-list">
-            <div class="faq-item">
-              <p class="faq-q">Is this another AI chatbot?</p>
-              <p class="faq-a">No. Mantra is a system, not a chat window. Your memory compounds. Your goals and relationships stay connected. It works alongside you over time.</p>
-            </div>
-
-            <div class="faq-item">
-              <p class="faq-q">What happens to my data?</p>
-              <p class="faq-a">It's yours. Mantra doesn't train on it, sell it, or share it. Export or delete everything at any time.</p>
-            </div>
-
-            <div class="faq-item">
-              <p class="faq-q">How is this different from Notion or Obsidian?</p>
-              <p class="faq-a">Those are capture tools. Mantra is what happens after capture. Your notes connect to goals, goals to people, and people to your calendar.</p>
-            </div>
-
-            <div class="faq-item">
-              <p class="faq-q">Does it take a long time to set up?</p>
-              <p class="faq-a">A few minutes. Share your goals and priorities, and it starts working. It gets smarter the longer you use it.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section 8: Final CTA -->
-      <section class="final-cta-section premium-divider reveal" aria-label="Get started">
-        <div class="inner">
-          <h2>Your life deserves a system as intelligent as you are.</h2>
-          <a class="cta-btn" href="https://mono-prod-8d22.up.railway.app/">Start With Mantra →</a>
-          <p class="contact-line">Questions? <a href="mailto:hello@mantra.app">hello@mantra.app</a></p>
-        </div>
-      </section>
-
-    </main>
-
-    <!-- Footer -->
-    <footer class="home-footer">
-      <img src="/brand/mantra-logo.png" alt="Mantra" width="1254" height="1254" />
-      <nav class="footer-links">
-        <a href="mailto:hello@mantra.app">Contact</a>
+    <div class="home-page">
+      <!-- Nav -->
+      <nav class="home-nav" aria-label="Main navigation">
+        <a href="/home"><img src="/brand/mantra-logo.png" alt="Mantra" /></a>
+        <a href="https://app.trymantra.ai" class="cta-btn">Start with Mantra</a>
       </nav>
-      <p class="footer-tagline">Your personal intelligence system.</p>
-      <p class="footer-copy">© 2026 Mantra</p>
-    </footer>
 
-    <!-- Scroll Progress Bar -->
-    <div class="scroll-progress-bar"></div>
+      <!-- ════════════════════════════════════════
+           SECTION 1: HERO
+           ════════════════════════════════════════ -->
+      <section class="hero-section" aria-label="Hero">
+        <div class="hero-orb-bg" data-parallax-speed="0.3"></div>
+        <div class="hero-content">
+          <p class="section-label">Personal Intelligence System</p>
+          <h1>Your life deserves better<br />than twelve apps and a notebook.</h1>
+          <p class="hero-sub">
+            Mantra is the intelligence layer underneath everything you're already doing.
+            One system that remembers, connects, and compounds — so your ambition
+            finally has infrastructure that keeps up.
+          </p>
+          <a href="https://app.trymantra.ai" class="cta-primary">Start with Mantra →</a>
+        </div>
+      </section>
 
-    <!-- CDN: GSAP + ScrollTrigger + SplitType -->
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
-    <script src="https://unpkg.com/split-type@0.3.4" defer></script>
+      <!-- ════════════════════════════════════════
+           SECTION 2: THE INTELLIGENCE LAYER
+           ════════════════════════════════════════ -->
+      <section class="intelligence-section" aria-label="The intelligence layer">
+        <div class="intelligence-grid">
+          <div class="intelligence-text">
+            <p class="section-label">The Layer Underneath</p>
+            <h2>Not another app.<br />The intelligence underneath all of them.</h2>
+            <p>
+              Your calendar, email, bank accounts, health data, contacts, and goals
+              already hold the raw material of your life. They just don't talk to each other.
+            </p>
+            <p>
+              Mantra connects them into one living layer. It remembers what matters,
+              surfaces what's relevant, and works on your agenda while you sleep.
+            </p>
+            <p>
+              No migration. No new inbox. No behavior change on day one.
+              Just a system that gets smarter because your history gets richer.
+            </p>
+          </div>
+          <div class="vignette-briefing" data-reveal="slide-right" data-reveal-threshold="0.3">
+            <p class="vignette-greeting">Good morning. Three things for today:</p>
+            <ol>
+              <li>Prep for your 2pm with Michael — he's evaluating Mantra for his coaching practice. Research brief ready.</li>
+              <li>Follow up with Sarah Chen — you said you'd send the proposal by Friday. Draft waiting for your review.</li>
+              <li>Your sleep was 6.2 hours. Light day recommended. Your energy budget is better spent on the Michael meeting.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
 
-    <!-- Animation Init -->
+      <!-- ════════════════════════════════════════
+           SECTION 3: CAPABILITIES (KINETIC)
+           ════════════════════════════════════════ -->
+      <section class="capabilities-section" aria-label="Capabilities">
+        <div class="capabilities-header">
+          <p class="section-label">What Your Life Looks Like</p>
+          <h2>Fifteen domains. One system.<br />Every one connected to your goals.</h2>
+        </div>
+
+        <div class="capability-sequence">
+          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>goals</strong> stay alive across every horizon — today through lifetime.</p>
+          <p class="capability-line" style="--accent-color: var(--brand-accent-green)">Your <strong>habits</strong> build the person who reaches those goals.</p>
+          <p class="capability-line" style="--accent-color: var(--brand-accent-green)">Your <strong>health</strong> tracked, reinforced, and connected to your capacity.</p>
+          <p class="capability-line" style="--accent-color: var(--brand-accent-warm)">Your <strong>relationships</strong> stay warm. Follow-ups happen. Nobody goes cold.</p>
+          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>projects</strong> move — tasks, milestones, deadlines, all linked.</p>
+          <p class="capability-line" style="--accent-color: var(--brand-accent-blue)">Your <strong>calendar</strong> becomes intelligent. Prep materializes before meetings.</p>
+          <p class="capability-line" style="--accent-color: var(--brand-accent-blue)">Your <strong>email</strong> triaged at machine speed with your judgment, not someone else's.</p>
+          <p class="capability-line" style="--accent-color: var(--brand-accent-blue)">Your <strong>memory</strong> never forgets a conversation, commitment, or insight.</p>
+          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>strategy</strong> gets real infrastructure — decisions, scenarios, theses.</p>
+          <p class="capability-line" style="--accent-color: var(--brand-accent-warm)">Your <strong>news</strong> filtered to signal. Noise eliminated before you see it.</p>
+          <p class="capability-line" style="--accent-color: var(--brand-accent-warm)">Your <strong>finances</strong> visible — spending, budgets, forecasts, goals.</p>
+          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>career</strong> managed with the same rigor as your portfolio.</p>
+          <p class="capability-line" style="--accent-color: var(--brand-accent-blue)">Your <strong>knowledge</strong> grows into a personal wiki that compounds.</p>
+          <p class="capability-line" style="--accent-color: var(--brand-accent-green)">Your <strong>voice</strong> captures ideas on a walk. No screen required.</p>
+          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>system works while you sleep</strong> — briefings, maintenance, follow-through.</p>
+        </div>
+
+        <!-- Vignette Grid -->
+        <div class="vignette-grid">
+          <!-- A: Goals Dashboard -->
+          <div class="vignette-card" data-reveal="scale" data-reveal-threshold="0.2">
+            <div class="vignette-body vignette-goals">
+              <div class="goal-item">
+                <span class="goal-badge badge-on-track">on track</span>
+                <span class="goal-label">Secure ideal employment</span>
+                <span class="goal-horizon">This Year</span>
+              </div>
+              <div class="goal-item">
+                <span class="goal-badge badge-active">active</span>
+                <span class="goal-label">Launch Mantra</span>
+                <span class="goal-horizon">This Quarter</span>
+              </div>
+              <div class="goal-item">
+                <span class="goal-badge badge-active">active</span>
+                <span class="goal-label">Demo with Michael Miller</span>
+                <span class="goal-horizon">This Month</span>
+              </div>
+            </div>
+            <div class="vignette-caption">Every horizon. Always alive.</div>
+          </div>
+
+          <!-- B: Relationship Graph -->
+          <div class="vignette-card" data-reveal="scale" data-reveal-threshold="0.2">
+            <div class="vignette-body vignette-people">
+              <div class="person-row">
+                <span class="person-name">Sarah Chen</span>
+                <span class="person-status status-overdue">12 days · follow-up due</span>
+              </div>
+              <div class="person-row">
+                <span class="person-name">Michael Miller</span>
+                <span class="person-status status-recent">today</span>
+              </div>
+              <div class="person-row">
+                <span class="person-name">Jeremie Bacon</span>
+                <span class="person-status status-neutral">3 days</span>
+              </div>
+            </div>
+            <div class="vignette-caption">Nobody goes cold.</div>
+          </div>
+
+          <!-- C: Decision Modeling -->
+          <div class="vignette-card" data-reveal="scale" data-reveal-threshold="0.2">
+            <div class="vignette-body vignette-decision">
+              <p class="decision-title">Where should we move?</p>
+              <div class="decision-tabs">
+                <span class="decision-tab tab-active">San Diego</span>
+                <span class="decision-tab">Chicago</span>
+                <span class="decision-tab">Austin</span>
+              </div>
+              <div class="decision-indicator">
+                <span class="traffic-light"></span>
+                <span>Analysis in progress</span>
+              </div>
+            </div>
+            <div class="vignette-caption">Complex decisions get structure.</div>
+          </div>
+
+          <!-- D: Autonomous Briefing -->
+          <div class="vignette-card" data-reveal="scale" data-reveal-threshold="0.2">
+            <div class="vignette-body vignette-auto">
+              <p class="auto-header">Daily Brief ready</p>
+              <p class="auto-body">3 priorities, 2 follow-ups, 1 financial alert. News: 4 signals matched your interests.</p>
+              <span class="auto-tag">Prepared overnight</span>
+            </div>
+            <div class="vignette-caption">It works while you sleep.</div>
+          </div>
+        </div>
+
+        <a href="https://app.trymantra.ai" class="cta-primary" style="margin-top: 0;">Start with Mantra →</a>
+      </section>
+
+      <!-- ════════════════════════════════════════
+           SECTION 4: EMERGENCE
+           ════════════════════════════════════════ -->
+      <section class="emergence-section" aria-label="Emergence">
+        <div class="grid-bg" data-parallax-speed="0.5"></div>
+        <div class="emergence-content">
+          <p class="section-label">Emergence</p>
+          <h2>Isolated tools store facts.<br />Connected systems produce judgment.</h2>
+          <p>
+            Your calendar knows Thursday's meeting is high-prep because
+            it links to a quarterly goal and a relationship that's been going cold.
+          </p>
+          <p>
+            An email thread becomes a task on the right project before you've
+            finished reading it, with a draft prepared in your voice.
+          </p>
+          <p>
+            A dip in sleep gets flagged the week before your biggest presentation.
+          </p>
+          <p>
+            A news signal about a contact's company surfaces the morning
+            of your call with them.
+          </p>
+          <p>
+            None of this is possible when your life lives in twelve separate apps.
+            All of it is inevitable when one layer sees the whole picture.
+          </p>
+
+          <!-- Connection Map -->
+          <div class="connection-map" aria-hidden="true">
+            <svg class="map-lines" viewBox="0 0 480 360" preserveAspectRatio="xMidYMid meet">
+              <!-- Lines from center (240,160) to outer nodes -->
+              <line x1="240" y1="160" x2="100" y2="60" />   <!-- Calendar -->
+              <line x1="240" y1="160" x2="380" y2="60" />   <!-- Email -->
+              <line x1="240" y1="160" x2="60" y2="180" />   <!-- Health -->
+              <line x1="240" y1="160" x2="420" y2="180" />  <!-- Finance -->
+              <line x1="240" y1="160" x2="100" y2="300" />  <!-- News -->
+              <line x1="240" y1="160" x2="380" y2="300" />  <!-- Memory -->
+              <!-- Cross-connections -->
+              <line x1="100" y1="60" x2="60" y2="180" />    <!-- Calendar-Health -->
+              <line x1="380" y1="60" x2="420" y2="180" />   <!-- Email-Finance -->
+              <line x1="100" y1="300" x2="380" y2="300" />  <!-- News-Memory -->
+
+              <!-- Traveling pulses -->
+              <circle class="map-pulse">
+                <animateMotion dur="4s" repeatCount="indefinite" path="M240,160 L100,60" />
+              </circle>
+              <circle class="map-pulse">
+                <animateMotion dur="4.5s" repeatCount="indefinite" begin="1s" path="M240,160 L380,300" />
+              </circle>
+              <circle class="map-pulse">
+                <animateMotion dur="5s" repeatCount="indefinite" begin="2s" path="M240,160 L420,180" />
+              </circle>
+            </svg>
+
+            <!-- Center: Goals -->
+            <div class="map-node node-center" style="left: 50%; top: 44%; transform: translate(-50%, -50%);">
+              <span class="node-dot"></span>
+              <span class="node-label">Your Goals</span>
+            </div>
+            <!-- Outer nodes -->
+            <div class="map-node" style="left: 21%; top: 17%; transform: translate(-50%, -50%);">
+              <span class="node-dot"></span>
+              <span class="node-label">Calendar</span>
+            </div>
+            <div class="map-node" style="left: 79%; top: 17%; transform: translate(-50%, -50%);">
+              <span class="node-dot"></span>
+              <span class="node-label">Email</span>
+            </div>
+            <div class="map-node" style="left: 12.5%; top: 50%; transform: translate(-50%, -50%);">
+              <span class="node-dot"></span>
+              <span class="node-label">Health</span>
+            </div>
+            <div class="map-node" style="left: 87.5%; top: 50%; transform: translate(-50%, -50%);">
+              <span class="node-dot"></span>
+              <span class="node-label">Finance</span>
+            </div>
+            <div class="map-node" style="left: 21%; top: 83%; transform: translate(-50%, -50%);">
+              <span class="node-dot"></span>
+              <span class="node-label">News</span>
+            </div>
+            <div class="map-node" style="left: 79%; top: 83%; transform: translate(-50%, -50%);">
+              <span class="node-dot"></span>
+              <span class="node-label">Memory</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════
+           SECTION 5: COMPOUNDING
+           ════════════════════════════════════════ -->
+      <section class="compounding-section" aria-label="Compounding">
+        <div class="compounding-header">
+          <p class="section-label">Compounding</p>
+          <h2>The longer you use it,<br />the more it becomes yours.</h2>
+        </div>
+
+        <div class="compounding-cards">
+          <div class="compound-card" data-reveal="slide-up" data-reveal-threshold="0.2">
+            <div class="card-accent"></div>
+            <h3>Week 1</h3>
+            <p>Your goals. Your top relationships. Your calendar rhythm. Your first priorities.</p>
+            <p>It already knows enough to help.</p>
+          </div>
+          <div class="compound-card" data-reveal="slide-up" data-reveal-threshold="0.2">
+            <div class="card-accent"></div>
+            <h3>Month 1</h3>
+            <p>Your decision patterns. Your relationship graph. Your health trends. Your financial picture. Every conversation, searchable by meaning.</p>
+            <p>It starts connecting dots you didn't draw.</p>
+          </div>
+          <div class="compound-card" data-reveal="slide-up" data-reveal-threshold="0.2">
+            <div class="card-accent"></div>
+            <h3>Month 6</h3>
+            <p>Your strategic position. What's working. What's drifting. Who you haven't talked to. Where your money went. What you said you'd do — and whether you did it.</p>
+            <p>A system that knows you better than your own memory.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════
+           SECTION 6: TRUST + CTA
+           ════════════════════════════════════════ -->
+      <section class="trust-section" aria-label="Trust and privacy">
+        <div class="trust-content">
+          <p class="section-label">Trust</p>
+          <h2>Everything it knows, you gave it.<br />Everything it does, it does for you.</h2>
+          <p>
+            Your data works for you, and only you. Nothing is shared.
+            Nothing is sold. Nothing trains a model you don't own.
+          </p>
+          <p>
+            You choose what connects. You choose what it remembers.
+            You choose how deep it goes. Every level of engagement
+            is complete on its own.
+          </p>
+          <p>
+            Mantra earns its place or gets deleted. That's the deal.
+          </p>
+
+          <!-- Trust Indicators -->
+          <div class="trust-indicators">
+            <div class="trust-indicator">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>Your data stays yours</span>
+            </div>
+            <div class="trust-indicator">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>End-to-end private</span>
+            </div>
+            <div class="trust-indicator">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>You own the memory</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Final CTA -->
+        <div class="final-cta">
+          <h2>Your ambition deserves a system<br />that keeps up.</h2>
+          <a href="https://app.trymantra.ai" class="cta-primary cta-large">Start with Mantra →</a>
+          <p class="cta-sub">Free to start. No credit card required.</p>
+        </div>
+      </section>
+    </div>
+
     <script>
-      window.addEventListener('load', function() {
-        // Bail if GSAP didn't load (progressive enhancement)
-        if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
-          // Fallback: show everything, run vanilla observer
-          document.querySelectorAll('.hero-section h1').forEach(function(el) {
-            el.classList.add('split-ready');
-          });
-          var observer = new IntersectionObserver(function(entries) {
-            entries.forEach(function(entry) {
-              if (entry.isIntersecting) entry.target.classList.add('revealed');
-            });
-          }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-          document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
-          return;
-        }
+      /* ══════════════════════════════════════════
+         HOME PAGE 2.0 — Animation Engine
+         Pure IntersectionObserver + rAF parallax.
+         No GSAP, ScrollTrigger, or SplitType.
+         ══════════════════════════════════════════ */
 
-        gsap.registerPlugin(ScrollTrigger);
-        var isMobile = window.innerWidth < 640;
+      (function () {
+        'use strict';
 
-        // ── Reduced Motion Contract ──
-        var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (prefersReducedMotion) {
-          document.querySelectorAll('.hero-section h1').forEach(function(el) {
-            el.classList.add('split-ready');
-          });
-          document.querySelectorAll('.reveal').forEach(function(el) {
-            el.classList.add('revealed');
-          });
-          return;
-        }
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        // ══════════════════════════════════
-        // LAYER 1: Kinetic Hero
-        // ══════════════════════════════════
+        // ── CTA Config (single source of truth) ──
+        // When waitlist launches, change this one line:
+        // const CTA_URL = 'https://waitlist.trymantra.ai';
+        // All <a> tags already have href set in markup.
 
-        var heroH1 = document.querySelector('.hero-section h1');
-        var heroSubhead = document.querySelector('.hero-section .subhead');
-        var heroTl = gsap.timeline({ delay: 0.3 });
+        // ── Parallax ──
+        if (!prefersReducedMotion) {
+          const parallaxEls = document.querySelectorAll('[data-parallax-speed]');
 
-        // Word-by-word headline assembly
-        if (heroH1 && typeof SplitType !== 'undefined') {
-          var splitTitle = new SplitType(heroH1, { types: 'words' });
-          heroH1.classList.add('split-ready');
+          if (parallaxEls.length > 0) {
+            let ticking = false;
 
-          gsap.set(splitTitle.words, { opacity: 0, y: 30, rotateX: -20 });
-          heroTl.to(splitTitle.words, {
-            opacity: 1, y: 0, rotateX: 0,
-            duration: 0.6,
-            ease: 'back.out(1.7)',
-            stagger: isMobile ? 0.04 : 0.06
-          });
-        } else if (heroH1) {
-          heroH1.classList.add('split-ready');
-          heroTl.from(heroH1, { opacity: 0, y: 30, duration: 0.8 });
-        }
-
-        // Subheadline line-by-line fade
-        if (heroSubhead && typeof SplitType !== 'undefined') {
-          var splitSub = new SplitType(heroSubhead, { types: 'lines' });
-          gsap.set(splitSub.lines, { opacity: 0, y: 15 });
-          heroTl.to(splitSub.lines, {
-            opacity: 1, y: 0,
-            duration: 0.5,
-            ease: 'power2.out',
-            stagger: 0.15
-          }, '-=0.2');
-        } else if (heroSubhead) {
-          heroTl.from(heroSubhead, { opacity: 0, y: 15, duration: 0.6 }, '-=0.2');
-        }
-
-        // CTA + micro-copy fade in
-        var heroCta = document.querySelector('.hero-section .cta-btn');
-        var heroMicro = document.querySelector('.hero-section .micro-copy');
-        if (heroCta) {
-          heroTl.from(heroCta, { opacity: 0, y: 20, duration: 0.5, ease: 'power2.out' }, '-=0.1');
-        }
-        if (heroMicro) {
-          heroTl.from(heroMicro, { opacity: 0, duration: 0.4 }, '-=0.3');
-        }
-
-        // CTA breathing glow
-        if (heroCta) {
-          gsap.to(heroCta, {
-            boxShadow: '0 0 40px rgba(74,144,217,0.5)',
-            duration: 2.5,
-            ease: 'sine.inOut',
-            yoyo: true,
-            repeat: -1
-          });
-        }
-
-        // Scroll-responsive orb parallax (desktop only)
-        if (!isMobile) {
-          var heroSection = document.querySelector('.hero-section');
-          if (heroSection) {
-            gsap.to('.hero-section::before', {
-              yPercent: 30,
-              ease: 'none',
-              scrollTrigger: {
-                trigger: heroSection,
-                start: 'top top',
-                end: 'bottom top',
-                scrub: true
+            function updateParallax() {
+              const scrollY = window.scrollY;
+              for (const el of parallaxEls) {
+                const speed = parseFloat(el.dataset.parallaxSpeed) || 0;
+                const offset = scrollY * speed;
+                el.style.transform = el.classList.contains('hero-orb-bg')
+                  ? `translate(-50%, calc(-50% + ${offset}px))`
+                  : `translateY(${offset}px)`;
               }
-            });
-            // Orb parallax via direct element targeting
-            var heroOrb = document.querySelector('.hero-orb');
-            if (heroOrb) {
-              gsap.to(heroOrb, {
-                yPercent: 70,
-                ease: 'none',
-                scrollTrigger: {
-                  trigger: heroSection,
-                  start: 'top top',
-                  end: 'bottom top',
-                  scrub: true
+              ticking = false;
+            }
+
+            window.addEventListener('scroll', function () {
+              if (!ticking) {
+                ticking = true;
+                requestAnimationFrame(updateParallax);
+              }
+            }, { passive: true });
+          }
+        }
+
+        // ── Reveal Observer (vignettes, cards) ──
+        const revealEls = document.querySelectorAll('[data-reveal]');
+
+        if (revealEls.length > 0 && !prefersReducedMotion) {
+          const revealObserver = new IntersectionObserver(function (entries) {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                revealObserver.unobserve(entry.target);
+              }
+            }
+          }, { threshold: 0.2 });
+
+          for (const el of revealEls) {
+            const threshold = parseFloat(el.dataset.revealThreshold);
+            if (!isNaN(threshold) && threshold !== 0.2) {
+              // Create a separate observer for custom thresholds
+              const customObserver = new IntersectionObserver(function (entries) {
+                for (const entry of entries) {
+                  if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    customObserver.unobserve(entry.target);
+                  }
                 }
+              }, { threshold: threshold });
+              customObserver.observe(el);
+            } else {
+              revealObserver.observe(el);
+            }
+          }
+        } else if (prefersReducedMotion) {
+          // Immediately show all
+          for (const el of revealEls) {
+            el.classList.add('visible');
+          }
+        }
+
+        // ── Kinetic Capability Sequence ──
+        const capLines = document.querySelectorAll('.capability-line');
+
+        if (capLines.length > 0 && !prefersReducedMotion) {
+          // Use a single scroll-position listener for per-line activation
+          function updateCapabilities() {
+            const viewportTop = window.scrollY;
+            const viewportHeight = window.innerHeight;
+            const activeZoneTop = viewportTop + viewportHeight * 0.3;
+            const activeZoneBottom = viewportTop + viewportHeight * 0.7;
+
+            for (const line of capLines) {
+              const rect = line.getBoundingClientRect();
+              const lineTop = rect.top + viewportTop;
+              const lineCenter = lineTop + rect.height / 2;
+
+              if (lineCenter >= activeZoneTop && lineCenter <= activeZoneBottom) {
+                line.classList.add('cap-active');
+                line.classList.remove('cap-past');
+              } else if (lineCenter < activeZoneTop) {
+                line.classList.remove('cap-active');
+                line.classList.add('cap-past');
+              } else {
+                line.classList.remove('cap-active', 'cap-past');
+              }
+            }
+          }
+
+          let capTicking = false;
+          window.addEventListener('scroll', function () {
+            if (!capTicking) {
+              capTicking = true;
+              requestAnimationFrame(function () {
+                updateCapabilities();
+                capTicking = false;
               });
             }
+          }, { passive: true });
+
+          // Initial check
+          updateCapabilities();
+        } else if (prefersReducedMotion) {
+          for (const line of capLines) {
+            line.classList.add('cap-active');
           }
         }
-
-        // ══════════════════════════════════
-        // LAYER 2: Scroll-Linked Parallax
-        // ══════════════════════════════════
-
-        // Section header directional slides
-        document.querySelectorAll('.home-page section h2').forEach(function(h2, i) {
-          var fromX = (i % 2 === 0) ? -60 : 60;
-          gsap.from(h2, {
-            x: fromX,
-            opacity: 0,
-            scale: 0.95,
-            duration: 0.8,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: h2,
-              start: 'top 85%',
-              toggleActions: 'play none none none'
-            }
-          });
-        });
-
-        // Pain point wipe reveals with accent bar
-        document.querySelectorAll('.pain-point').forEach(function(pp, i) {
-          ScrollTrigger.create({
-            trigger: pp,
-            start: 'top 80%',
-            onEnter: function() {
-              // Fade in the pain point text
-              gsap.fromTo(pp, 
-                { opacity: 0, x: -20 }, 
-                { opacity: 1, x: 0, duration: 0.6, ease: 'power2.out', delay: i * 0.2 }
-              );
-              // Animate the blue accent bar via CSS custom property
-              gsap.fromTo(pp,
-                { '--pain-scale': 0 },
-                { '--pain-scale': 1, duration: isMobile ? 0.4 : 0.6, ease: 'power2.out', delay: i * 0.2 }
-              );
-            }
-          });
-          // Set initial state
-          gsap.set(pp, { opacity: 0, x: -20, '--pain-scale': 0 });
-        });
-
-        // Reveal animations (replaces IntersectionObserver)
-        document.querySelectorAll('.reveal').forEach(function(el) {
-          ScrollTrigger.create({
-            trigger: el,
-            start: 'top 90%',
-            onEnter: function() {
-              el.classList.add('revealed');
-            }
-          });
-        });
-
-        // Pillar card crystallization with border trace
-        document.querySelectorAll('.pillar-card').forEach(function(card, i) {
-          gsap.from(card, {
-            opacity: 0,
-            y: 40,
-            duration: 0.7,
-            ease: 'power2.out',
-            delay: i * 0.15,
-            scrollTrigger: {
-              trigger: card,
-              start: 'top 85%',
-              toggleActions: 'play none none none'
-            }
-          });
-        });
-
-        // ══════════════════════════════════
-        // LAYER 3: Ambient Life
-        // ══════════════════════════════════
-
-        // Pillar section gradient hue shift (desktop only)
-        if (!isMobile) {
-          var pillarsSection = document.querySelector('.pillars-section');
-          if (pillarsSection) {
-            gsap.to(pillarsSection, {
-              '--hue-shift': '15deg',
-              duration: 10,
-              ease: 'sine.inOut',
-              yoyo: true,
-              repeat: -1
-            });
-          }
-        }
-
-        // CTA shimmer sweep
-        document.querySelectorAll('.cta-btn').forEach(function(btn) {
-          function runShimmer() {
-            gsap.fromTo(btn,
-              { '--shimmer-x': '-100%' },
-              { '--shimmer-x': '200%', duration: 0.6, ease: 'power1.inOut',
-                onComplete: function() {
-                  gsap.delayedCall(4.5, runShimmer);
-                }
-              }
-            );
-          }
-          gsap.delayedCall(2, runShimmer);
-        });
-
-        // Breathing section dividers (via CSS custom property on parent)
-        document.querySelectorAll('.premium-divider').forEach(function(div, i) {
-          gsap.fromTo(div,
-            { '--divider-opacity': 1 },
-            { '--divider-opacity': 0.4, duration: 4, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: i * 0.7 }
-          );
-        });
-
-        // Step number count-up
-        document.querySelectorAll('.step-number').forEach(function(num, i) {
-          var target = parseInt(num.textContent, 10);
-          if (isNaN(target)) return;
-          
-          ScrollTrigger.create({
-            trigger: num,
-            start: 'top 85%',
-            onEnter: function() {
-              var obj = { val: 0 };
-              gsap.to(obj, {
-                val: target,
-                duration: 0.8,
-                delay: i * 0.2,
-                ease: 'power2.out',
-                snap: { val: 1 },
-                onUpdate: function() {
-                  num.textContent = Math.round(obj.val);
-                }
-              });
-            }
-          });
-        });
-
-        // ══════════════════════════════════
-        // LAYER 4: Capability Roller
-        // ══════════════════════════════════
-
-        var rollerLines = document.querySelectorAll('.roller-line');
-        if (rollerLines.length > 0) {
-          var rollerSection = document.querySelector('.roller-section');
-          // Each line lights up as the user scrolls through the section
-          rollerLines.forEach(function(line, i) {
-            ScrollTrigger.create({
-              trigger: rollerSection,
-              start: function() {
-                var fraction = i / rollerLines.length;
-                return 'top+=' + (fraction * 100) + '% center';
-              },
-              end: function() {
-                var fraction = (i + 1) / rollerLines.length;
-                return 'top+=' + (fraction * 100) + '% center';
-              },
-              onEnter: function() { line.classList.add('roller-active'); },
-              onLeaveBack: function() { line.classList.remove('roller-active'); }
-            });
-          });
-        }
-
-        // ══════════════════════════════════
-        // LAYER 5: Scroll Progress
-        // ══════════════════════════════════
-
-        var progressBar = document.querySelector('.scroll-progress-bar');
-        if (progressBar) {
-          gsap.to(progressBar, {
-            opacity: 0.6,
-            duration: 0.3,
-            scrollTrigger: {
-              trigger: document.body,
-              start: 'top -50',
-              toggleActions: 'play none none reverse'
-            }
-          });
-
-          gsap.to(progressBar, {
-            scaleY: 1,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: document.body,
-              start: 'top top',
-              end: 'bottom bottom',
-              scrub: true
-            }
-          });
-        }
-      });
+      })();
     </script>
   </body>
 </html>
