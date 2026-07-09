@@ -37,7 +37,7 @@ body {
 .cta-btn {
   display: inline-block;
   padding: 16px 36px;
-  background: linear-gradient(135deg, #C8A050 0%, #A07830 100%);
+  background: linear-gradient(135deg, #4A90D9 0%, #2B5EA7 100%);
   color: #000;
   text-decoration: none;
   font-weight: 600;
@@ -51,7 +51,7 @@ body {
 
 .cta-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 24px rgba(200, 160, 80, 0.35), 0 4px 12px rgba(0,0,0,0.4);
+  box-shadow: 0 0 24px rgba(74, 144, 217, 0.35), 0 4px 12px rgba(0,0,0,0.4);
 }
 
 .cta-btn:active {
@@ -73,11 +73,11 @@ body {
 
 /* Stagger delays for cards and grid items */
 .stagger-1 { transition-delay: 0.1s; }
-.stagger-2 { transition-delay: 0.2s; }
-.stagger-3 { transition-delay: 0.3s; }
-.stagger-4 { transition-delay: 0.4s; }
-.stagger-5 { transition-delay: 0.5s; }
-.stagger-6 { transition-delay: 0.6s; }
+.stagger-2 { transition-delay: 0.25s; }
+.stagger-3 { transition-delay: 0.4s; }
+.stagger-4 { transition-delay: 0.55s; }
+.stagger-5 { transition-delay: 0.7s; }
+.stagger-6 { transition-delay: 0.85s; }
 
 /* Hero fade-in on load */
 .hero-fade {
@@ -108,7 +108,7 @@ body {
   width: 60%;
   max-width: 480px;
   height: 1px;
-  background: radial-gradient(ellipse at center, rgba(200, 160, 80, 0.25) 0%, transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(74, 144, 217, 0.25) 0%, transparent 70%);
 }
 
 /* ── Card Hover Effects ── */
@@ -119,6 +119,126 @@ body {
 .card-hover:hover {
   border-color: rgba(255,255,255,0.15);
   transform: translateY(-2px);
+}
+
+/* ── Hero Orb Animations ── */
+@keyframes orbDrift1 {
+  0%   { transform: translate(-50%, -50%) scale(1);    opacity: 0.6; }
+  33%  { transform: translate(-45%, -55%) scale(1.15); opacity: 0.8; }
+  66%  { transform: translate(-55%, -45%) scale(0.9);  opacity: 0.5; }
+  100% { transform: translate(-48%, -52%) scale(1.1);  opacity: 0.7; }
+}
+
+@keyframes orbDrift2 {
+  0%   { transform: translate(-50%, -50%) scale(1);    opacity: 0.5; }
+  50%  { transform: translate(-40%, -60%) scale(1.2);  opacity: 0.7; }
+  100% { transform: translate(-55%, -45%) scale(0.85); opacity: 0.4; }
+}
+
+@keyframes orbDrift3 {
+  0%   { transform: translate(-50%, -50%) scale(1);    opacity: 0.4; }
+  50%  { transform: translate(-60%, -40%) scale(1.3);  opacity: 0.6; }
+  100% { transform: translate(-42%, -58%) scale(0.95); opacity: 0.3; }
+}
+
+.hero-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  mix-blend-mode: screen;
+  width: 200px;
+  height: 200px;
+  top: 35%;
+  left: 40%;
+  background: radial-gradient(circle, rgba(120, 180, 255, 0.06) 0%, transparent 60%);
+  animation: orbDrift3 9s ease-in-out infinite alternate;
+}
+
+/* ── Pillar Crystallization ── */
+
+/* Phase 1: Animated border using gradient mask */
+.pillar-card {
+  position: relative;
+}
+
+.pillar-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(74, 144, 217, 0.4), rgba(74, 144, 217, 0.1), transparent 50%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.6s ease 0.3s;
+}
+
+.pillar-card.revealed::before {
+  opacity: 1;
+}
+
+/* Phase 2: Inner glow activation */
+.pillar-card::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
+  background: radial-gradient(circle at 30% 30%, rgba(74, 144, 217, 0.06) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 1.2s ease;
+  pointer-events: none;
+}
+
+.pillar-card.revealed::after {
+  opacity: 1;
+}
+
+/* Phase 3: Header accent line */
+.pillar-card h3 {
+  position: relative;
+  padding-bottom: 12px;
+}
+
+.pillar-card h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(74, 144, 217, 0.6), transparent);
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s;
+}
+
+.pillar-card.revealed h3::after {
+  width: 48px;
+}
+
+/* Section header accent line */
+.pillars-section h2 {
+  position: relative;
+  display: inline-block;
+}
+
+.pillars-section h2::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(74, 144, 217, 0.5), transparent);
+  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s;
+}
+
+.pillars-section.revealed h2::after {
+  width: 80px;
 }
 
 /* ── Mobile: reduce animation intensity ── */
@@ -133,6 +253,17 @@ body {
     opacity: 1;
     transform: none;
   }
+  .hero-orb,
+  .hero-section::before,
+  .hero-section::after {
+    animation: none !important;
+  }
+  .pillar-card::before,
+  .pillar-card::after,
+  .pillar-card h3::after,
+  .pillars-section h2::after {
+    transition: none;
+  }
 }
 
 @media (max-width: 639px) {
@@ -142,5 +273,11 @@ body {
   .stagger-1, .stagger-2, .stagger-3,
   .stagger-4, .stagger-5, .stagger-6 {
     transition-delay: 0s;
+  }
+  /* Reduce orb sizes and soften on mobile */
+  .hero-orb {
+    width: 120px;
+    height: 120px;
+    filter: blur(100px);
   }
 }
