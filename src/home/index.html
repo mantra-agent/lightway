@@ -103,16 +103,48 @@
         overflow: hidden;
       }
 
+      /* Hero orbs — living intelligence animation */
       .hero-section::before {
         content: '';
         position: absolute;
-        top: 40%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 600px;
-        height: 600px;
-        background: radial-gradient(circle, rgba(200, 160, 80, 0.06) 0%, transparent 70%);
+        border-radius: 50%;
+        filter: blur(80px);
         pointer-events: none;
+        mix-blend-mode: screen;
+        width: 500px;
+        height: 500px;
+        top: 30%;
+        left: 45%;
+        background: radial-gradient(circle, rgba(74, 144, 217, 0.12) 0%, transparent 70%);
+        animation: orbDrift1 12s ease-in-out infinite alternate;
+      }
+
+      .hero-section::after {
+        content: '';
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        pointer-events: none;
+        mix-blend-mode: screen;
+        width: 350px;
+        height: 350px;
+        top: 45%;
+        left: 55%;
+        background: radial-gradient(circle, rgba(100, 160, 230, 0.08) 0%, transparent 70%);
+        animation: orbDrift2 15s ease-in-out infinite alternate;
+      }
+
+      @media (max-width: 639px) {
+        .hero-section::before {
+          width: 300px;
+          height: 300px;
+          filter: blur(100px);
+        }
+        .hero-section::after {
+          width: 210px;
+          height: 210px;
+          filter: blur(100px);
+        }
       }
 
       .hero-section .inner {
@@ -138,7 +170,10 @@
         line-height: 1.08;
         margin: 0;
         letter-spacing: -0.025em;
-        color: #fff;
+        background: linear-gradient(135deg, #fff 0%, rgba(180, 210, 255, 0.9) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
       }
 
       .hero-section .subhead {
@@ -214,7 +249,7 @@
         content: "→";
         position: absolute;
         left: 0;
-        color: rgba(200, 160, 80, 0.5);
+        color: rgba(74, 144, 217, 0.5);
       }
 
       @media (min-width: 640px) {
@@ -491,6 +526,7 @@
 
       <!-- Section 1: Hero -->
       <section class="hero-section" aria-label="Hero">
+        <div class="hero-orb"></div>
         <div class="inner hero-fade">
           <div class="hero-logo">
             <img src="/brand/mantra-logo.png" alt="Mantra" width="1254" height="1254" />
@@ -521,7 +557,7 @@
       </section>
 
       <!-- Section 3: Four Pillars -->
-      <section class="pillars-section premium-divider reveal" aria-label="What a personal intelligence system actually does">
+      <section class="pillars-section premium-divider reveal" aria-label="What a personal intelligence system actually does" id="pillars">
         <div class="inner">
           <h2>What a personal intelligence system actually does</h2>
           <p class="section-intro">Mantra synthesizes your memory, strategy, relationships, and execution into one living layer. Not four features. One system that thinks with you.</p>
