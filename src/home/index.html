@@ -8,6 +8,9 @@
     <meta property="og:description" content="Your personal intelligence system. Remember what matters, connect the dots, and keep moving." />
     <meta property="og:type" content="website" />
     <title>Mantra — Your Personal Intelligence System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
     <style>
       /* ── Base ── */
@@ -15,9 +18,9 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        color: #fff;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        line-height: 1.6;
+        color: hsl(220 10% 92%);
+        font-family: 'Inter', sans-serif;
+        line-height: 1.5;
       }
 
       .home-page section {
@@ -39,23 +42,23 @@
         line-height: 1.15;
         margin: 0 0 16px;
         letter-spacing: -0.02em;
-        color: #fff;
+        color: hsl(220 10% 92%);
       }
 
       .home-page h3 {
         font-size: 1.125rem;
         font-weight: 600;
         margin: 0 0 8px;
-        color: #fff;
+        color: hsl(220 10% 92%);
       }
 
       .home-page p {
         margin: 0;
-        color: rgba(255,255,255,0.7);
+        color: hsl(220 10% 55%);
       }
 
       .home-page a {
-        color: #fff;
+        color: hsl(220 10% 92%);
         text-decoration: underline;
         text-underline-offset: 2px;
       }
@@ -84,13 +87,13 @@
       .home-nav .nav-link {
         font-size: 0.875rem;
         font-weight: 500;
-        color: rgba(255,255,255,0.7);
+        color: hsl(220 10% 55%);
         text-decoration: none;
         transition: color 0.2s;
       }
 
       .home-nav .nav-link:hover {
-        color: #fff;
+        color: hsl(220 10% 92%);
       }
 
       /* ── Hero ── */
@@ -116,7 +119,7 @@
         height: 500px;
         top: 30%;
         left: 45%;
-        background: radial-gradient(circle, rgba(74, 144, 217, 0.12) 0%, transparent 70%);
+        background: radial-gradient(circle, hsla(200 80% 50% / 0.12) 0%, transparent 70%);
         animation: orbDrift1 12s ease-in-out infinite alternate;
       }
 
@@ -131,7 +134,7 @@
         height: 350px;
         top: 45%;
         left: 55%;
-        background: radial-gradient(circle, rgba(100, 160, 230, 0.08) 0%, transparent 70%);
+        background: radial-gradient(circle, hsla(200 70% 55% / 0.08) 0%, transparent 70%);
         animation: orbDrift2 15s ease-in-out infinite alternate;
       }
 
@@ -171,7 +174,7 @@
         line-height: 1.08;
         margin: 0;
         letter-spacing: -0.025em;
-        background: linear-gradient(135deg, #fff 0%, rgba(180, 210, 255, 0.9) 100%);
+        background: linear-gradient(135deg, hsl(220 10% 92%) 0%, hsl(200 40% 75%) 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -187,14 +190,14 @@
 
       .hero-section .subhead {
         font-size: clamp(1rem, 2.5vw, 1.2rem);
-        line-height: 1.65;
-        color: rgba(255,255,255,0.65);
+        line-height: 1.625;
+        color: hsl(220 10% 55%);
         max-width: 560px;
       }
 
       .micro-copy {
-        font-size: 0.8125rem;
-        color: rgba(255,255,255,0.4);
+        font-size: 0.75rem;
+        color: hsl(220 10% 40%);
         margin-top: 8px;
       }
 
@@ -206,19 +209,19 @@
       }
 
       .pain-point strong {
-        color: #fff;
+        color: hsl(220 10% 92%);
         font-weight: 600;
       }
 
       .pain-point p {
-        font-size: 1.0625rem;
-        line-height: 1.7;
+        font-size: 1.125rem;
+        line-height: 1.625;
       }
 
       /* ── Pillars Section ── */
       .pillars-section .section-intro {
-        font-size: 1.0625rem;
-        color: rgba(255,255,255,0.6);
+        font-size: 1.125rem;
+        color: hsl(220 10% 55%);
         margin-bottom: 48px;
       }
 
@@ -229,8 +232,8 @@
       }
 
       .pillar-card {
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.08);
+        background: hsl(222 20% 11%);
+        border: 1px solid hsl(222 16% 16%);
         border-radius: 12px;
         padding: 28px;
       }
@@ -242,14 +245,14 @@
 
       .pillar-card .description {
         font-size: 1rem;
-        line-height: 1.7;
-        color: rgba(255,255,255,0.65);
+        line-height: 1.625;
+        color: hsl(220 10% 55%);
         margin-bottom: 16px;
       }
 
       .pillar-card .outcome {
-        font-size: 0.9375rem;
-        color: rgba(255,255,255,0.5);
+        font-size: 0.875rem;
+        color: hsl(220 10% 45%);
         padding-left: 20px;
         position: relative;
       }
@@ -258,7 +261,7 @@
         content: "→";
         position: absolute;
         left: 0;
-        color: rgba(74, 144, 217, 0.5);
+        color: hsla(200 80% 50% / 0.5);
       }
 
       @media (min-width: 640px) {
@@ -272,39 +275,39 @@
         width: 100%;
         border-collapse: collapse;
         margin-top: 40px;
-        font-size: 0.9375rem;
+        font-size: 0.875rem;
       }
 
       .diff-table th {
         text-align: left;
         padding: 14px 16px;
         font-weight: 600;
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: rgba(255,255,255,0.4);
-        border-bottom: 1px solid rgba(255,255,255,0.1);
+        color: hsl(220 10% 40%);
+        border-bottom: 1px solid hsl(222 16% 16%);
       }
 
       .diff-table td {
         padding: 14px 16px;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
+        border-bottom: 1px solid hsla(222 16% 16% / 0.6);
         vertical-align: top;
       }
 
       .diff-table td:first-child {
-        color: rgba(255,255,255,0.5);
+        color: hsl(220 10% 45%);
         font-weight: 500;
         width: 30%;
       }
 
       .diff-table td:last-child {
-        color: rgba(255,255,255,0.8);
+        color: hsl(220 10% 75%);
       }
 
       @media (max-width: 639px) {
         .diff-table {
-          font-size: 0.8125rem;
+          font-size: 0.75rem;
         }
         .diff-table th,
         .diff-table td {
@@ -338,10 +341,10 @@
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        border: 1px solid rgba(255,255,255,0.2);
+        border: 1px solid hsl(222 16% 20%);
         font-size: 0.875rem;
         font-weight: 600;
-        color: rgba(255,255,255,0.6);
+        color: hsl(220 10% 55%);
         flex-shrink: 0;
       }
 
@@ -351,8 +354,8 @@
       }
 
       .step p {
-        font-size: 0.9375rem;
-        color: rgba(255,255,255,0.55);
+        font-size: 0.875rem;
+        color: hsl(220 10% 45%);
         max-width: 320px;
       }
 
@@ -382,10 +385,10 @@
 
       .testimonial blockquote {
         margin: 0;
-        font-size: 1.0625rem;
+        font-size: 1.125rem;
         font-style: italic;
-        line-height: 1.7;
-        color: rgba(255,255,255,0.6);
+        line-height: 1.625;
+        color: hsl(220 10% 55%);
       }
 
       .testimonial cite {
@@ -393,7 +396,7 @@
         margin-top: 12px;
         font-size: 0.875rem;
         font-style: normal;
-        color: rgba(255,255,255,0.35);
+        color: hsl(220 10% 35%);
       }
 
       @media (min-width: 768px) {
@@ -414,7 +417,7 @@
       }
 
       .faq-item {
-        border-bottom: 1px solid rgba(255,255,255,0.06);
+        border-bottom: 1px solid hsla(222 16% 16% / 0.6);
         padding: 24px 0;
       }
 
@@ -425,15 +428,15 @@
       .faq-q {
         font-size: 1rem;
         font-weight: 600;
-        color: #fff;
+        color: hsl(220 10% 92%);
         margin: 0 0 10px;
         cursor: default;
       }
 
       .faq-a {
-        font-size: 0.9375rem;
-        line-height: 1.7;
-        color: rgba(255,255,255,0.55);
+        font-size: 0.875rem;
+        line-height: 1.625;
+        color: hsl(220 10% 45%);
         margin: 0;
       }
 
@@ -457,24 +460,24 @@
       }
 
       .final-cta-section .subhead {
-        color: rgba(255,255,255,0.55);
-        font-size: 1.0625rem;
+        color: hsl(220 10% 45%);
+        font-size: 1.125rem;
         max-width: 480px;
       }
 
       .contact-line {
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
         color: rgba(255,255,255,0.3);
         margin-top: 8px;
       }
 
       .contact-line a {
-        color: rgba(255,255,255,0.5);
+        color: hsl(220 10% 45%);
         text-decoration: none;
       }
 
       .contact-line a:hover {
-        color: rgba(255,255,255,0.7);
+        color: hsl(220 10% 55%);
       }
 
       /* ── Footer ── */
@@ -497,17 +500,17 @@
       .footer-links {
         display: flex;
         gap: 24px;
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
       }
 
       .footer-links a {
-        color: rgba(255,255,255,0.35);
+        color: hsl(220 10% 35%);
         text-decoration: none;
         transition: color 0.2s;
       }
 
       .footer-links a:hover {
-        color: rgba(255,255,255,0.6);
+        color: hsl(220 10% 55%);
       }
 
       .footer-copy {
@@ -517,7 +520,7 @@
       }
 
       .footer-tagline {
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
         color: rgba(255,255,255,0.25);
         font-style: italic;
         margin: 0;
