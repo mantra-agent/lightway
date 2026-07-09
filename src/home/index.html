@@ -176,6 +176,14 @@
         background-clip: text;
       }
 
+      /* SplitType wraps words in spans — they need the gradient too */
+      .hero-section h1 .word {
+        background: inherit;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
       .hero-section .subhead {
         font-size: clamp(1rem, 2.5vw, 1.2rem);
         line-height: 1.65;
