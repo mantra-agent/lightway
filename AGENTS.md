@@ -56,13 +56,17 @@ Canonical palette from Mantra Design Guide (dark mode):
 
 ## Page Architecture
 
-### /home (Landing Page 2.0)
-- **No GSAP/ScrollTrigger/SplitType.** Pure CSS animations + vanilla JS IntersectionObserver + rAF parallax.
-- 6-section story arc: Hero → Intelligence Layer → Capabilities (kinetic scroll) → Emergence → Compounding → Trust+CTA
-- Parallax via `data-parallax-speed` attributes and a single rAF scroll handler
-- Kinetic capability sequence: 15 lines with scroll-driven active/past states via IntersectionObserver viewport zones
-- Vignettes: HTML/CSS product UI mockups, not images
-- CTA constant: `https://app.trymantra.ai` (swap to waitlist URL when ready)
+### /home (Landing Page 2.1 — Visual Craft)
+- **GSAP 3.12.5 + ScrollTrigger** (CDN). No SplitType.
+- 7-section story arc: Hero → Definition → Vignettes (kinetic word cloud) → Emergence → Acceleration → Trust → Close/CTA
+- 3-layer parallax system: bg-layer (0.3×), mid-layer (0.6×), section-content (1.0×) via GSAP ScrollTrigger scrub
+- Ambient gradient blobs (8 total) with radial-gradient + CSS blur, no canvas/SVG rendering
+- Full-page grain texture overlay (SVG data URI, CSS-tiled)
+- Major Third type scale: hero 64px, display 48px, subtitle 24px, body 18px, caption 14px
+- Kinetic word cloud replaces fake product UI vignettes — NO invented UI anywhere
+- Entrance choreography: hero timeline on load, scroll-triggered one-shot reveals per section
+- `prefers-reduced-motion` fallback disables all GSAP + shows content immediately
+- CTA constant: `https://app.trymantra.ai`
 
 ### /coaches
 - Uses GSAP + ScrollTrigger + SplitType (CDN)

@@ -11,1259 +11,846 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/styles.css" />
     <style>
       /* ══════════════════════════════════════════
-         HOME PAGE 2.0 — Ground-Up Reimagine
+         VISUAL CRAFT SPEC — /home 2.1
          ══════════════════════════════════════════ */
 
-      /* ── Design Tokens (Canonical Mantra Palette) ──
-         Source of truth: Mantra Design Guide — Color System
-         Background: pure black #000000
-         Card: #171C24 (hsl 222 20% 11%) warm dark blue-gray
-         Card border: #212934 (hsl 222 16% 15%)
-         Primary text: #E8EAED
-         Secondary text: #828A96 (hsl 220 10% 55%)
-         Brand accent: CTA blue #1A9BDB (hsl 200 80% 50%)
-         Active blue: #8DD4F0 (in-progress states only)
-         Semantic: Success #20A88E, Warning #E89820, Error #D4364B
-         Rule: 60% neutral / 30% supporting / 10% accent
-      ── */
+      /* ── A.1 Global Design System ── */
       :root {
-        --brand-primary: #1A9BDB;
-        --brand-primary-hover: #1589C4;
-        --brand-active: #8DD4F0;
-        --brand-surface: #000000;
-        --brand-surface-elevated: #171C24;
-        --brand-surface-subtle: #0D1117;
-        --brand-border: #212934;
-        --brand-text-primary: #E8EAED;
-        --brand-text-secondary: #828A96;
-        --brand-text-tertiary: #5C6370;
-        --brand-success: #20A88E;
-        --brand-warning: #E89820;
-        --brand-error: #D4364B;
+        /* === Easing === */
+        --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+        --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+        --ease-snappy: cubic-bezier(0.4, 0, 0.2, 1);
+
+        /* === Landing Page Type Scale (Major Third 1.25x from 16px) === */
+        --text-hero: 4rem;
+        --text-display: 3rem;
+        --text-subtitle: 1.5rem;
+        --text-body-lg: 1.125rem;
+        --text-caption: 0.875rem;
+
+        /* === Line Heights === */
+        --lh-hero: 1.1;
+        --lh-display: 1.15;
+        --lh-subtitle: 1.4;
+        --lh-body: 1.6;
+
+        /* === Letter Spacing === */
+        --ls-hero: -0.02em;
+        --ls-display: -0.015em;
+
+        /* === Section Spacing (4px grid) === */
+        --space-section-lg: 6rem;
+        --space-section-md: 5rem;
+        --space-section-sm: 4rem;
+        --space-element-lg: 3rem;
+        --space-element-md: 2rem;
+        --space-element-sm: 1.5rem;
+        --space-element-xs: 1rem;
+
+        /* === Content Widths === */
+        --max-content: 1200px;
+        --max-text-narrow: 680px;
+        --max-text-wide: 800px;
+
+        /* === Ambient Layers === */
+        --ambient-opacity: 0.06;
+        --ambient-blur: 80px;
+        --grain-opacity: 0.04;
+
+        /* === Brand Colors (Mantra Design Guide) === */
+        --color-canvas: #000000;
+        --color-card: #171C24;
+        --color-card-border: #212934;
+        --color-fg: #E8EAED;
+        --color-fg-muted: #828A96;
+        --color-accent: #1A9BDB;
+        --color-accent-active: #8DD4F0;
       }
 
-      /* ── Base ── */
-      .home-page {
+      /* ── A.2 Mobile Type Scale ── */
+      @media (max-width: 768px) {
+        :root {
+          --text-hero: 2.5rem;
+          --text-display: 2rem;
+          --text-subtitle: 1.25rem;
+          --text-body-lg: 1rem;
+        }
+      }
+
+      /* ── Base Reset ── */
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        background: var(--color-canvas);
+        color: var(--color-fg);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      a { color: inherit; text-decoration: none; }
+
+      /* ── C.2 Layer CSS ── */
+      .section {
+        position: relative;
+        overflow: hidden;
         display: flex;
         flex-direction: column;
-        background: var(--brand-surface);
-        color: var(--brand-text-primary);
-        font-family: 'Inter', sans-serif;
-        line-height: 1.7;
-        font-size: 1.125rem;
+        align-items: center;
+        justify-content: center;
       }
 
-      .home-page section {
+      .bg-layer {
+        position: absolute;
+        inset: -20% 0;
+        z-index: -2;
+        pointer-events: none;
+      }
+
+      .mid-layer {
+        position: absolute;
+        inset: -10% 0;
+        z-index: -1;
+        pointer-events: none;
+      }
+
+      .section-content {
+        position: relative;
+        z-index: 0;
         width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 128px 24px;
       }
 
-      .home-page h1 {
-        font-size: clamp(2.5rem, 5vw, 4.5rem);
-        font-weight: 700;
-        line-height: 1.1;
-        letter-spacing: -0.02em;
-        margin: 0;
-        color: var(--brand-text-primary);
+      /* ── A.6 Parallax Blobs ── */
+      .parallax-blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(var(--ambient-blur));
+        opacity: var(--ambient-opacity);
+        pointer-events: none;
+        will-change: transform;
+        background: radial-gradient(circle, var(--color-accent), transparent 70%);
       }
 
-      .home-page h2 {
-        font-size: clamp(1.5rem, 3vw, 2.5rem);
-        font-weight: 600;
-        line-height: 1.2;
-        margin: 0 0 24px;
-        color: var(--brand-text-primary);
-      }
+      .blob-large { width: 600px; height: 600px; }
+      .blob-medium { width: 450px; height: 450px; }
+      .blob-small { width: 300px; height: 300px; }
 
-      .home-page h3 {
-        font-size: clamp(1.25rem, 2vw, 1.75rem);
-        font-weight: 600;
-        margin: 0 0 12px;
-        color: var(--brand-text-primary);
-      }
-
-      .home-page p {
-        margin: 0;
-        color: var(--brand-text-secondary);
-        max-width: 42rem;
-      }
-
-      /* ── Nav ── */
-      .home-nav {
+      /* ── A.5 Grain Overlay ── */
+      .grain-overlay {
         position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 100;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 16px 24px;
-        background: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        opacity: var(--grain-opacity);
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        background-repeat: repeat;
+        background-size: 256px 256px;
       }
 
-      .home-nav img {
-        height: 28px;
-        width: auto;
-      }
-
-      .home-nav .cta-btn {
-        padding: 10px 24px;
-        font-size: 0.875rem;
-        background: var(--brand-primary);
-      }
-
-      .home-nav .cta-btn:hover {
-        background: var(--brand-primary-hover);
-      }
-
-      /* ── Section Label ── */
-      .section-label {
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        color: var(--brand-text-tertiary);
-        margin: 0 0 16px;
-      }
-
-      /* ── CTA Buttons ── */
-      .cta-primary {
+      /* ── CTA Button ── */
+      .btn-primary {
         display: inline-block;
-        padding: 16px 32px;
-        background: var(--brand-primary);
-        color: #fff;
-        text-decoration: none;
+        font-size: var(--text-body-lg);
         font-weight: 600;
-        font-size: 1.125rem;
-        border-radius: 12px;
-        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-        border: none;
-        cursor: pointer;
+        color: #fff;
+        background: var(--color-accent);
+        padding: 14px 32px;
+        border-radius: 6px;
+        transition: background 150ms var(--ease-spring);
       }
 
-      .cta-primary:hover {
-        background: var(--brand-primary-hover);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 20px rgba(26, 155, 219, 0.3);
-      }
-
-      .cta-primary.cta-large {
-        padding: 20px 40px;
-        font-size: 1.25rem;
-        border-radius: 16px;
-        animation: ctaPulse 3s ease-in-out infinite;
-      }
-
-      @keyframes ctaPulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(26, 155, 219, 0); }
-        50% { box-shadow: 0 0 24px 4px rgba(26, 155, 219, 0.15); }
+      .btn-primary:hover {
+        background: var(--color-accent-active);
       }
 
       /* ══════════════════════════════════════════
-         SECTION 1: HERO
+         B.1 HERO
          ══════════════════════════════════════════ */
-      .hero-section {
+      .section--hero {
         min-height: 100vh;
-        justify-content: center;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-        padding-top: 80px;
+        min-height: 100dvh;
+        padding: 120px 24px 80px;
       }
 
-      .hero-orb-bg {
+      .hero-grid {
         position: absolute;
-        top: 40%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 50vw;
-        height: 50vw;
-        max-width: 800px;
-        max-height: 800px;
-        background: radial-gradient(circle, var(--brand-primary) 0%, transparent 70%);
-        opacity: 0.08;
-        border-radius: 50%;
-        filter: blur(60px);
-        pointer-events: none;
+        inset: 0;
+        z-index: -1;
+        opacity: 0.03;
+        background-image: radial-gradient(circle, var(--color-fg-muted) 1px, transparent 1px);
+        background-size: 32px 32px;
         will-change: transform;
       }
 
       .hero-content {
-        position: relative;
-        z-index: 1;
-        max-width: 48rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 24px;
-      }
-
-      .hero-content h1 {
-        visibility: visible !important; /* override shared styles.css FOUT prevention */
-        opacity: 0;
-        transform: translateY(24px);
-        animation: fadeUp 0.6s ease-out 0.1s forwards;
-      }
-
-      .hero-content .hero-sub {
-        opacity: 0;
-        transform: translateY(24px);
-        animation: fadeUp 0.6s ease-out 0.3s forwards;
-        font-size: 1.25rem;
-        line-height: 1.6;
-        color: var(--brand-text-secondary);
-        max-width: 38rem;
-      }
-
-      .hero-content .cta-primary {
-        opacity: 0;
-        transform: translateY(24px);
-        animation: fadeUp 0.6s ease-out 0.5s forwards;
-      }
-
-      @keyframes fadeUp {
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      /* ══════════════════════════════════════════
-         SECTION 2: THE INTELLIGENCE LAYER
-         ══════════════════════════════════════════ */
-      .intelligence-section {
-        background: var(--brand-surface-subtle);
-      }
-
-      .intelligence-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 64px;
-        max-width: 64rem;
-        width: 100%;
-        align-items: center;
-      }
-
-      .intelligence-text {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-      }
-
-      .intelligence-text p {
-        line-height: 1.7;
-      }
-
-      /* Vignette: Morning Briefing */
-      .vignette-briefing {
-        max-width: 420px;
-        background: var(--brand-surface-elevated);
-        border-radius: 16px;
-        padding: 28px;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        font-size: 0.9375rem;
-        line-height: 1.65;
-        color: var(--brand-text-secondary);
-        opacity: 0;
-        transform: translateX(40px);
-        transition: opacity 0.8s ease-out, transform 0.8s ease-out;
-        justify-self: center;
-      }
-
-      .vignette-briefing.visible {
-        opacity: 1;
-        transform: translateX(0);
-      }
-
-      .vignette-briefing .vignette-greeting {
-        color: var(--brand-text-primary);
-        font-weight: 600;
-        margin-bottom: 16px;
-      }
-
-      .vignette-briefing ol {
-        margin: 0;
-        padding: 0 0 0 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      .vignette-briefing li {
-        padding-left: 4px;
-      }
-
-      /* ══════════════════════════════════════════
-         SECTION 3: CAPABILITIES (KINETIC)
-         ══════════════════════════════════════════ */
-      .capabilities-section {
-        background: var(--brand-surface);
-      }
-
-      .capabilities-header {
+        max-width: var(--max-text-narrow);
         text-align: center;
-        max-width: 48rem;
-        margin-bottom: 48px;
-      }
-
-      /* Kinetic Capability Sequence */
-      .capability-sequence {
-        max-width: 40rem;
-        width: 100%;
         display: flex;
         flex-direction: column;
-        gap: 1.75rem;
-        margin-bottom: 64px;
-      }
-
-      .capability-line {
-        font-size: 1.125rem;
-        line-height: 1.6;
-        color: var(--brand-text-secondary);
-        opacity: 0.15;
-        transform: translateY(8px);
-        transition: opacity 0.4s ease-out, transform 0.4s ease-out;
-      }
-
-      .capability-line.cap-active {
-        opacity: 1;
-        transform: translateY(0);
-      }
-
-      .capability-line.cap-past {
-        opacity: 0.4;
-        transform: translateY(0);
-      }
-
-      .capability-line strong {
-        color: var(--brand-text-primary);
-        transition: color 0.4s ease-out;
-      }
-
-      .capability-line.cap-active strong,
-      .capability-line.cap-past strong {
-        color: var(--accent-color, var(--brand-primary));
-      }
-
-      /* Vignette Grid */
-      .vignette-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 2rem;
-        max-width: 64rem;
-        width: 100%;
-        margin-bottom: 48px;
-      }
-
-      .vignette-card {
-        background: var(--brand-surface-elevated);
-        border-radius: 16px;
-        overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        opacity: 0;
-        transform: scale(0.96);
-        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-      }
-
-      .vignette-card.visible {
-        opacity: 1;
-        transform: scale(1);
-      }
-
-      .vignette-card:nth-child(2) { transition-delay: 150ms; }
-      .vignette-card:nth-child(3) { transition-delay: 300ms; }
-      .vignette-card:nth-child(4) { transition-delay: 450ms; }
-
-      .vignette-body {
-        padding: 24px;
-        font-size: 0.875rem;
-        line-height: 1.6;
-        color: var(--brand-text-secondary);
-      }
-
-      .vignette-caption {
-        padding: 16px 24px;
-        font-size: 0.875rem;
-        color: var(--brand-text-tertiary);
-        border-top: 1px solid rgba(255, 255, 255, 0.04);
-      }
-
-      /* Vignette A: Goals Dashboard */
-      .vignette-goals .goal-item {
-        display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 8px 0;
       }
 
-      .vignette-goals .goal-item + .goal-item {
-        border-top: 1px solid rgba(255, 255, 255, 0.04);
+      .hero-headline {
+        font-size: var(--text-hero);
+        font-weight: 700;
+        line-height: var(--lh-hero);
+        letter-spacing: var(--ls-hero);
+        color: var(--color-fg);
       }
 
-      .goal-badge {
-        font-size: 0.6875rem;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        white-space: nowrap;
+      .hero-subhead {
+        font-size: var(--text-subtitle);
+        font-weight: 400;
+        line-height: var(--lh-subtitle);
+        color: var(--color-fg-muted);
+        margin-top: var(--space-element-md);
       }
 
-      .badge-on-track {
-        background: rgba(32, 168, 142, 0.15);
-        color: var(--brand-success);
+      .hero-cta {
+        margin-top: var(--space-element-lg);
       }
 
-      .badge-active {
-        background: rgba(141, 212, 240, 0.15);
-        color: var(--brand-active);
+      /* ── D: Blob Positions ── */
+      .blob-a { top: 15%; left: 20%; }
+      .blob-b { bottom: 20%; right: 15%; }
+      .blob-c { top: 60%; left: 50%; transform: translateX(-50%); }
+      .blob-d { top: 30%; left: 40%; }
+      .blob-e { bottom: 15%; right: 20%; }
+      .blob-f { top: 50%; left: 35%; transform: translateY(-50%); }
+      .blob-g { bottom: 25%; right: 30%; }
+      .blob-h { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+      /* ══════════════════════════════════════════
+         B.2 DEFINITION
+         ══════════════════════════════════════════ */
+      .section--definition {
+        padding: var(--space-section-md) 24px;
       }
 
-      .goal-label {
-        font-size: 0.8125rem;
-        color: var(--brand-text-secondary);
+      .definition-content {
+        max-width: var(--max-text-narrow);
+        text-align: center;
       }
 
-      .goal-horizon {
-        font-size: 0.6875rem;
-        color: var(--brand-text-tertiary);
-        margin-left: auto;
-        white-space: nowrap;
-      }
-
-      /* Vignette B: Relationship Graph */
-      .vignette-people .person-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 8px 0;
-      }
-
-      .vignette-people .person-row + .person-row {
-        border-top: 1px solid rgba(255, 255, 255, 0.04);
-      }
-
-      .person-name {
-        font-size: 0.8125rem;
-        color: var(--brand-text-primary);
-        font-weight: 500;
-      }
-
-      .person-status {
-        font-size: 0.75rem;
-        font-weight: 500;
-      }
-
-      .status-overdue { color: var(--brand-error); }
-      .status-recent { color: var(--brand-success); }
-      .status-neutral { color: var(--brand-text-tertiary); }
-
-      /* Vignette C: Decision */
-      .vignette-decision .decision-title {
-        font-size: 0.9375rem;
-        font-weight: 600;
-        color: var(--brand-text-primary);
-        margin-bottom: 12px;
-      }
-
-      .decision-tabs {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 12px;
-      }
-
-      .decision-tab {
-        font-size: 0.75rem;
-        padding: 4px 12px;
-        border-radius: 6px;
-        background: rgba(255, 255, 255, 0.06);
-        color: var(--brand-text-tertiary);
-      }
-
-      .decision-tab.tab-active {
-        background: rgba(26, 155, 219, 0.15);
-        color: var(--brand-primary);
-      }
-
-      .decision-indicator {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.75rem;
-        color: var(--brand-text-tertiary);
-      }
-
-      .traffic-light {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--brand-active);
-      }
-
-      /* Vignette D: Autonomous Briefing */
-      .vignette-auto .auto-header {
-        font-size: 0.8125rem;
-        font-weight: 600;
-        color: var(--brand-text-primary);
-        margin-bottom: 8px;
-      }
-
-      .vignette-auto .auto-body {
-        font-size: 0.8125rem;
-        color: var(--brand-text-secondary);
-        line-height: 1.6;
-      }
-
-      .vignette-auto .auto-tag {
-        display: inline-block;
-        font-size: 0.6875rem;
-        padding: 2px 8px;
-        border-radius: 4px;
-        background: rgba(26, 155, 219, 0.12);
-        color: var(--brand-primary);
-        margin-top: 8px;
+      .definition-text {
+        font-size: var(--text-subtitle);
+        font-weight: 400;
+        line-height: var(--lh-subtitle);
+        color: var(--color-fg);
       }
 
       /* ══════════════════════════════════════════
-         SECTION 4: EMERGENCE
+         B.3 VIGNETTES (Kinetic Word Cloud)
          ══════════════════════════════════════════ */
-      .emergence-section {
-        background: var(--brand-surface-subtle);
-        position: relative;
-        overflow: hidden;
+      .section--vignettes {
+        padding: var(--space-section-lg) 24px;
+        min-height: 500px;
       }
 
-      .emergence-section .grid-bg {
+      .vignettes-header {
+        font-size: var(--text-display);
+        font-weight: 700;
+        line-height: var(--lh-display);
+        letter-spacing: var(--ls-display);
+        color: var(--color-fg);
+        text-align: center;
+        margin-bottom: var(--space-element-lg);
+      }
+
+      .word-field {
+        position: relative;
+        width: 100%;
+        max-width: var(--max-content);
+        height: 360px;
+        margin: 0 auto;
+      }
+
+      .word-field span {
         position: absolute;
-        inset: 0;
-        background-image:
-          linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-        background-size: 48px 48px;
-        pointer-events: none;
-        will-change: transform;
+        white-space: nowrap;
+      }
+
+      .word-large {
+        font-size: var(--text-display);
+        font-weight: 600;
+        color: var(--color-accent);
+        opacity: 0.9;
+      }
+
+      .word-medium {
+        font-size: var(--text-subtitle);
+        font-weight: 500;
+        color: var(--color-fg);
+        opacity: 0.7;
+      }
+
+      .word-small {
+        font-size: var(--text-body-lg);
+        font-weight: 400;
+        color: var(--color-fg-muted);
+        opacity: 0.5;
+      }
+
+      /* ══════════════════════════════════════════
+         B.4 EMERGENCE
+         ══════════════════════════════════════════ */
+      .section--emergence {
+        padding: var(--space-section-lg) 24px;
+        min-height: 440px;
       }
 
       .emergence-content {
-        position: relative;
-        z-index: 1;
+        max-width: var(--max-text-wide);
         text-align: center;
-        max-width: 42rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 24px;
       }
 
-      .emergence-content p {
-        text-align: left;
-        line-height: 1.8;
+      .emergence-headline {
+        font-size: var(--text-display);
+        font-weight: 700;
+        line-height: var(--lh-display);
+        letter-spacing: var(--ls-display);
+        color: var(--color-fg);
       }
 
-      /* Connection Map */
-      .connection-map {
+      .pill-row-wrapper {
         position: relative;
-        width: 100%;
-        max-width: 480px;
-        height: 360px;
-        margin-top: 48px;
+        margin-top: var(--space-element-lg);
       }
 
-      .map-node {
+      .pill-connecting-line {
         position: absolute;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 6px;
-        z-index: 2;
+        top: 50%;
+        left: 5%;
+        right: 5%;
+        height: 1px;
+        background: var(--color-card-border);
+        opacity: 0.4;
+        z-index: 0;
       }
 
-      .map-node .node-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: var(--brand-text-secondary);
-      }
-
-      .map-node.node-center .node-dot {
-        width: 24px;
-        height: 24px;
-        background: var(--brand-primary);
-      }
-
-      .map-node .node-label {
-        font-size: 0.75rem;
-        color: var(--brand-text-tertiary);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        white-space: nowrap;
-      }
-
-      .map-node.node-center .node-label {
-        font-size: 0.8125rem;
-        color: var(--brand-text-primary);
-        font-weight: 600;
-      }
-
-      .map-lines {
-        position: absolute;
-        inset: 0;
+      .pill-row {
+        position: relative;
         z-index: 1;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px;
       }
 
-      .map-lines line {
-        stroke: rgba(255, 255, 255, 0.08);
-        stroke-width: 1;
-      }
-
-      .map-pulse {
-        r: 3;
-        fill: var(--brand-primary);
-        opacity: 0.2;
+      .domain-pill {
+        font-size: var(--text-caption);
+        font-weight: 500;
+        color: var(--color-fg-muted);
+        border: 1px solid var(--color-card-border);
+        border-radius: 9999px;
+        padding: 6px 16px;
+        background: var(--color-canvas);
       }
 
       /* ══════════════════════════════════════════
-         SECTION 5: COMPOUNDING
+         B.5 ACCELERATION
          ══════════════════════════════════════════ */
-      .compounding-section {
-        background: var(--brand-surface);
+      .section--acceleration {
+        padding: var(--space-section-md) 24px;
+        min-height: 380px;
       }
 
-      .compounding-header {
+      .acceleration-content {
+        max-width: var(--max-text-wide);
         text-align: center;
-        max-width: 42rem;
-        margin-bottom: 48px;
       }
 
-      .compounding-cards {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 2rem;
-        max-width: 64rem;
-        width: 100%;
+      .acceleration-headline {
+        font-size: var(--text-display);
+        font-weight: 700;
+        line-height: var(--lh-display);
+        letter-spacing: var(--ls-display);
+        color: var(--color-fg);
       }
 
-      .compound-card {
-        background: var(--brand-surface-elevated);
-        border-radius: 16px;
-        padding: 32px;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        opacity: 0;
-        transform: translateY(40px);
-        transition: opacity 0.6s ease-out, transform 0.6s ease-out, box-shadow 0.6s ease-out;
-      }
-
-      .compound-card.visible {
-        opacity: 1;
-        transform: translateY(0);
-      }
-
-      .compound-card:nth-child(2) { transition-delay: 200ms; }
-      .compound-card:nth-child(3) { transition-delay: 400ms; }
-
-      .compound-card h3 {
-        font-size: 1rem;
-        color: var(--brand-text-tertiary);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin: 0;
-      }
-
-      .compound-card p {
-        color: var(--brand-text-secondary);
-        font-size: 1rem;
-        line-height: 1.7;
-        margin: 0;
-      }
-
-      .compound-card p:last-child {
-        color: var(--brand-text-primary);
-      }
-
-      .compound-card .card-accent {
-        width: 100%;
-        height: 2px;
-        border-radius: 1px;
-        background: var(--brand-primary);
-      }
-
-      .compound-card:nth-child(1) .card-accent { opacity: 0.3; }
-      .compound-card:nth-child(2) .card-accent { opacity: 0.6; }
-      .compound-card:nth-child(3) .card-accent { opacity: 1; }
-
-      .compound-card:nth-child(3).visible {
-        box-shadow: 0 0 40px rgba(26, 155, 219, 0.08);
+      .acceleration-subhead {
+        font-size: var(--text-body-lg);
+        font-weight: 400;
+        line-height: var(--lh-body);
+        color: var(--color-fg-muted);
+        max-width: var(--max-text-narrow);
+        margin: var(--space-element-md) auto 0;
       }
 
       /* ══════════════════════════════════════════
-         SECTION 6: TRUST + CTA
+         B.6 TRUST
          ══════════════════════════════════════════ */
-      .trust-section {
-        background: var(--brand-surface-subtle);
+      .section--trust {
+        padding: var(--space-section-sm) 24px;
+        min-height: 280px;
       }
 
       .trust-content {
+        max-width: var(--max-text-narrow);
         text-align: center;
-        max-width: 42rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 24px;
       }
 
-      .trust-content p {
-        text-align: center;
-        line-height: 1.8;
+      .trust-headline {
+        font-size: var(--text-display);
+        font-weight: 700;
+        line-height: var(--lh-display);
+        letter-spacing: var(--ls-display);
+        color: var(--color-fg);
       }
 
-      .trust-indicators {
-        display: flex;
-        gap: 3rem;
-        margin-top: 16px;
-        flex-wrap: wrap;
-        justify-content: center;
+      .trust-subhead {
+        font-size: var(--text-body-lg);
+        font-weight: 400;
+        line-height: var(--lh-body);
+        color: var(--color-fg-muted);
+        margin-top: var(--space-element-sm);
       }
 
-      .trust-indicator {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .trust-indicator svg {
-        width: 20px;
-        height: 20px;
-        color: var(--brand-text-tertiary);
-        stroke-width: 1.5;
-      }
-
-      .trust-indicator span {
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        color: var(--brand-text-tertiary);
-      }
-
-      /* Final CTA Block */
-      .final-cta {
-        text-align: center;
-        padding-top: 80px;
+      .trust-statements {
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 16px;
+        margin-top: var(--space-element-lg);
       }
 
-      .final-cta h2 {
-        margin-bottom: 8px;
+      .trust-statement {
+        font-size: var(--text-body-lg);
+        font-weight: 500;
+        color: var(--color-fg);
+        opacity: 0.8;
       }
 
-      .cta-sub {
-        font-size: 0.875rem;
-        color: var(--brand-text-tertiary);
+      .trust-check {
+        color: var(--color-accent);
+        margin-right: 8px;
       }
 
       /* ══════════════════════════════════════════
-         RESPONSIVE
+         B.7 CLOSE / CTA
          ══════════════════════════════════════════ */
-      @media (max-width: 1023px) {
-        .intelligence-grid {
-          grid-template-columns: 1fr;
-          gap: 40px;
-        }
-
-        .vignette-briefing {
-          max-width: 100%;
-        }
-
-        .compounding-cards {
-          grid-template-columns: 1fr;
-          max-width: 32rem;
-        }
+      .section--close {
+        padding: var(--space-section-lg) 24px;
+        min-height: 320px;
       }
 
-      @media (max-width: 767px) {
-        .home-page section {
-          padding: 80px 20px;
-        }
-
-        .vignette-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .connection-map {
-          height: 280px;
-          max-width: 100%;
-        }
-
-        .trust-indicators {
-          flex-direction: column;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .hero-content .hero-sub {
-          font-size: 1.0625rem;
-        }
+      .close-content {
+        max-width: var(--max-text-narrow);
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       }
 
-      @media (max-width: 479px) {
-        .trust-indicators {
-          align-items: flex-start;
-        }
+      .close-headline {
+        font-size: var(--text-display);
+        font-weight: 700;
+        line-height: var(--lh-display);
+        letter-spacing: var(--ls-display);
+        color: var(--color-fg);
+      }
+
+      .close-cta {
+        margin-top: var(--space-element-lg);
       }
 
       /* ══════════════════════════════════════════
-         REDUCED MOTION
+         A.4 REDUCED MOTION
          ══════════════════════════════════════════ */
       @media (prefers-reduced-motion: reduce) {
-        .hero-content h1,
-        .hero-content .hero-sub,
-        .hero-content .cta-primary {
+        .bg-layer,
+        .mid-layer,
+        .parallax-blob,
+        .grain-overlay {
+          transform: none !important;
           animation: none !important;
-          opacity: 1 !important;
-          transform: none !important;
-          visibility: visible !important;
-        }
-
-        .capability-line {
-          opacity: 1 !important;
-          transform: none !important;
           transition: none !important;
         }
-
-        .capability-line strong {
-          color: var(--accent-color, var(--brand-primary)) !important;
-          transition: none !important;
-        }
-
-        .vignette-briefing,
-        .vignette-card,
-        .compound-card {
+        [data-reveal] {
           opacity: 1 !important;
           transform: none !important;
-          transition: none !important;
+        }
+      }
+
+      /* ══════════════════════════════════════════
+         E. MOBILE BREAKPOINTS
+         ══════════════════════════════════════════ */
+      @media (max-width: 768px) {
+        .section--hero { padding: 72px 24px 48px; }
+        .section--definition { padding: 48px 24px; }
+        .section--vignettes { padding: 56px 24px; }
+        .section--emergence { padding: 56px 24px; }
+        .section--acceleration { padding: 48px 24px; }
+        .section--trust { padding: 40px 24px; }
+        .section--close { padding: 56px 24px; }
+
+        .parallax-blob { transform: scale(0.6); }
+
+        .word-field {
+          position: static;
+          height: auto;
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 16px 24px;
+          padding: 0 16px;
         }
 
-        .hero-orb-bg {
-          transform: translate(-50%, -50%) !important;
+        .word-field span {
+          position: static;
         }
 
-        .grid-bg {
-          transform: none !important;
-        }
-
-        .cta-primary.cta-large {
-          animation: none;
-        }
-
-        .map-pulse {
-          display: none;
+        .pill-row {
+          gap: 8px;
         }
       }
     </style>
   </head>
-
   <body>
-    <div class="home-page">
-      <!-- Nav -->
-      <nav class="home-nav" aria-label="Main navigation">
-        <a href="/home"><img src="/brand/mantra-logo.png" alt="Mantra" /></a>
-        <a href="https://app.trymantra.ai" class="cta-btn">Start with Mantra</a>
-      </nav>
+    <!-- A.5 Grain Texture Overlay -->
+    <div class="grain-overlay" aria-hidden="true"></div>
 
-      <!-- ════════════════════════════════════════
-           SECTION 1: HERO
-           ════════════════════════════════════════ -->
-      <section class="hero-section" aria-label="Hero">
-        <div class="hero-orb-bg" data-parallax-speed="0.3"></div>
-        <div class="hero-content">
-          <p class="section-label">Personal Intelligence System</p>
-          <h1>Reach your full potential.</h1>
-          <p class="hero-sub">
-            Mantra helps you achieve your goals with a synthetic intelligence that connects your calendar, money, health, relationships, and ideas.
-          </p>
-          <a href="https://app.trymantra.ai" class="cta-primary">Start with Mantra →</a>
+    <!-- ════════════════════════════════════════
+         SECTION 1: HERO
+         ════════════════════════════════════════ -->
+    <section class="section section--hero" id="hero">
+      <div class="bg-layer" aria-hidden="true">
+        <div class="parallax-blob blob-large blob-a"></div>
+        <div class="parallax-blob blob-large blob-b"></div>
+      </div>
+      <div class="mid-layer" aria-hidden="true">
+        <div class="hero-grid"></div>
+      </div>
+      <div class="section-content hero-content">
+        <h1 class="hero-headline">Reach your full potential.</h1>
+        <p class="hero-subhead">Mantra helps you achieve your goals with a synthetic intelligence that connects your calendar, money, health, relationships, and ideas.</p>
+        <a href="https://app.trymantra.ai" class="btn-primary hero-cta">Start with Mantra →</a>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         SECTION 2: DEFINITION
+         ════════════════════════════════════════ -->
+    <section class="section section--definition" id="definition">
+      <div class="bg-layer" aria-hidden="true">
+        <div class="parallax-blob blob-small blob-c"></div>
+      </div>
+      <div class="section-content definition-content">
+        <p class="definition-text">An autonomous agent that works for you on whatever matters most in your life, saving you time, magnifying your impact.</p>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         SECTION 3: VIGNETTES (Kinetic Word Cloud)
+         ════════════════════════════════════════ -->
+    <section class="section section--vignettes" id="vignettes">
+      <div class="bg-layer" aria-hidden="true">
+        <div class="parallax-blob blob-large blob-d"></div>
+        <div class="parallax-blob blob-medium blob-e"></div>
+      </div>
+      <div class="section-content" style="max-width: var(--max-content); margin: 0 auto;">
+        <h2 class="vignettes-header">Here's what that looks like.</h2>
+        <div class="word-field mid-layer-content">
+          <!-- Row 1: Large accent words -->
+          <span class="word-large" style="top: 10%; left: 8%;">Goals</span>
+          <span class="word-large" style="top: 45%; left: 65%;">Calendar</span>
+          <span class="word-large" style="top: 75%; left: 25%;">Memory</span>
+          <!-- Row 2: Medium white words -->
+          <span class="word-medium" style="top: 5%; left: 60%;">Email</span>
+          <span class="word-medium" style="top: 35%; left: 15%;">Health</span>
+          <span class="word-medium" style="top: 60%; left: 75%;">Finance</span>
+          <span class="word-medium" style="top: 80%; left: 65%;">News</span>
+          <!-- Row 3: Small muted words -->
+          <span class="word-small" style="top: 20%; left: 35%;">Relationships</span>
+          <span class="word-small" style="top: 50%; left: 40%;">Decisions</span>
+          <span class="word-small" style="top: 15%; left: 80%;">Wellness</span>
+          <span class="word-small" style="top: 70%; left: 50%;">Ideas</span>
+          <span class="word-small" style="top: 40%; left: 85%;">Plans</span>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- ════════════════════════════════════════
-           SECTION 2: THE INTELLIGENCE LAYER
-           ════════════════════════════════════════ -->
-      <section class="intelligence-section" aria-label="The intelligence layer">
-        <div class="intelligence-grid">
-          <div class="intelligence-text">
-            <p class="section-label">What It Is</p>
-            <h2>An autonomous agent that works for you on whatever matters most in your life, saving you time, magnifying your impact.</h2>
-          </div>
-          <div class="vignette-briefing" data-reveal="slide-right" data-reveal-threshold="0.3">
-            <p class="vignette-greeting">Good morning. Three things for today:</p>
-            <ol>
-              <li>Prep for your 2pm with David — he's exploring a partnership opportunity. Research brief ready.</li>
-              <li>Follow up with Lauren Park — you said you'd send the proposal by Friday. Draft waiting for your review.</li>
-              <li>Your sleep was 6.2 hours. Light day recommended. Your energy budget is better spent on the David meeting.</li>
-            </ol>
-          </div>
-        </div>
-      </section>
-
-      <!-- ════════════════════════════════════════
-           SECTION 3: CAPABILITIES (KINETIC)
-           ════════════════════════════════════════ -->
-      <section class="capabilities-section" aria-label="Capabilities">
-        <div class="capabilities-header">
-          <p class="section-label">Capabilities</p>
-          <h2>Here's what that looks like.</h2>
-        </div>
-
-        <div class="capability-sequence">
-          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>goals</strong> stay alive across every horizon — today through lifetime.</p>
-          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>habits</strong> build the person who reaches those goals.</p>
-          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>health</strong> tracked, reinforced, and connected to your capacity.</p>
-          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>relationships</strong> stay warm. Follow-ups happen. Nobody goes cold.</p>
-          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>projects</strong> move — tasks, milestones, deadlines, all linked.</p>
-          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>calendar</strong> becomes intelligent. Prep materializes before meetings.</p>
-          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>email</strong> triaged at machine speed with your judgment, not someone else's.</p>
-          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>memory</strong> grows with every conversation, commitment, and insight.</p>
-          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>strategy</strong> gets real infrastructure — decisions, scenarios, theses.</p>
-          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>news</strong> filtered to signal. Noise eliminated before you see it.</p>
-          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>finances</strong> visible — spending, budgets, forecasts, goals.</p>
-          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>career</strong> managed with the same rigor as your portfolio.</p>
-          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>knowledge</strong> grows into a personal wiki that compounds.</p>
-          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>voice</strong> captures ideas on a walk. No screen required.</p>
-          <p class="capability-line" style="--accent-color: var(--brand-primary)">Your <strong>system works while you sleep</strong> — briefings, maintenance, follow-through.</p>
-        </div>
-
-        <!-- Vignette Grid -->
-        <div class="vignette-grid">
-          <!-- A: Goals Dashboard -->
-          <div class="vignette-card" data-reveal="scale" data-reveal-threshold="0.2">
-            <div class="vignette-body vignette-goals">
-              <div class="goal-item">
-                <span class="goal-badge badge-on-track">on track</span>
-                <span class="goal-label">Build the next chapter</span>
-                <span class="goal-horizon">This Year</span>
-              </div>
-              <div class="goal-item">
-                <span class="goal-badge badge-active">active</span>
-                <span class="goal-label">Launch the product</span>
-                <span class="goal-horizon">This Quarter</span>
-              </div>
-              <div class="goal-item">
-                <span class="goal-badge badge-active">active</span>
-                <span class="goal-label">Demo with David Chen</span>
-                <span class="goal-horizon">This Month</span>
-              </div>
-            </div>
-            <div class="vignette-caption">Every horizon. Always alive.</div>
-          </div>
-
-          <!-- B: Relationship Graph -->
-          <div class="vignette-card" data-reveal="scale" data-reveal-threshold="0.2">
-            <div class="vignette-body vignette-people">
-              <div class="person-row">
-                <span class="person-name">Lauren Park</span>
-                <span class="person-status status-overdue">12 days · follow-up due</span>
-              </div>
-              <div class="person-row">
-                <span class="person-name">David Chen</span>
-                <span class="person-status status-recent">today</span>
-              </div>
-              <div class="person-row">
-                <span class="person-name">Marcus Rivera</span>
-                <span class="person-status status-neutral">3 days</span>
-              </div>
-            </div>
-            <div class="vignette-caption">Nobody goes cold.</div>
-          </div>
-
-          <!-- C: Decision Modeling -->
-          <div class="vignette-card" data-reveal="scale" data-reveal-threshold="0.2">
-            <div class="vignette-body vignette-decision">
-              <p class="decision-title">Where should we expand?</p>
-              <div class="decision-tabs">
-                <span class="decision-tab tab-active">New York</span>
-                <span class="decision-tab">London</span>
-                <span class="decision-tab">Singapore</span>
-              </div>
-              <div class="decision-indicator">
-                <span class="traffic-light"></span>
-                <span>Analysis in progress</span>
-              </div>
-            </div>
-            <div class="vignette-caption">Complex decisions get structure.</div>
-          </div>
-
-          <!-- D: Autonomous Briefing -->
-          <div class="vignette-card" data-reveal="scale" data-reveal-threshold="0.2">
-            <div class="vignette-body vignette-auto">
-              <p class="auto-header">Daily Brief ready</p>
-              <p class="auto-body">3 priorities, 2 follow-ups, 1 financial alert. News: 4 signals matched your interests.</p>
-              <span class="auto-tag">Prepared overnight</span>
-            </div>
-            <div class="vignette-caption">It works while you sleep.</div>
+    <!-- ════════════════════════════════════════
+         SECTION 4: EMERGENCE
+         ════════════════════════════════════════ -->
+    <section class="section section--emergence" id="emergence">
+      <div class="bg-layer" aria-hidden="true">
+        <div class="parallax-blob blob-large blob-f"></div>
+      </div>
+      <div class="section-content emergence-content">
+        <h2 class="emergence-headline">You move through your day. It moves your goals forward.</h2>
+        <div class="pill-row-wrapper">
+          <div class="pill-connecting-line" aria-hidden="true"></div>
+          <div class="pill-row">
+            <span class="domain-pill">Your Goals</span>
+            <span class="domain-pill">Calendar</span>
+            <span class="domain-pill">Email</span>
+            <span class="domain-pill">Health</span>
+            <span class="domain-pill">Finance</span>
+            <span class="domain-pill">News</span>
+            <span class="domain-pill">Memory</span>
           </div>
         </div>
+      </div>
+    </section>
 
-        <a href="https://app.trymantra.ai" class="cta-primary" style="margin-top: 0;">Start with Mantra →</a>
-      </section>
+    <!-- ════════════════════════════════════════
+         SECTION 5: ACCELERATION
+         ════════════════════════════════════════ -->
+    <section class="section section--acceleration" id="acceleration">
+      <div class="bg-layer" aria-hidden="true">
+        <div class="parallax-blob blob-medium blob-g"></div>
+      </div>
+      <div class="section-content acceleration-content">
+        <h2 class="acceleration-headline">Everything you do starts moving faster.</h2>
+        <p class="acceleration-subhead">Week one it helps. Month six it's an extension of you. The longer you run, the faster you go.</p>
+      </div>
+    </section>
 
-      <!-- ════════════════════════════════════════
-           SECTION 4: EMERGENCE
-           ════════════════════════════════════════ -->
-      <section class="emergence-section" aria-label="Emergence">
-        <div class="grid-bg" data-parallax-speed="0.5"></div>
-        <div class="emergence-content">
-          <p class="section-label">Emergence</p>
-          <h2>You move through your day.<br />It moves your goals forward.</h2>
-
-          <!-- Connection Map -->
-          <div class="connection-map" aria-hidden="true">
-            <svg class="map-lines" viewBox="0 0 480 360" preserveAspectRatio="xMidYMid meet">
-              <!-- Lines from center (240,160) to outer nodes -->
-              <line x1="240" y1="160" x2="100" y2="60" />   <!-- Calendar -->
-              <line x1="240" y1="160" x2="380" y2="60" />   <!-- Email -->
-              <line x1="240" y1="160" x2="60" y2="180" />   <!-- Health -->
-              <line x1="240" y1="160" x2="420" y2="180" />  <!-- Finance -->
-              <line x1="240" y1="160" x2="100" y2="300" />  <!-- News -->
-              <line x1="240" y1="160" x2="380" y2="300" />  <!-- Memory -->
-              <!-- Cross-connections -->
-              <line x1="100" y1="60" x2="60" y2="180" />    <!-- Calendar-Health -->
-              <line x1="380" y1="60" x2="420" y2="180" />   <!-- Email-Finance -->
-              <line x1="100" y1="300" x2="380" y2="300" />  <!-- News-Memory -->
-
-              <!-- Traveling pulses -->
-              <circle class="map-pulse">
-                <animateMotion dur="4s" repeatCount="indefinite" path="M240,160 L100,60" />
-              </circle>
-              <circle class="map-pulse">
-                <animateMotion dur="4.5s" repeatCount="indefinite" begin="1s" path="M240,160 L380,300" />
-              </circle>
-              <circle class="map-pulse">
-                <animateMotion dur="5s" repeatCount="indefinite" begin="2s" path="M240,160 L420,180" />
-              </circle>
-            </svg>
-
-            <!-- Center: Goals -->
-            <div class="map-node node-center" style="left: 50%; top: 44%; transform: translate(-50%, -50%);">
-              <span class="node-dot"></span>
-              <span class="node-label">Your Goals</span>
-            </div>
-            <!-- Outer nodes -->
-            <div class="map-node" style="left: 21%; top: 17%; transform: translate(-50%, -50%);">
-              <span class="node-dot"></span>
-              <span class="node-label">Calendar</span>
-            </div>
-            <div class="map-node" style="left: 79%; top: 17%; transform: translate(-50%, -50%);">
-              <span class="node-dot"></span>
-              <span class="node-label">Email</span>
-            </div>
-            <div class="map-node" style="left: 12.5%; top: 50%; transform: translate(-50%, -50%);">
-              <span class="node-dot"></span>
-              <span class="node-label">Health</span>
-            </div>
-            <div class="map-node" style="left: 87.5%; top: 50%; transform: translate(-50%, -50%);">
-              <span class="node-dot"></span>
-              <span class="node-label">Finance</span>
-            </div>
-            <div class="map-node" style="left: 21%; top: 83%; transform: translate(-50%, -50%);">
-              <span class="node-dot"></span>
-              <span class="node-label">News</span>
-            </div>
-            <div class="map-node" style="left: 79%; top: 83%; transform: translate(-50%, -50%);">
-              <span class="node-dot"></span>
-              <span class="node-label">Memory</span>
-            </div>
-          </div>
+    <!-- ════════════════════════════════════════
+         SECTION 6: TRUST
+         ════════════════════════════════════════ -->
+    <section class="section section--trust" id="trust">
+      <!-- No blobs — deliberately sparse -->
+      <div class="section-content trust-content">
+        <h2 class="trust-headline">Your data. Yours only.</h2>
+        <p class="trust-subhead">Nothing shared, nothing sold, nothing trains someone else's model.</p>
+        <div class="trust-statements">
+          <p class="trust-statement"><span class="trust-check">✓</span>Your data stays yours</p>
+          <p class="trust-statement"><span class="trust-check">✓</span>End-to-end private</p>
+          <p class="trust-statement"><span class="trust-check">✓</span>You own the memory</p>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- ════════════════════════════════════════
-           SECTION 5: ACCELERATION
-           ════════════════════════════════════════ -->
-      <section class="compounding-section" aria-label="Acceleration">
-        <div class="compounding-header">
-          <p class="section-label">Acceleration</p>
-          <h2>Everything you do<br />starts moving faster.</h2>
-          <p class="hero-sub" style="margin-top: 16px;">Week one it helps. Month six it's an extension of you. The longer you run, the faster you go.</p>
-        </div>
-      </section>
+    <!-- ════════════════════════════════════════
+         SECTION 7: CLOSE / CTA
+         ════════════════════════════════════════ -->
+    <section class="section section--close" id="close">
+      <div class="bg-layer" aria-hidden="true">
+        <div class="parallax-blob blob-large blob-h"></div>
+      </div>
+      <div class="section-content close-content">
+        <h2 class="close-headline">You bring the ambition. Mantra brings the leverage.</h2>
+        <a href="https://app.trymantra.ai" class="btn-primary close-cta">Start with Mantra →</a>
+      </div>
+    </section>
 
-      <!-- ════════════════════════════════════════
-           SECTION 6: TRUST + CTA
-           ════════════════════════════════════════ -->
-      <section class="trust-section" aria-label="Trust and privacy">
-        <div class="trust-content">
-          <p class="section-label">Trust</p>
-          <h2>Your data. Yours only.</h2>
-          <p>
-            Nothing shared, nothing sold, nothing trains someone else's model.
-          </p>
-
-          <!-- Trust Indicators -->
-          <div class="trust-indicators">
-            <div class="trust-indicator">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              <span>Your data stays yours</span>
-            </div>
-            <div class="trust-indicator">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <span>End-to-end private</span>
-            </div>
-            <div class="trust-indicator">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              <span>You own the memory</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Final CTA -->
-        <div class="final-cta">
-          <h2>You bring the ambition.<br />Mantra brings the leverage.</h2>
-          <a href="https://app.trymantra.ai" class="cta-primary cta-large">Start with Mantra →</a>
-          <p class="cta-sub">Free to start. No credit card required.</p>
-        </div>
-      </section>
-    </div>
-
+    <!-- GSAP + ScrollTrigger (CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
     <script>
       /* ══════════════════════════════════════════
-         HOME PAGE 2.0 — Animation Engine
-         Pure IntersectionObserver + rAF parallax.
-         No GSAP, ScrollTrigger, or SplitType.
+         VISUAL CRAFT 2.1 — Animation Engine
+         GSAP + ScrollTrigger
          ══════════════════════════════════════════ */
-
       (function () {
         'use strict';
 
-        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        gsap.registerPlugin(ScrollTrigger);
 
-        // ── CTA Config (single source of truth) ──
-        // When waitlist launches, change this one line:
-        // const CTA_URL = 'https://waitlist.trymantra.ai';
-        // All <a> tags already have href set in markup.
+        var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        // ── Parallax ──
+        // ── A.3 Universal Section Reveal ──
+        function revealSection(selector, options) {
+          options = options || {};
+          var y = options.y !== undefined ? options.y : 24;
+          var duration = options.duration || 0.7;
+          var stagger = options.stagger !== undefined ? options.stagger : 0.08;
+          var delay = options.delay || 0;
+          var ease = options.ease || 'power3.out';
+
+          gsap.from(selector + ' > *', {
+            y: y,
+            opacity: 0,
+            duration: duration,
+            ease: ease,
+            stagger: stagger,
+            delay: delay,
+            scrollTrigger: {
+              trigger: selector,
+              start: 'top 80%',
+              once: true
+            }
+          });
+        }
+
+        // ── C.3 Parallax System ──
+        function initParallax() {
+          document.querySelectorAll('.bg-layer').forEach(function (layer) {
+            gsap.to(layer, {
+              y: '-15%',
+              ease: 'none',
+              scrollTrigger: {
+                trigger: layer.parentElement,
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: true
+              }
+            });
+          });
+
+          document.querySelectorAll('.mid-layer').forEach(function (layer) {
+            gsap.to(layer, {
+              y: '-8%',
+              ease: 'none',
+              scrollTrigger: {
+                trigger: layer.parentElement,
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: true
+              }
+            });
+          });
+        }
+
+        // ── B.1 Hero Entrance ──
+        function initHeroEntrance() {
+          var heroTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+          heroTl
+            .from('.hero-headline', { scale: 0.96, opacity: 0, duration: 1.0 })
+            .from('.hero-subhead', { y: 16, opacity: 0, duration: 0.8 }, 0.15)
+            .from('.hero-cta', { y: 16, opacity: 0, duration: 0.8 }, 0.3)
+            .from('.section--hero .parallax-blob', { opacity: 0, duration: 1.5 }, 0)
+            .from('.hero-grid', { opacity: 0, duration: 1.2 }, 0.2);
+        }
+
+        // ── B.2 Definition Reveal ──
+        function initDefinition() {
+          gsap.from('.definition-text', {
+            y: 24,
+            opacity: 0,
+            duration: 0.7,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: '.section--definition',
+              start: 'top 80%',
+              once: true
+            }
+          });
+        }
+
+        // ── B.3 Vignettes Word Cascade ──
+        function initVignettes() {
+          revealSection('.section--vignettes .section-content', { stagger: 0 });
+
+          var vigTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: '.word-field',
+              start: 'top 80%',
+              once: true
+            }
+          });
+          vigTl
+            .from('.word-large', {
+              y: 32, opacity: 0, duration: 0.9, stagger: 0.12,
+              ease: 'power3.out'
+            })
+            .from('.word-medium', {
+              y: 24, opacity: 0, duration: 0.8, stagger: 0.1,
+              ease: 'power3.out'
+            }, 0.2)
+            .from('.word-small', {
+              y: 16, opacity: 0, duration: 0.7, stagger: 0.08,
+              ease: 'power3.out'
+            }, 0.4);
+        }
+
+        // ── B.4 Emergence Pill Stagger ──
+        function initEmergence() {
+          gsap.from('.emergence-headline', {
+            y: 24,
+            opacity: 0,
+            duration: 0.7,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: '.section--emergence',
+              start: 'top 80%',
+              once: true
+            }
+          });
+
+          gsap.from('.pill-connecting-line', {
+            scaleX: 0,
+            opacity: 0,
+            duration: 0.6,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: '.pill-row-wrapper',
+              start: 'top 80%',
+              once: true
+            }
+          });
+
+          gsap.from('.domain-pill', {
+            y: 12,
+            opacity: 0,
+            duration: 0.5,
+            stagger: 0.06,
+            ease: 'power3.out',
+            delay: 0.4,
+            scrollTrigger: {
+              trigger: '.pill-row-wrapper',
+              start: 'top 80%',
+              once: true
+            }
+          });
+        }
+
+        // ── B.5 Acceleration Reveal ──
+        function initAcceleration() {
+          revealSection('.acceleration-content');
+        }
+
+        // ── B.6 Trust Stagger ──
+        function initTrust() {
+          var trustTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: '.section--trust',
+              start: 'top 80%',
+              once: true
+            }
+          });
+          trustTl
+            .from('.trust-headline', { y: 24, opacity: 0, duration: 0.7, ease: 'power3.out' })
+            .from('.trust-subhead', { y: 20, opacity: 0, duration: 0.6, ease: 'power3.out' }, 0.1)
+            .from('.trust-statement', {
+              y: 16, opacity: 0, duration: 0.6, stagger: 0.08,
+              ease: 'power3.out'
+            }, 0.2);
+        }
+
+        // ── B.7 Close Reveal ──
+        function initClose() {
+          var closeTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: '.section--close',
+              start: 'top 80%',
+              once: true
+            }
+          });
+          closeTl
+            .from('.close-headline', { y: 24, opacity: 0, duration: 0.7, ease: 'power3.out' })
+            .from('.close-cta', { y: 16, opacity: 0, duration: 0.8, ease: 'power3.out' }, 0.2)
+            .from('.section--close .parallax-blob', { opacity: 0, duration: 1.2, ease: 'power3.out' }, 0);
+        }
+
+        // ── Init ──
+        function initScrollAnimations() {
+          initDefinition();
+          initVignettes();
+          initEmergence();
+          initAcceleration();
+          initTrust();
+          initClose();
+        }
+
         if (!prefersReducedMotion) {
-          const parallaxEls = document.querySelectorAll('[data-parallax-speed]');
-
-          if (parallaxEls.length > 0) {
-            let ticking = false;
-
-            function updateParallax() {
-              const scrollY = window.scrollY;
-              for (const el of parallaxEls) {
-                const speed = parseFloat(el.dataset.parallaxSpeed) || 0;
-                const offset = scrollY * speed;
-                el.style.transform = el.classList.contains('hero-orb-bg')
-                  ? `translate(-50%, calc(-50% + ${offset}px))`
-                  : `translateY(${offset}px)`;
-              }
-              ticking = false;
-            }
-
-            window.addEventListener('scroll', function () {
-              if (!ticking) {
-                ticking = true;
-                requestAnimationFrame(updateParallax);
-              }
-            }, { passive: true });
-          }
-        }
-
-        // ── Reveal Observer (vignettes, cards) ──
-        const revealEls = document.querySelectorAll('[data-reveal]');
-
-        if (revealEls.length > 0 && !prefersReducedMotion) {
-          const revealObserver = new IntersectionObserver(function (entries) {
-            for (const entry of entries) {
-              if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-                revealObserver.unobserve(entry.target);
-              }
-            }
-          }, { threshold: 0.2 });
-
-          for (const el of revealEls) {
-            const threshold = parseFloat(el.dataset.revealThreshold);
-            if (!isNaN(threshold) && threshold !== 0.2) {
-              // Create a separate observer for custom thresholds
-              const customObserver = new IntersectionObserver(function (entries) {
-                for (const entry of entries) {
-                  if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                    customObserver.unobserve(entry.target);
-                  }
-                }
-              }, { threshold: threshold });
-              customObserver.observe(el);
-            } else {
-              revealObserver.observe(el);
-            }
-          }
-        } else if (prefersReducedMotion) {
-          // Immediately show all
-          for (const el of revealEls) {
-            el.classList.add('visible');
-          }
-        }
-
-        // ── Kinetic Capability Sequence ──
-        const capLines = document.querySelectorAll('.capability-line');
-
-        if (capLines.length > 0 && !prefersReducedMotion) {
-          // Use a single scroll-position listener for per-line activation
-          function updateCapabilities() {
-            const viewportTop = window.scrollY;
-            const viewportHeight = window.innerHeight;
-            const activeZoneTop = viewportTop + viewportHeight * 0.3;
-            const activeZoneBottom = viewportTop + viewportHeight * 0.7;
-
-            for (const line of capLines) {
-              const rect = line.getBoundingClientRect();
-              const lineTop = rect.top + viewportTop;
-              const lineCenter = lineTop + rect.height / 2;
-
-              if (lineCenter >= activeZoneTop && lineCenter <= activeZoneBottom) {
-                line.classList.add('cap-active');
-                line.classList.remove('cap-past');
-              } else if (lineCenter < activeZoneTop) {
-                line.classList.remove('cap-active');
-                line.classList.add('cap-past');
-              } else {
-                line.classList.remove('cap-active', 'cap-past');
-              }
-            }
-          }
-
-          let capTicking = false;
-          window.addEventListener('scroll', function () {
-            if (!capTicking) {
-              capTicking = true;
-              requestAnimationFrame(function () {
-                updateCapabilities();
-                capTicking = false;
-              });
-            }
-          }, { passive: true });
-
-          // Initial check
-          updateCapabilities();
-        } else if (prefersReducedMotion) {
-          for (const line of capLines) {
-            line.classList.add('cap-active');
-          }
+          initHeroEntrance();
+          initScrollAnimations();
+          initParallax();
         }
       })();
     </script>
