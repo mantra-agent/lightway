@@ -32,3 +32,115 @@ body {
   min-width: 132px;
   height: auto;
 }
+
+/* ── Shared CTA Button ── */
+.cta-btn {
+  display: inline-block;
+  padding: 16px 36px;
+  background: linear-gradient(135deg, #C8A050 0%, #A07830 100%);
+  color: #000;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 8px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  letter-spacing: -0.01em;
+  border: none;
+  cursor: pointer;
+}
+
+.cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 24px rgba(200, 160, 80, 0.35), 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.cta-btn:active {
+  transform: translateY(0);
+}
+
+/* ── Scroll Reveal Animations ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delays for cards and grid items */
+.stagger-1 { transition-delay: 0.1s; }
+.stagger-2 { transition-delay: 0.2s; }
+.stagger-3 { transition-delay: 0.3s; }
+.stagger-4 { transition-delay: 0.4s; }
+.stagger-5 { transition-delay: 0.5s; }
+.stagger-6 { transition-delay: 0.6s; }
+
+/* Hero fade-in on load */
+.hero-fade {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: heroFadeIn 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+}
+
+@keyframes heroFadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Premium Section Divider ── */
+.premium-divider {
+  border-top: none;
+  position: relative;
+}
+
+.premium-divider::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  max-width: 480px;
+  height: 1px;
+  background: radial-gradient(ellipse at center, rgba(200, 160, 80, 0.25) 0%, transparent 70%);
+}
+
+/* ── Card Hover Effects ── */
+.card-hover {
+  transition: border-color 0.3s ease, transform 0.3s ease;
+}
+
+.card-hover:hover {
+  border-color: rgba(255,255,255,0.15);
+  transform: translateY(-2px);
+}
+
+/* ── Mobile: reduce animation intensity ── */
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+  .hero-fade {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 639px) {
+  .reveal {
+    transform: translateY(20px);
+  }
+  .stagger-1, .stagger-2, .stagger-3,
+  .stagger-4, .stagger-5, .stagger-6 {
+    transition-delay: 0s;
+  }
+}

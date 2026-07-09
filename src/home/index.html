@@ -99,6 +99,20 @@
         justify-content: center;
         text-align: center;
         padding-top: 120px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(200, 160, 80, 0.06) 0%, transparent 70%);
+        pointer-events: none;
       }
 
       .hero-section .inner {
@@ -107,6 +121,7 @@
         align-items: center;
         gap: 24px;
         max-width: 720px;
+        position: relative;
       }
 
       .hero-logo img {
@@ -133,25 +148,6 @@
         max-width: 560px;
       }
 
-      /* ── CTA Button ── */
-      .cta-btn {
-        display: inline-block;
-        padding: 16px 36px;
-        background: #fff;
-        color: #000;
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 1rem;
-        border-radius: 8px;
-        transition: opacity 0.2s, transform 0.2s;
-        letter-spacing: -0.01em;
-      }
-
-      .cta-btn:hover {
-        opacity: 0.88;
-        transform: translateY(-1px);
-      }
-
       .micro-copy {
         font-size: 0.8125rem;
         color: rgba(255,255,255,0.4);
@@ -159,14 +155,10 @@
       }
 
       /* ── Gap / Bridge Section ── */
-      .gap-section {
-        border-top: 1px solid rgba(255,255,255,0.06);
-      }
-
       .gap-section .inner {
         display: flex;
         flex-direction: column;
-        gap: 40px;
+        gap: 32px;
       }
 
       .pain-point strong {
@@ -180,10 +172,6 @@
       }
 
       /* ── Pillars Section ── */
-      .pillars-section {
-        border-top: 1px solid rgba(255,255,255,0.06);
-      }
-
       .pillars-section .section-intro {
         font-size: 1.0625rem;
         color: rgba(255,255,255,0.6);
@@ -193,54 +181,40 @@
       .pillar-cards {
         display: grid;
         grid-template-columns: 1fr;
-        gap: 32px;
+        gap: 24px;
       }
 
       .pillar-card {
         background: rgba(255,255,255,0.04);
         border: 1px solid rgba(255,255,255,0.08);
         border-radius: 12px;
-        padding: 32px;
+        padding: 28px;
       }
 
       .pillar-card h3 {
         font-size: 1.25rem;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
       }
 
       .pillar-card .description {
         font-size: 1rem;
         line-height: 1.7;
         color: rgba(255,255,255,0.65);
-        margin-bottom: 20px;
+        margin-bottom: 16px;
       }
 
-      .pillar-card .outcomes {
-        list-style: none;
-        padding: 0;
-        margin: 0 0 20px;
-      }
-
-      .pillar-card .outcomes li {
+      .pillar-card .outcome {
         font-size: 0.9375rem;
-        color: rgba(255,255,255,0.6);
-        padding: 6px 0 6px 20px;
+        color: rgba(255,255,255,0.5);
+        padding-left: 20px;
         position: relative;
       }
 
-      .pillar-card .outcomes li::before {
+      .pillar-card .outcome::before {
         content: "→";
         position: absolute;
         left: 0;
-        color: rgba(255,255,255,0.3);
-      }
-
-      .pillar-card .quote {
-        font-style: italic;
-        font-size: 0.9375rem;
-        color: rgba(255,255,255,0.45);
-        padding-left: 16px;
-        border-left: 2px solid rgba(255,255,255,0.12);
+        color: rgba(200, 160, 80, 0.5);
       }
 
       @media (min-width: 640px) {
@@ -250,17 +224,6 @@
       }
 
       /* ── Differentiation Section ── */
-      .diff-section {
-        border-top: 1px solid rgba(255,255,255,0.06);
-      }
-
-      .diff-section .closing {
-        margin-top: 40px;
-        font-size: 1.0625rem;
-        line-height: 1.7;
-        color: rgba(255,255,255,0.7);
-      }
-
       .diff-table {
         width: 100%;
         border-collapse: collapse;
@@ -307,7 +270,6 @@
 
       /* ── How It Works ── */
       .how-section {
-        border-top: 1px solid rgba(255,255,255,0.06);
         text-align: center;
       }
 
@@ -359,7 +321,6 @@
 
       /* ── Social Proof ── */
       .proof-section {
-        border-top: 1px solid rgba(255,255,255,0.06);
         text-align: center;
       }
 
@@ -401,10 +362,6 @@
       }
 
       /* ── FAQ ── */
-      .faq-section {
-        border-top: 1px solid rgba(255,255,255,0.06);
-      }
-
       .faq-list {
         display: flex;
         flex-direction: column;
@@ -438,7 +395,6 @@
 
       /* ── Final CTA ── */
       .final-cta-section {
-        border-top: 1px solid rgba(255,255,255,0.06);
         text-align: center;
         padding: 100px 24px;
       }
@@ -535,12 +491,12 @@
 
       <!-- Section 1: Hero -->
       <section class="hero-section" aria-label="Hero">
-        <div class="inner">
+        <div class="inner hero-fade">
           <div class="hero-logo">
             <img src="/brand/mantra-logo.png" alt="Mantra" width="1254" height="1254" />
           </div>
           <h1>Your life is complex. Your system should be intelligent.</h1>
-          <p class="subhead">Mantra is a personal intelligence system. It remembers what matters, connects the dots, and keeps you moving toward the things you actually care about.</p>
+          <p class="subhead">Mantra remembers what matters, connects the dots, and keeps you moving toward the things you actually care about.</p>
           <div>
             <a class="cta-btn" href="#cta">See What Mantra Remembers →</a>
             <p class="micro-copy">No credit card. No setup. Just show me.</p>
@@ -549,77 +505,57 @@
       </section>
 
       <!-- Section 2: The Gap -->
-      <section class="gap-section" aria-label="The gap">
+      <section class="gap-section premium-divider reveal" aria-label="The gap">
         <div class="inner">
           <h2>You already know something is off.</h2>
           <div class="pain-point">
-            <p><strong>You have seventeen apps and no system.</strong> Notes here. Tasks there. Contacts somewhere. Calendar events that mean nothing because the context disappeared two weeks ago. You spend more time maintaining your tools than using them.</p>
+            <p><strong>You have seventeen apps and no system.</strong> Notes here, tasks there, contacts somewhere else. You spend more time maintaining your tools than using them.</p>
           </div>
           <div class="pain-point">
-            <p><strong>You remember the wrong things.</strong> You can recall a random conversation from 2019 but not the name of the person you met last Tuesday who could change your career. Your brain is a beautiful pattern machine with terrible storage.</p>
+            <p><strong>You remember the wrong things.</strong> You can recall a random conversation from 2019 but not the person you met last Tuesday who could change your career.</p>
           </div>
           <div class="pain-point">
-            <p><strong>You're always catching up.</strong> Monday starts with the feeling that something slipped. By Friday, you've reacted to everything and initiated nothing. Your goals are real, but they live in your head, where they compete with groceries and deadlines and noise.</p>
+            <p><strong>You're always catching up.</strong> Monday starts with the feeling that something slipped. By Friday, you've reacted to everything and initiated nothing.</p>
           </div>
         </div>
       </section>
 
       <!-- Section 3: Four Pillars -->
-      <section class="pillars-section" aria-label="What a personal intelligence system actually does">
+      <section class="pillars-section premium-divider reveal" aria-label="What a personal intelligence system actually does">
         <div class="inner">
           <h2>What a personal intelligence system actually does</h2>
           <p class="section-intro">Mantra synthesizes your memory, strategy, relationships, and execution into one living layer. Not four features. One system that thinks with you.</p>
 
           <div class="pillar-cards">
-            <div class="pillar-card">
+            <div class="pillar-card card-hover reveal stagger-1">
               <h3>Memory that compounds</h3>
-              <p class="description">Your conversations, decisions, notes, and lessons don't disappear into app silos. They accumulate. Mantra remembers what you've read, who you've talked to, what you committed to, and why it mattered. Over time, it gets smarter because your history gets richer.</p>
-              <ul class="outcomes">
-                <li>Search across everything you've ever captured, by meaning, not keywords</li>
-                <li>Surface a relevant note from three months ago exactly when you need it</li>
-                <li>Never walk into a meeting without full context on the person and the history</li>
-              </ul>
-              <p class="quote">"I mentioned something offhand in January. Three months later, Mantra connected it to a decision I was making. I would never have remembered."</p>
+              <p class="description">Your conversations, decisions, and lessons don't disappear into app silos. They accumulate. Mantra remembers what you've read, who you've talked to, what you committed to, and why it mattered. Over time, it gets smarter because your history gets richer.</p>
+              <p class="outcome">Surface a relevant note from three months ago exactly when you need it</p>
             </div>
 
-            <div class="pillar-card">
+            <div class="pillar-card card-hover reveal stagger-2">
               <h3>Strategy that stays alive</h3>
               <p class="description">Goals don't die because they're bad goals. They die because nothing keeps them visible. Mantra turns your intentions into living objects: tracked, broken down, connected to your daily choices, and reviewed on a rhythm you set.</p>
-              <ul class="outcomes">
-                <li>Morning priorities that connect to weekly, monthly, and quarterly goals</li>
-                <li>Progress that's visible over time, not trapped in your head</li>
-                <li>Strategic clarity that survives the noise of a busy week</li>
-              </ul>
-              <p class="quote">"I stopped setting goals on January 1st and forgetting them by February. They just... stayed."</p>
+              <p class="outcome">Morning priorities that connect to weekly, monthly, and quarterly goals</p>
             </div>
 
-            <div class="pillar-card">
+            <div class="pillar-card card-hover reveal stagger-3">
               <h3>Relationships that don't go cold</h3>
-              <p class="description">You know who matters. But "I should reach out to them" turns into "I can't believe it's been six months." Mantra tracks your relationships: who you've talked to, what you discussed, what you owe each other, and when it's been too long.</p>
-              <ul class="outcomes">
-                <li>Know the last time you spoke with anyone and what you talked about</li>
-                <li>Follow-up reminders that feel natural, not robotic</li>
-                <li>Context on every person before every meeting, automatically</li>
-              </ul>
-              <p class="quote">"I walked into a dinner with someone I hadn't seen in a year and remembered exactly where we left off. They thought I was a genius. I just had Mantra."</p>
+              <p class="description">You know who matters. But "I should reach out to them" turns into "I can't believe it's been six months." Mantra tracks who you've talked to, what you discussed, what you owe each other, and when it's been too long.</p>
+              <p class="outcome">Walk into any meeting with full context on the person and the history</p>
             </div>
 
-            <div class="pillar-card">
+            <div class="pillar-card card-hover reveal stagger-4">
               <h3>Execution that follows through</h3>
               <p class="description">Ideas are cheap. Execution is the bottleneck. Mantra captures what you decide, turns it into trackable commitments, and keeps the loop closed. Not with notifications and guilt. With visibility and momentum.</p>
-              <ul class="outcomes">
-                <li>Action items that don't evaporate when the meeting ends</li>
-                <li>A clear view of what's in progress, what's waiting, and what's stuck</li>
-                <li>Weekly and daily rhythms that keep you honest without becoming a chore</li>
-              </ul>
-              <p class="quote">"I used to end every week wondering what I actually accomplished. Now I know. And so does my system."</p>
+              <p class="outcome">A clear view of what's in progress, what's waiting, and what's stuck</p>
             </div>
           </div>
         </div>
       </section>
 
       <!-- Section 4: Negative Differentiation -->
-      <section class="diff-section" aria-label="What Mantra is not">
+      <section class="diff-section premium-divider reveal" aria-label="What Mantra is not">
         <div class="inner">
           <h2>Not another app to check.</h2>
 
@@ -633,72 +569,70 @@
             <tbody>
               <tr>
                 <td>Note-taking apps</td>
-                <td>Notes are inputs. Mantra is the intelligence layer that makes them useful. You capture once and the system connects, surfaces, and reminds.</td>
+                <td>Notes are inputs. Mantra is the intelligence layer that makes them useful.</td>
               </tr>
               <tr>
                 <td>CRMs</td>
-                <td>CRMs track deals. Mantra tracks people you care about, conversations that matter, and relationships that shape your life, not your pipeline.</td>
+                <td>CRMs track deals. Mantra tracks the people and relationships that shape your life.</td>
               </tr>
               <tr>
                 <td>Todo apps</td>
-                <td>Todos are lists. Mantra connects tasks to goals, goals to strategy, and strategy to your actual life. The difference between a checklist and a system.</td>
+                <td>Todos are lists. Mantra connects tasks to goals, goals to strategy, and strategy to your actual life.</td>
               </tr>
               <tr>
                 <td>AI assistants</td>
-                <td>Assistants wait for instructions. Mantra learns your context over time and works with you proactively. It's not a chatbot. It's a mind that grows alongside yours.</td>
+                <td>Assistants wait for instructions. Mantra learns your context and works with you proactively.</td>
               </tr>
             </tbody>
           </table>
-
-          <p class="closing">The tools you have are fine at what they do. The problem is that none of them talk to each other, and none of them know you. Mantra does both.</p>
         </div>
       </section>
 
       <!-- Section 5: How It Works -->
-      <section class="how-section" aria-label="How it works">
+      <section class="how-section premium-divider reveal" aria-label="How it works">
         <div class="inner">
           <h2>Three steps. No onboarding marathon.</h2>
 
           <div class="steps">
-            <div class="step">
+            <div class="step reveal stagger-1">
               <div class="step-number">1</div>
               <h3>Tell it what matters</h3>
-              <p>Share your goals, your priorities, the people in your world. Mantra doesn't need your entire life story. A few minutes of context and it starts working.</p>
+              <p>Share your goals, priorities, and the people in your world. A few minutes of context and it starts working.</p>
             </div>
 
-            <div class="step">
+            <div class="step reveal stagger-2">
               <div class="step-number">2</div>
               <h3>Live your life</h3>
-              <p>Take notes, capture thoughts, log conversations, check in on your goals. Or don't. Mantra meets you where you are.</p>
+              <p>Take notes, capture thoughts, check in on your goals. Or don't. Mantra meets you where you are.</p>
             </div>
 
-            <div class="step">
+            <div class="step reveal stagger-3">
               <div class="step-number">3</div>
               <h3>Watch it compound</h3>
-              <p>Over weeks and months, Mantra builds a richer model of your priorities, your patterns, and your world. What starts as a simple capture tool becomes the most useful system you've ever had.</p>
+              <p>Over weeks and months, Mantra builds a richer model of your priorities, patterns, and world.</p>
             </div>
           </div>
         </div>
       </section>
 
       <!-- Section 6: Social Proof -->
-      <section class="proof-section" aria-label="What people are saying">
+      <section class="proof-section premium-divider reveal" aria-label="What people are saying">
         <div class="inner">
           <h2>What people are saying</h2>
 
           <div class="testimonials">
-            <div class="testimonial">
+            <div class="testimonial reveal stagger-1">
               <blockquote>"I've tried every productivity system. Mantra is the first one that actually works the way I think."</blockquote>
               <cite>Founder</cite>
             </div>
 
-            <div class="testimonial">
+            <div class="testimonial reveal stagger-2">
               <blockquote>"Six months in and I can't imagine going back. It's like having a chief of staff who never forgets anything."</blockquote>
               <cite>Executive</cite>
             </div>
 
-            <div class="testimonial">
-              <blockquote>"The relationship tracking alone changed my networking. I actually follow up now. And I remember why I should."</blockquote>
+            <div class="testimonial reveal stagger-3">
+              <blockquote>"The relationship tracking alone changed my networking. I actually follow up now."</blockquote>
               <cite>Consultant</cite>
             </div>
           </div>
@@ -706,44 +640,44 @@
       </section>
 
       <!-- Section 7: FAQ -->
-      <section class="faq-section" aria-label="Frequently asked questions">
+      <section class="faq-section premium-divider reveal" aria-label="Frequently asked questions">
         <div class="inner">
           <h2>Frequently asked questions</h2>
 
           <div class="faq-list">
             <div class="faq-item">
               <p class="faq-q">Is this just another AI chatbot?</p>
-              <p class="faq-a">No. Mantra is a system, not a chat window. It has memory that compounds over time, understands your goals and relationships, and works proactively alongside you. You can talk to it, but that's one of many ways to interact.</p>
+              <p class="faq-a">No. Mantra is a system with memory that compounds over time, understands your goals and relationships, and works proactively alongside you.</p>
             </div>
 
             <div class="faq-item">
               <p class="faq-q">What happens to my data?</p>
-              <p class="faq-a">Your data is yours. Mantra doesn't train on your information, sell it, or share it. You can export or delete everything at any time. Privacy isn't a feature. It's the foundation.</p>
+              <p class="faq-a">Your data is yours. Mantra doesn't train on it, sell it, or share it. You can export or delete everything at any time.</p>
             </div>
 
             <div class="faq-item">
               <p class="faq-q">How is this different from Notion / Obsidian / Apple Notes?</p>
-              <p class="faq-a">Those are excellent capture tools. Mantra is what happens after you capture. It connects your notes to your goals, your goals to your relationships, and your relationships to your calendar. It doesn't replace your notes app. It makes your notes useful.</p>
+              <p class="faq-a">Those are capture tools. Mantra is what happens after capture. It connects notes to goals, goals to relationships, and relationships to your calendar.</p>
             </div>
 
             <div class="faq-item">
               <p class="faq-q">Do I need to spend a lot of time setting it up?</p>
-              <p class="faq-a">No. Start with a few goals and priorities. Mantra starts working immediately and gets smarter over time. There's no "right way" to use it, and you don't need to reorganize your life to get value.</p>
+              <p class="faq-a">No. Start with a few goals and priorities. Mantra starts immediately and gets smarter over time.</p>
             </div>
 
             <div class="faq-item">
               <p class="faq-q">What does it cost?</p>
-              <p class="faq-a">We're currently offering early access. Reach out to learn about pricing and availability.</p>
+              <p class="faq-a">We're offering early access. Reach out to learn about pricing and availability.</p>
             </div>
           </div>
         </div>
       </section>
 
       <!-- Section 8: Final CTA -->
-      <section class="final-cta-section" aria-label="Get started">
+      <section class="final-cta-section premium-divider reveal" aria-label="Get started">
         <div class="inner">
           <h2>Your life deserves a system as intelligent as you are.</h2>
-          <p class="subhead">See what a personal intelligence system feels like. No commitment. No credit card.</p>
+          <p class="subhead">See what a personal intelligence system feels like. No commitment.</p>
           <a class="cta-btn" href="#cta">See What Mantra Remembers →</a>
           <p class="contact-line">Questions? <a href="mailto:hello@mantra.app">hello@mantra.app</a></p>
         </div>
@@ -751,7 +685,7 @@
 
     </main>
 
-    <!-- Section 9: Footer -->
+    <!-- Footer -->
     <footer class="home-footer">
       <img src="/brand/mantra-logo.png" alt="Mantra" width="1254" height="1254" />
       <nav class="footer-links">
@@ -762,5 +696,22 @@
       <p class="footer-tagline">Your personal intelligence system.</p>
       <p class="footer-copy">© 2026 Mantra</p>
     </footer>
+
+    <!-- Scroll Reveal Observer -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var observer = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('revealed');
+            }
+          });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        document.querySelectorAll('.reveal').forEach(function(el) {
+          observer.observe(el);
+        });
+      });
+    </script>
   </body>
 </html>

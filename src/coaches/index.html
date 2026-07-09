@@ -99,6 +99,20 @@
         justify-content: center;
         text-align: center;
         padding-top: 120px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(200, 160, 80, 0.06) 0%, transparent 70%);
+        pointer-events: none;
       }
 
       .hero-section .inner {
@@ -107,6 +121,7 @@
         align-items: center;
         gap: 24px;
         max-width: 720px;
+        position: relative;
       }
 
       .hero-logo img {
@@ -133,25 +148,6 @@
         max-width: 560px;
       }
 
-      /* ── CTA Button ── */
-      .cta-btn {
-        display: inline-block;
-        padding: 16px 36px;
-        background: #fff;
-        color: #000;
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 1rem;
-        border-radius: 8px;
-        transition: opacity 0.2s, transform 0.2s;
-        letter-spacing: -0.01em;
-      }
-
-      .cta-btn:hover {
-        opacity: 0.88;
-        transform: translateY(-1px);
-      }
-
       .micro-copy {
         font-size: 0.8125rem;
         color: rgba(255,255,255,0.4);
@@ -159,14 +155,10 @@
       }
 
       /* ── Problem Section ── */
-      .problem-section {
-        border-top: 1px solid rgba(255,255,255,0.06);
-      }
-
       .problem-section .inner {
         display: flex;
         flex-direction: column;
-        gap: 40px;
+        gap: 32px;
       }
 
       .pain-point strong {
@@ -180,10 +172,6 @@
       }
 
       /* ── Client Experience ── */
-      .client-section {
-        border-top: 1px solid rgba(255,255,255,0.06);
-      }
-
       .client-section .section-intro {
         font-size: 1.0625rem;
         color: rgba(255,255,255,0.6);
@@ -193,34 +181,25 @@
       .benefit-cards {
         display: grid;
         grid-template-columns: 1fr;
-        gap: 32px;
+        gap: 24px;
       }
 
       .benefit-card {
         background: rgba(255,255,255,0.04);
         border: 1px solid rgba(255,255,255,0.08);
         border-radius: 12px;
-        padding: 32px;
+        padding: 28px;
       }
 
       .benefit-card h3 {
         font-size: 1.25rem;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
       }
 
       .benefit-card .description {
         font-size: 1rem;
         line-height: 1.7;
         color: rgba(255,255,255,0.65);
-        margin-bottom: 20px;
-      }
-
-      .benefit-card .quote {
-        font-style: italic;
-        font-size: 0.9375rem;
-        color: rgba(255,255,255,0.45);
-        padding-left: 16px;
-        border-left: 2px solid rgba(255,255,255,0.12);
       }
 
       @media (min-width: 640px) {
@@ -230,10 +209,6 @@
       }
 
       /* ── Coach Benefits ── */
-      .coach-section {
-        border-top: 1px solid rgba(255,255,255,0.06);
-      }
-
       .coach-section .section-intro {
         font-size: 1.0625rem;
         color: rgba(255,255,255,0.6);
@@ -243,12 +218,12 @@
       .coach-grid {
         display: grid;
         grid-template-columns: 1fr;
-        gap: 32px;
+        gap: 24px;
       }
 
       .coach-benefit h3 {
         font-size: 1.0625rem;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
       }
 
       .coach-benefit p {
@@ -265,7 +240,6 @@
 
       /* ── How It Works ── */
       .how-section {
-        border-top: 1px solid rgba(255,255,255,0.06);
         text-align: center;
       }
 
@@ -316,10 +290,6 @@
       }
 
       /* ── Comparison ── */
-      .comparison-section {
-        border-top: 1px solid rgba(255,255,255,0.06);
-      }
-
       .comparison-table {
         width: 100%;
         border-collapse: collapse;
@@ -370,7 +340,6 @@
 
       /* ── Social Proof ── */
       .proof-section {
-        border-top: 1px solid rgba(255,255,255,0.06);
         text-align: center;
       }
 
@@ -412,10 +381,6 @@
       }
 
       /* ── FAQ ── */
-      .faq-section {
-        border-top: 1px solid rgba(255,255,255,0.06);
-      }
-
       .faq-list {
         display: flex;
         flex-direction: column;
@@ -449,7 +414,6 @@
 
       /* ── Final CTA ── */
       .final-cta-section {
-        border-top: 1px solid rgba(255,255,255,0.06);
         text-align: center;
         padding: 100px 24px;
       }
@@ -546,12 +510,12 @@
 
       <!-- Section 1: Hero -->
       <section class="hero-section" aria-label="Hero">
-        <div class="inner">
+        <div class="inner hero-fade">
           <div class="hero-logo">
             <img src="/brand/mantra-logo.png" alt="Mantra" width="1254" height="1254" />
           </div>
           <h1>Your best coaching happens between sessions. But right now, nothing does.</h1>
-          <p class="subhead">Mantra gives every client an AI-powered growth system that tracks goals, captures reflections, remembers action items, and makes progress visible. You coach. Mantra continues the work.</p>
+          <p class="subhead">Mantra gives every client an AI-powered growth system that keeps the work alive.</p>
           <div>
             <a class="cta-btn" href="#cta">See the Client Experience →</a>
             <p class="micro-copy">No credit card. See what your clients would get.</p>
@@ -560,114 +524,110 @@
       </section>
 
       <!-- Section 2: The Problem -->
-      <section class="problem-section" aria-label="The problem">
+      <section class="problem-section premium-divider reveal" aria-label="The problem">
         <div class="inner">
           <h2>Sound familiar?</h2>
           <div class="pain-point">
-            <p><strong>Your clients forget their homework.</strong> You assign reflection exercises, reading, journaling prompts. By next session, most of it has evaporated. You spend the first 15 minutes catching up instead of going deeper.</p>
+            <p><strong>Your clients forget their homework.</strong> By next session, the reflection exercises and action items have evaporated. You spend the first 15 minutes catching up.</p>
           </div>
           <div class="pain-point">
-            <p><strong>You're buried in admin.</strong> Session notes. Follow-up emails. Progress tracking. Scheduling. Intake forms. You became a coach to change lives, not manage spreadsheets.</p>
+            <p><strong>You're buried in admin.</strong> Session notes, follow-up emails, progress tracking, scheduling. You became a coach to change lives, not manage spreadsheets.</p>
           </div>
           <div class="pain-point">
-            <p><strong>Your impact is invisible.</strong> Clients feel better but can't articulate why. When renewal time comes, they hesitate. When you ask for referrals, they don't know what to say. The transformation is real but undocumented.</p>
+            <p><strong>Your impact is invisible.</strong> Clients feel better but can't articulate why. When renewal time comes, they hesitate. The transformation is real but undocumented.</p>
           </div>
         </div>
       </section>
 
       <!-- Section 3: Client Experience -->
-      <section class="client-section" aria-label="What your clients experience">
+      <section class="client-section premium-divider reveal" aria-label="What your clients experience">
         <div class="inner">
           <h2>What your clients experience</h2>
           <p class="section-intro">Between sessions, your clients get an intelligent companion that extends your coaching into their daily life.</p>
 
           <div class="benefit-cards">
-            <div class="benefit-card">
+            <div class="benefit-card card-hover reveal stagger-1">
               <h3>Goals that stay alive</h3>
               <p class="description">Every goal you set together is tracked, broken into steps, and gently surfaced. Your client doesn't need to remember what they committed to. Mantra does.</p>
-              <p class="quote">"I actually did the thing we talked about. It kept showing up."</p>
             </div>
 
-            <div class="benefit-card">
+            <div class="benefit-card card-hover reveal stagger-2">
               <h3>Reflections that stick</h3>
-              <p class="description">Clients capture thoughts, wins, struggles, and patterns as they happen. Not in a forgotten notebook. In a system that connects their reflections to their goals and brings patterns to light.</p>
-              <p class="quote">"I noticed I always avoid the same conversation. I never saw that before."</p>
+              <p class="description">Clients capture thoughts, wins, and struggles as they happen. Mantra connects their reflections to their goals and brings patterns to light.</p>
             </div>
 
-            <div class="benefit-card">
+            <div class="benefit-card card-hover reveal stagger-3">
               <h3>Homework that gets done</h3>
               <p class="description">Action items from each session are remembered and tracked. Progress is visible to both of you. No more starting sessions with "So... did you do the thing?"</p>
-              <p class="quote">"Walking into our session with everything already visible changed the dynamic completely."</p>
             </div>
 
-            <div class="benefit-card">
+            <div class="benefit-card card-hover reveal stagger-4">
               <h3>Progress you can see</h3>
-              <p class="description">A clear record of where your client started, what they've worked on, and how far they've come. When renewal time arrives, the evidence speaks for itself.</p>
-              <p class="quote">"For the first time, I could actually show someone what six months of coaching did for me."</p>
+              <p class="description">A clear record of where your client started and how far they've come. When renewal time arrives, the evidence speaks for itself.</p>
             </div>
           </div>
         </div>
       </section>
 
       <!-- Section 4: Coach Benefits -->
-      <section class="coach-section" aria-label="What you get">
+      <section class="coach-section premium-divider reveal" aria-label="What you get">
         <div class="inner">
           <h2>What you get</h2>
           <p class="section-intro">While Mantra works with your clients between sessions, you get your time back and your impact amplified.</p>
 
           <div class="coach-grid">
-            <div class="coach-benefit">
+            <div class="coach-benefit reveal stagger-1">
               <h3>Less admin, more coaching</h3>
-              <p>Session prep happens automatically. Client context, recent reflections, and goal progress are waiting for you before every session. Stop spending the first 15 minutes catching up.</p>
+              <p>Client context, recent reflections, and goal progress are waiting for you before every session.</p>
             </div>
 
-            <div class="coach-benefit">
+            <div class="coach-benefit reveal stagger-2">
               <h3>Between-session continuity</h3>
-              <p>Your coaching doesn't stop when the session ends. Mantra maintains momentum, surfaces relevant prompts, and keeps your client engaged in the work.</p>
+              <p>Your coaching doesn't stop when the session ends. Mantra maintains momentum and keeps your client engaged.</p>
             </div>
 
-            <div class="coach-benefit">
+            <div class="coach-benefit reveal stagger-3">
               <h3>Premium differentiation</h3>
-              <p>"My coach gives me an AI-powered growth system" is a referral sentence that sells itself. Mantra makes your practice feel like the future.</p>
+              <p>"My coach gives me an AI-powered growth system" is a referral sentence that sells itself.</p>
             </div>
 
-            <div class="coach-benefit">
+            <div class="coach-benefit reveal stagger-4">
               <h3>Visible ROI for renewals</h3>
-              <p>When clients can see their own transformation documented, renewal conversations become celebrations. Referrals come with evidence.</p>
+              <p>When clients can see their own transformation documented, renewal conversations become celebrations.</p>
             </div>
           </div>
         </div>
       </section>
 
       <!-- Section 5: How It Works -->
-      <section class="how-section" aria-label="How it works">
+      <section class="how-section premium-divider reveal" aria-label="How it works">
         <div class="inner">
           <h2>How it works</h2>
 
           <div class="steps">
-            <div class="step">
+            <div class="step reveal stagger-1">
               <div class="step-number">1</div>
               <h3>Onboard your client</h3>
-              <p>Invite your client to Mantra. Their goals, preferences, and coaching context are captured in minutes. No complex setup. No IT department.</p>
+              <p>Invite your client to Mantra. Goals and coaching context are captured in minutes.</p>
             </div>
 
-            <div class="step">
+            <div class="step reveal stagger-2">
               <div class="step-number">2</div>
               <h3>Coach as you do</h3>
-              <p>Run your sessions your way. Mantra captures the takeaways, tracks the commitments, and extends the conversation into the days between.</p>
+              <p>Run your sessions your way. Mantra captures takeaways and extends the conversation between meetings.</p>
             </div>
 
-            <div class="step">
+            <div class="step reveal stagger-3">
               <div class="step-number">3</div>
               <h3>Watch them grow</h3>
-              <p>Your client stays engaged between sessions. Progress accumulates visibly. You walk into every session with full context and clear momentum.</p>
+              <p>Your client stays engaged between sessions. Progress accumulates visibly. You walk in with full context.</p>
             </div>
           </div>
         </div>
       </section>
 
       <!-- Section 6: Comparison -->
-      <section class="comparison-section" aria-label="Comparison">
+      <section class="comparison-section premium-divider reveal" aria-label="Comparison">
         <div class="inner">
           <h2>Stop duct-taping your practice together</h2>
 
@@ -682,13 +642,13 @@
             <tbody>
               <tr>
                 <td>Between sessions</td>
-                <td class="without">Silence. Maybe a follow-up email.</td>
-                <td class="with">Active goal tracking, reflections, AI support</td>
+                <td class="without">Silence</td>
+                <td class="with">Active goal tracking and AI support</td>
               </tr>
               <tr>
                 <td>Client homework</td>
                 <td class="without">Forgotten by Tuesday</td>
-                <td class="with">Tracked, visible, gently surfaced</td>
+                <td class="with">Tracked and gently surfaced</td>
               </tr>
               <tr>
                 <td>Progress tracking</td>
@@ -696,13 +656,13 @@
                 <td class="with">Documented transformation over time</td>
               </tr>
               <tr>
-                <td>Renewal conversations</td>
+                <td>Renewals</td>
                 <td class="without">Awkward justification</td>
                 <td class="with">Evidence-based celebration</td>
               </tr>
               <tr>
                 <td>Your tech stack</td>
-                <td class="without">Scheduling + CRM + forms + notes + email</td>
+                <td class="without">Scheduling + CRM + forms + notes</td>
                 <td class="with">One system that does the work</td>
               </tr>
             </tbody>
@@ -711,23 +671,23 @@
       </section>
 
       <!-- Section 7: Social Proof -->
-      <section class="proof-section" aria-label="What coaches are saying">
+      <section class="proof-section premium-divider reveal" aria-label="What coaches are saying">
         <div class="inner">
           <h2>What coaches are saying</h2>
 
           <div class="testimonials">
-            <div class="testimonial">
+            <div class="testimonial reveal stagger-1">
               <blockquote>"My clients are doing the work between sessions for the first time. That changed everything."</blockquote>
               <cite>Executive Coach</cite>
             </div>
 
-            <div class="testimonial">
-              <blockquote>"I used to spend 20 minutes per client on session prep. Now I walk in with full context in 30 seconds."</blockquote>
+            <div class="testimonial reveal stagger-2">
+              <blockquote>"I walk into every session with full context in 30 seconds. No more 20-minute prep."</blockquote>
               <cite>Leadership Coach</cite>
             </div>
 
-            <div class="testimonial">
-              <blockquote>"A client renewed for another six months and said, 'I've never been able to see my own growth like this before.' That's the moment I knew."</blockquote>
+            <div class="testimonial reveal stagger-3">
+              <blockquote>"A client renewed and said, 'I've never been able to see my own growth like this.' That's the moment I knew."</blockquote>
               <cite>Wellness Coach</cite>
             </div>
           </div>
@@ -735,44 +695,44 @@
       </section>
 
       <!-- Section 8: FAQ -->
-      <section class="faq-section" aria-label="Frequently asked questions">
+      <section class="faq-section premium-divider reveal" aria-label="Frequently asked questions">
         <div class="inner">
           <h2>Frequently asked questions</h2>
 
           <div class="faq-list">
             <div class="faq-item">
               <p class="faq-q">Do my clients need to be tech-savvy?</p>
-              <p class="faq-a">No. Mantra is designed to feel like a journal or a thoughtful companion, not a software tool. If your client can use a messaging app, they can use Mantra.</p>
+              <p class="faq-a">No. If they can use a messaging app, they can use Mantra.</p>
             </div>
 
             <div class="faq-item">
               <p class="faq-q">Will this replace me as a coach?</p>
-              <p class="faq-a">The opposite. Mantra extends your impact into the time between sessions. It doesn't coach. It holds the space you create and keeps it alive until you meet again.</p>
+              <p class="faq-a">The opposite. Mantra extends your impact into the time between sessions. It doesn't coach. It holds the space you create.</p>
             </div>
 
             <div class="faq-item">
               <p class="faq-q">How is this different from a CRM or coaching platform?</p>
-              <p class="faq-a">CRMs track your business. Coaching platforms manage your schedule. Mantra transforms your client's experience. It's the difference between managing a practice and multiplying your impact.</p>
+              <p class="faq-a">CRMs track your business. Coaching platforms manage your schedule. Mantra transforms your client's experience.</p>
             </div>
 
             <div class="faq-item">
               <p class="faq-q">What does setup look like?</p>
-              <p class="faq-a">You invite your client. They answer a few questions about their goals and preferences. Mantra starts working immediately. Most coaches onboard a client in under 10 minutes.</p>
+              <p class="faq-a">Invite your client, they answer a few questions, Mantra starts working. Under 10 minutes.</p>
             </div>
 
             <div class="faq-item">
               <p class="faq-q">What does it cost?</p>
-              <p class="faq-a">We're currently offering early access to select coaches. Reach out to learn about pricing and availability.</p>
+              <p class="faq-a">We're offering early access to select coaches. Reach out to learn about pricing.</p>
             </div>
           </div>
         </div>
       </section>
 
       <!-- Section 9: Final CTA -->
-      <section class="final-cta-section" aria-label="Get started">
+      <section class="final-cta-section premium-divider reveal" aria-label="Get started">
         <div class="inner">
           <h2>Give your clients the experience they deserve</h2>
-          <p class="subhead">See what an AI-powered coaching experience looks like. No commitment. No credit card.</p>
+          <p class="subhead">See what an AI-powered coaching experience looks like. No commitment.</p>
           <a class="cta-btn" href="#cta">See the Client Experience →</a>
           <p class="contact-line">Questions? <a href="mailto:hello@mantra.app">hello@mantra.app</a></p>
         </div>
@@ -780,7 +740,7 @@
 
     </main>
 
-    <!-- Section 10: Footer -->
+    <!-- Footer -->
     <footer class="coaches-footer">
       <img src="/brand/mantra-logo.png" alt="Mantra" width="1254" height="1254" />
       <nav class="footer-links">
@@ -791,5 +751,22 @@
       <p class="footer-tagline">Built for coaches who believe in what happens between sessions.</p>
       <p class="footer-copy">© 2026 Mantra</p>
     </footer>
+
+    <!-- Scroll Reveal Observer -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var observer = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('revealed');
+            }
+          });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        document.querySelectorAll('.reveal').forEach(function(el) {
+          observer.observe(el);
+        });
+      });
+    </script>
   </body>
 </html>
