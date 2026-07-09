@@ -38,10 +38,19 @@ FOUT prevention: Hero `h1` has `visibility: hidden` in CSS, switched to `visible
 
 ## Brand
 
-- Surface background: #0F0F14 (home), #000 (coaches/splash)
-- Primary accent: #6366F1 (Indigo 500) — used on /home
-- Legacy blue accent: #4A90D9 / #2B5EA7 — used on /coaches
-- Domain accents: warm (#F59E0B), green (#22C55E), blue (#3B82F6), rose (#F43F5E)
+Canonical palette from Mantra Design Guide (dark mode):
+
+- Background: #000000 (pure black)
+- Card: #171C24 (hsl 222 20% 11%), warm dark blue-gray
+- Card border: #212934 (hsl 222 16% 15%)
+- Primary text: #E8EAED
+- Secondary text: #828A96 (hsl 220 10% 55%)
+- Brand accent: CTA blue #1A9BDB (hsl 200 80% 50%)
+- Active blue: #8DD4F0 (in-progress states only)
+- Semantic: Success #20A88E, Warning #E89820, Error #D4364B (use only where meaning is literally health/completion, caution, or error — never decorative)
+- Rule: 60% neutral / 30% supporting / 10% accent. Warm neutrals (hue 220-222), never pure/cool grays
+- /home tokens centralized in `:root` CSS variables in `src/home/index.html`
+- Legacy /coaches still uses #4A90D9 / #2B5EA7 (not yet migrated)
 - Mantra logo at `brand/mantra-logo.png`
 - Clean, minimal, premium dark design
 
