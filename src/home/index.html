@@ -527,7 +527,7 @@
       <!-- Section 1: Hero -->
       <section class="hero-section" aria-label="Hero">
         <div class="hero-orb"></div>
-        <div class="inner hero-fade">
+        <div class="inner">
           <div class="hero-logo">
             <img src="/brand/mantra-logo.png" alt="Mantra" width="1254" height="1254" />
           </div>
@@ -544,13 +544,13 @@
       <section class="gap-section premium-divider reveal" aria-label="The gap">
         <div class="inner">
           <h2>You already know something is off.</h2>
-          <div class="pain-point">
+          <div class="pain-point" data-pain-index="0">
             <p><strong>You have seventeen apps and no system.</strong> Notes here, tasks there, contacts somewhere else. You spend more time maintaining your tools than using them.</p>
           </div>
-          <div class="pain-point">
+          <div class="pain-point" data-pain-index="1">
             <p><strong>You remember the wrong things.</strong> You can recall a random conversation from 2019 but not the person you met last Tuesday who could change your career.</p>
           </div>
-          <div class="pain-point">
+          <div class="pain-point" data-pain-index="2">
             <p><strong>You're always catching up.</strong> Monday starts with the feeling that something slipped. By Friday, you've reacted to everything and initiated nothing.</p>
           </div>
         </div>
@@ -733,20 +733,300 @@
       <p class="footer-copy">© 2026 Mantra</p>
     </footer>
 
-    <!-- Scroll Reveal Observer -->
+    <!-- Scroll Progress Bar -->
+    <div class="scroll-progress-bar"></div>
+
+    <!-- CDN: GSAP + ScrollTrigger + SplitType -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
+    <script src="https://unpkg.com/split-type@0.3.4" defer></script>
+
+    <!-- Animation Init -->
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        var observer = new IntersectionObserver(function(entries) {
-          entries.forEach(function(entry) {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('revealed');
+      window.addEventListener('load', function() {
+        // Bail if GSAP didn't load (progressive enhancement)
+        if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+          // Fallback: show everything, run vanilla observer
+          document.querySelectorAll('.hero-section h1').forEach(function(el) {
+            el.classList.add('split-ready');
+          });
+          var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting) entry.target.classList.add('revealed');
+            });
+          }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+          document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
+          return;
+        }
+
+        gsap.registerPlugin(ScrollTrigger);
+        var isMobile = window.innerWidth < 640;
+
+        // ── Reduced Motion Contract ──
+        var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (prefersReducedMotion) {
+          document.querySelectorAll('.hero-section h1').forEach(function(el) {
+            el.classList.add('split-ready');
+          });
+          document.querySelectorAll('.reveal').forEach(function(el) {
+            el.classList.add('revealed');
+          });
+          return;
+        }
+
+        // ══════════════════════════════════
+        // LAYER 1: Kinetic Hero
+        // ══════════════════════════════════
+
+        var heroH1 = document.querySelector('.hero-section h1');
+        var heroSubhead = document.querySelector('.hero-section .subhead');
+        var heroTl = gsap.timeline({ delay: 0.3 });
+
+        // Word-by-word headline assembly
+        if (heroH1 && typeof SplitType !== 'undefined') {
+          var splitTitle = new SplitType(heroH1, { types: 'words' });
+          heroH1.classList.add('split-ready');
+
+          gsap.set(splitTitle.words, { opacity: 0, y: 30, rotateX: -20 });
+          heroTl.to(splitTitle.words, {
+            opacity: 1, y: 0, rotateX: 0,
+            duration: 0.6,
+            ease: 'back.out(1.7)',
+            stagger: isMobile ? 0.04 : 0.06
+          });
+        } else if (heroH1) {
+          heroH1.classList.add('split-ready');
+          heroTl.from(heroH1, { opacity: 0, y: 30, duration: 0.8 });
+        }
+
+        // Subheadline line-by-line fade
+        if (heroSubhead && typeof SplitType !== 'undefined') {
+          var splitSub = new SplitType(heroSubhead, { types: 'lines' });
+          gsap.set(splitSub.lines, { opacity: 0, y: 15 });
+          heroTl.to(splitSub.lines, {
+            opacity: 1, y: 0,
+            duration: 0.5,
+            ease: 'power2.out',
+            stagger: 0.15
+          }, '-=0.2');
+        } else if (heroSubhead) {
+          heroTl.from(heroSubhead, { opacity: 0, y: 15, duration: 0.6 }, '-=0.2');
+        }
+
+        // CTA + micro-copy fade in
+        var heroCta = document.querySelector('.hero-section .cta-btn');
+        var heroMicro = document.querySelector('.hero-section .micro-copy');
+        if (heroCta) {
+          heroTl.from(heroCta, { opacity: 0, y: 20, duration: 0.5, ease: 'power2.out' }, '-=0.1');
+        }
+        if (heroMicro) {
+          heroTl.from(heroMicro, { opacity: 0, duration: 0.4 }, '-=0.3');
+        }
+
+        // CTA breathing glow
+        if (heroCta) {
+          gsap.to(heroCta, {
+            boxShadow: '0 0 40px rgba(74,144,217,0.5)',
+            duration: 2.5,
+            ease: 'sine.inOut',
+            yoyo: true,
+            repeat: -1
+          });
+        }
+
+        // Scroll-responsive orb parallax (desktop only)
+        if (!isMobile) {
+          var heroSection = document.querySelector('.hero-section');
+          if (heroSection) {
+            gsap.to('.hero-section::before', {
+              yPercent: 30,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: heroSection,
+                start: 'top top',
+                end: 'bottom top',
+                scrub: true
+              }
+            });
+            // Orb parallax via direct element targeting
+            var heroOrb = document.querySelector('.hero-orb');
+            if (heroOrb) {
+              gsap.to(heroOrb, {
+                yPercent: 70,
+                ease: 'none',
+                scrollTrigger: {
+                  trigger: heroSection,
+                  start: 'top top',
+                  end: 'bottom top',
+                  scrub: true
+                }
+              });
+            }
+          }
+        }
+
+        // ══════════════════════════════════
+        // LAYER 2: Scroll-Linked Parallax
+        // ══════════════════════════════════
+
+        // Section header directional slides
+        document.querySelectorAll('.home-page section h2').forEach(function(h2, i) {
+          var fromX = (i % 2 === 0) ? -60 : 60;
+          gsap.from(h2, {
+            x: fromX,
+            opacity: 0,
+            scale: 0.95,
+            duration: 0.8,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: h2,
+              start: 'top 85%',
+              toggleActions: 'play none none none'
             }
           });
-        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-
-        document.querySelectorAll('.reveal').forEach(function(el) {
-          observer.observe(el);
         });
+
+        // Pain point wipe reveals with accent bar
+        document.querySelectorAll('.pain-point').forEach(function(pp, i) {
+          ScrollTrigger.create({
+            trigger: pp,
+            start: 'top 80%',
+            onEnter: function() {
+              // Fade in the pain point text
+              gsap.fromTo(pp, 
+                { opacity: 0, x: -20 }, 
+                { opacity: 1, x: 0, duration: 0.6, ease: 'power2.out', delay: i * 0.2 }
+              );
+              // Animate the blue accent bar via CSS custom property
+              gsap.fromTo(pp,
+                { '--pain-scale': 0 },
+                { '--pain-scale': 1, duration: isMobile ? 0.4 : 0.6, ease: 'power2.out', delay: i * 0.2 }
+              );
+            }
+          });
+          // Set initial state
+          gsap.set(pp, { opacity: 0, x: -20, '--pain-scale': 0 });
+        });
+
+        // Reveal animations (replaces IntersectionObserver)
+        document.querySelectorAll('.reveal').forEach(function(el) {
+          ScrollTrigger.create({
+            trigger: el,
+            start: 'top 90%',
+            onEnter: function() {
+              el.classList.add('revealed');
+            }
+          });
+        });
+
+        // Pillar card crystallization with border trace
+        document.querySelectorAll('.pillar-card').forEach(function(card, i) {
+          gsap.from(card, {
+            opacity: 0,
+            y: 40,
+            duration: 0.7,
+            ease: 'power2.out',
+            delay: i * 0.15,
+            scrollTrigger: {
+              trigger: card,
+              start: 'top 85%',
+              toggleActions: 'play none none none'
+            }
+          });
+        });
+
+        // ══════════════════════════════════
+        // LAYER 3: Ambient Life
+        // ══════════════════════════════════
+
+        // Pillar section gradient hue shift (desktop only)
+        if (!isMobile) {
+          var pillarsSection = document.querySelector('.pillars-section');
+          if (pillarsSection) {
+            gsap.to(pillarsSection, {
+              '--hue-shift': '15deg',
+              duration: 10,
+              ease: 'sine.inOut',
+              yoyo: true,
+              repeat: -1
+            });
+          }
+        }
+
+        // CTA shimmer sweep
+        document.querySelectorAll('.cta-btn').forEach(function(btn) {
+          function runShimmer() {
+            gsap.fromTo(btn,
+              { '--shimmer-x': '-100%' },
+              { '--shimmer-x': '200%', duration: 0.6, ease: 'power1.inOut',
+                onComplete: function() {
+                  gsap.delayedCall(4.5, runShimmer);
+                }
+              }
+            );
+          }
+          gsap.delayedCall(2, runShimmer);
+        });
+
+        // Breathing section dividers (via CSS custom property on parent)
+        document.querySelectorAll('.premium-divider').forEach(function(div, i) {
+          gsap.fromTo(div,
+            { '--divider-opacity': 1 },
+            { '--divider-opacity': 0.4, duration: 4, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: i * 0.7 }
+          );
+        });
+
+        // Step number count-up
+        document.querySelectorAll('.step-number').forEach(function(num, i) {
+          var target = parseInt(num.textContent, 10);
+          if (isNaN(target)) return;
+          
+          ScrollTrigger.create({
+            trigger: num,
+            start: 'top 85%',
+            onEnter: function() {
+              var obj = { val: 0 };
+              gsap.to(obj, {
+                val: target,
+                duration: 0.8,
+                delay: i * 0.2,
+                ease: 'power2.out',
+                snap: { val: 1 },
+                onUpdate: function() {
+                  num.textContent = Math.round(obj.val);
+                }
+              });
+            }
+          });
+        });
+
+        // ══════════════════════════════════
+        // LAYER 4: Scroll Progress
+        // ══════════════════════════════════
+
+        var progressBar = document.querySelector('.scroll-progress-bar');
+        if (progressBar) {
+          gsap.to(progressBar, {
+            opacity: 0.6,
+            duration: 0.3,
+            scrollTrigger: {
+              trigger: document.body,
+              start: 'top -50',
+              toggleActions: 'play none none reverse'
+            }
+          });
+
+          gsap.to(progressBar, {
+            scaleY: 1,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: document.body,
+              start: 'top top',
+              end: 'bottom bottom',
+              scrub: true
+            }
+          });
+        }
       });
     </script>
   </body>
