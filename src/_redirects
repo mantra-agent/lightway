@@ -1,0 +1,2 @@
+# Apex to www redirect (Cloudflare Pages)
+https://trymantra.ai/* https://www.trymantra.ai/:splat 301
