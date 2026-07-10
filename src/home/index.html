@@ -572,15 +572,16 @@
         position: absolute;
         left: 50%;
         top: 52%;
-        width: 160px;
-        height: 160px;
+        width: 200px;
+        height: 200px;
         transform: translate(-50%, -50%) scale(0);
         border-radius: 50%;
         background: radial-gradient(circle,
-          rgba(255,255,255,0.85) 0%,
-          rgba(255,255,255,0.5) 8%,
-          rgba(26,155,219,0.45) 25%,
-          rgba(26,155,219,0.12) 50%,
+          rgba(255,255,255,0.95) 0%,
+          rgba(255,255,255,0.6) 6%,
+          rgba(26,155,219,0.5) 20%,
+          rgba(26,155,219,0.15) 45%,
+          rgba(26,155,219,0.04) 65%,
           transparent 100%
         );
         z-index: 8;
@@ -590,17 +591,18 @@
       .beam-base-bloom {
         position: absolute;
         left: 50%;
-        top: 60%;
-        width: 260px;
-        height: 220px;
+        top: 58%;
+        width: 320px;
+        height: 280px;
         transform: translate(-50%, -50%);
         border-radius: 50%;
         background: radial-gradient(ellipse,
-          rgba(26,155,219,0.25) 0%,
-          rgba(26,155,219,0.08) 40%,
-          transparent 70%
+          rgba(26,155,219,0.35) 0%,
+          rgba(26,155,219,0.15) 35%,
+          rgba(26,155,219,0.04) 60%,
+          transparent 80%
         );
-        filter: blur(20px);
+        filter: blur(24px);
         opacity: 0;
         z-index: 1;
       }
@@ -1577,13 +1579,16 @@
             var threadCount = config.threads;
             var beamX = isMobile ? 1220 : 1152; // ~80% of 1440
 
-            // Generate threads converging toward beam — biased rightward
+            // Generate threads converging toward beam — rightward bias with left fill
             for (var t = 0; t < threadCount; t++) {
               var path = document.createElementNS(ns, 'path');
-              // Bias startX: 60% of threads start in the right half
-              var startX = Math.random() < 0.6
+              // 50% right half (dense near beam), 30% mid, 20% far left
+              var roll = Math.random();
+              var startX = roll < 0.5
                 ? 700 + Math.random() * 740
-                : Math.random() * 700;
+                : roll < 0.8
+                  ? 300 + Math.random() * 400
+                  : Math.random() * 300;
               var startY = 20 + Math.random() * 360;
               var endX = beamX + (Math.random() - 0.5) * 50;
               var endY = 5 + Math.random() * 70;
@@ -1722,23 +1727,25 @@
             // Tier 3: Bright pulse nodes with halos — concentrated near beam
             var pulseCount = config.pulseNodes;
             for (var p = 0; p < pulseCount; p++) {
-              // Halo circle (large, soft glow behind)
+              // Position biased center-right, near beam
+              var px = beamX + (Math.random() - 0.6) * 450;
+              var py = 30 + Math.random() * 280;
+
+              // Outer halo (large, very soft glow)
               var halo = document.createElementNS(ns, 'circle');
-              var px = beamX + (Math.random() - 0.6) * 400;
-              var py = 20 + Math.random() * 250;
               halo.setAttribute('cx', px.toFixed(1));
               halo.setAttribute('cy', py.toFixed(1));
-              halo.setAttribute('r', (8 + Math.random() * 12).toFixed(1));
+              halo.setAttribute('r', (12 + Math.random() * 16).toFixed(1));
               halo.setAttribute('fill', ACCENT);
               halo.setAttribute('opacity', '0');
               halo.classList.add('engine-node', 'engine-node--halo');
               svg.appendChild(halo);
 
-              // Bright core
+              // Bright core — visible, punchy
               var pc = document.createElementNS(ns, 'circle');
               pc.setAttribute('cx', px.toFixed(1));
               pc.setAttribute('cy', py.toFixed(1));
-              pc.setAttribute('r', (2 + Math.random() * 2.5).toFixed(1));
+              pc.setAttribute('r', (2.5 + Math.random() * 3).toFixed(1));
               pc.setAttribute('fill', ACCENT);
               pc.setAttribute('opacity', '0');
               pc.classList.add('engine-node', 'engine-node--pulse');
@@ -1753,37 +1760,37 @@
 
           if (!backSvg) return;
 
-          // Back: many thin threads, very low opacity (0.06-0.15), slow
+          // Back: dense base texture — many thin threads, very low opacity
           populateLayer(backSvg, {
-            threads: isMobile ? 30 : 80,
-            microNodes: isMobile ? 30 : 80,
-            medNodes: isMobile ? 8 : 20,
+            threads: isMobile ? 40 : 110,
+            microNodes: isMobile ? 40 : 100,
+            medNodes: isMobile ? 10 : 25,
             pulseNodes: 0,
             minOpacity: 0.04,
-            maxOpacity: 0.15,
+            maxOpacity: 0.16,
             maxWidth: 0.5,
           });
 
-          // Mid: moderate threads, medium opacity (0.15-0.35)
+          // Mid: moderate threads, medium opacity
           populateLayer(midSvg, {
-            threads: isMobile ? 25 : 65,
-            microNodes: isMobile ? 20 : 50,
-            medNodes: isMobile ? 10 : 25,
-            pulseNodes: isMobile ? 2 : 4,
+            threads: isMobile ? 30 : 80,
+            microNodes: isMobile ? 25 : 60,
+            medNodes: isMobile ? 12 : 30,
+            pulseNodes: isMobile ? 2 : 5,
             minOpacity: 0.12,
-            maxOpacity: 0.35,
-            maxWidth: 0.9,
+            maxOpacity: 0.38,
+            maxWidth: 1.0,
           });
 
-          // Front: fewer but brighter threads (0.25-0.6), plus bright pulse nodes
+          // Front: fewer but brighter threads, plus bright pulse nodes
           populateLayer(frontSvg, {
-            threads: isMobile ? 18 : 50,
-            microNodes: isMobile ? 12 : 30,
-            medNodes: isMobile ? 6 : 15,
-            pulseNodes: isMobile ? 3 : 6,
-            minOpacity: 0.2,
+            threads: isMobile ? 20 : 55,
+            microNodes: isMobile ? 15 : 35,
+            medNodes: isMobile ? 8 : 20,
+            pulseNodes: isMobile ? 3 : 7,
+            minOpacity: 0.22,
             maxOpacity: 0.6,
-            maxWidth: 1.4,
+            maxWidth: 1.5,
           });
 
           // ── ScrollTrigger: Engine room ignites as section enters ──
@@ -1829,9 +1836,9 @@
           allNodes.forEach(function(node, i) {
             var targetOp;
             if (node.classList.contains('engine-node--pulse')) {
-              targetOp = 0.7 + Math.random() * 0.3;
+              targetOp = 0.75 + Math.random() * 0.25;
             } else if (node.classList.contains('engine-node--halo')) {
-              targetOp = 0.06 + Math.random() * 0.08;
+              targetOp = 0.08 + Math.random() * 0.1;
             } else if (node.classList.contains('engine-node--med')) {
               targetOp = 0.2 + Math.random() * 0.35;
             } else {
@@ -1964,7 +1971,7 @@
             var haloNodes = document.querySelectorAll('.engine-node--halo');
             haloNodes.forEach(function(node, i) {
               gsap.to(node, {
-                opacity: 0.04 + Math.random() * 0.06,
+                opacity: 0.05 + Math.random() * 0.08,
                 duration: 2 + Math.random() * 3,
                 delay: i * 0.5 + Math.random() * 3,
                 ease: 'sine.inOut',
