@@ -56,16 +56,17 @@ Canonical palette from Mantra Design Guide (dark mode):
 
 ## Page Architecture
 
-### /home (Landing Page 2.1 — Visual Craft)
+### /home (Landing Page 2.2 — Convergence Hero)
 - **GSAP 3.12.5 + ScrollTrigger** (CDN). No SplitType.
 - 7-section story arc: Hero → Definition → Vignettes (kinetic word cloud) → Emergence → Acceleration → Trust → Close/CTA
-- 3-layer parallax system: bg-layer (0.3×), mid-layer (0.6×), section-content (1.0×) via GSAP ScrollTrigger scrub
-- Ambient gradient blobs (8 total) with radial-gradient + CSS blur, no canvas/SVG rendering
+- **Hero**: Oversized clamp-based type (`clamp(3rem, 9vw, 10rem)`, line-height 0.95, letter-spacing -0.03em) + canvas convergence visual (scattered particles/icons + curved radiating lines → single blue glow point, scroll-linked convergence progression)
+- 3-layer parallax system on non-hero sections: bg-layer (0.3×), mid-layer (0.6×), section-content (1.0×) via GSAP ScrollTrigger scrub
+- Ambient gradient blobs (6 remaining) with radial-gradient + CSS blur, no canvas/SVG (hero uses canvas)
 - Full-page grain texture overlay (SVG data URI, CSS-tiled)
-- Major Third type scale: hero 64px, display 48px, subtitle 24px, body 18px, caption 14px
 - Kinetic word cloud replaces fake product UI vignettes — NO invented UI anywhere
 - Entrance choreography: hero timeline on load, scroll-triggered one-shot reveals per section
-- `prefers-reduced-motion` fallback disables all GSAP + shows content immediately
+- `prefers-reduced-motion` fallback: canvas draws static composed state, GSAP animations disabled
+- Mobile: reduced particle/line density, headline scales via clamp
 - CTA constant: `https://app.trymantra.ai`
 
 ### /coaches
