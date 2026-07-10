@@ -1760,15 +1760,15 @@
 
           if (!backSvg) return;
 
-          // Back: dense base texture — many thin threads, very low opacity
+          // Back: dense base texture — many threads, low but visible opacity
           populateLayer(backSvg, {
             threads: isMobile ? 40 : 110,
             microNodes: isMobile ? 40 : 100,
             medNodes: isMobile ? 10 : 25,
             pulseNodes: 0,
-            minOpacity: 0.04,
-            maxOpacity: 0.16,
-            maxWidth: 0.5,
+            minOpacity: 0.06,
+            maxOpacity: 0.2,
+            maxWidth: 0.6,
           });
 
           // Mid: moderate threads, medium opacity
@@ -1777,8 +1777,8 @@
             microNodes: isMobile ? 25 : 60,
             medNodes: isMobile ? 12 : 30,
             pulseNodes: isMobile ? 2 : 5,
-            minOpacity: 0.12,
-            maxOpacity: 0.38,
+            minOpacity: 0.15,
+            maxOpacity: 0.4,
             maxWidth: 1.0,
           });
 
@@ -1788,7 +1788,7 @@
             microNodes: isMobile ? 15 : 35,
             medNodes: isMobile ? 8 : 20,
             pulseNodes: isMobile ? 3 : 7,
-            minOpacity: 0.22,
+            minOpacity: 0.25,
             maxOpacity: 0.6,
             maxWidth: 1.5,
           });
@@ -1843,7 +1843,7 @@
               targetOp = 0.2 + Math.random() * 0.35;
             } else {
               // micro nodes
-              targetOp = 0.08 + Math.random() * 0.2;
+              targetOp = 0.12 + Math.random() * 0.25;
             }
             gsap.to(node, {
               opacity: targetOp,
@@ -1875,8 +1875,7 @@
           beamTl.to('.beam-flare', {
             scale: 1,
             duration: 0.6,
-            ease: 'back.out(1.2)',
-            clearProps: 'transform'
+            ease: 'back.out(1.2)'
           }, 0.4);
 
           // ── Scroll-linked "you" dot drifts left-to-right ──
