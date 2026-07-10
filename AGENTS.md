@@ -58,7 +58,7 @@ Canonical palette from Mantra Design Guide (dark mode):
 
 ### /home (Landing Page 2.2 — Convergence Hero)
 - **GSAP 3.12.5 + ScrollTrigger** (CDN). No SplitType.
-- 7-section story arc: Hero → Definition → Vignettes (kinetic word cloud) → Emergence → Acceleration → Trust → Close/CTA
+- 7-section story arc: Hero → Definition (split-screen agent-at-work) → Vignettes (kinetic word cloud) → Emergence → Acceleration → Trust → Close/CTA
 - **Hero**: Oversized clamp-based type (`clamp(3rem, 9vw, 10rem)`, line-height 0.95, letter-spacing -0.03em) + canvas convergence visual (scattered particles/icons + curved radiating lines → single blue glow point, scroll-linked convergence progression)
 - 3-layer parallax system on non-hero sections: bg-layer (0.3×), mid-layer (0.6×), section-content (1.0×) via GSAP ScrollTrigger scrub
 - Ambient gradient blobs (6 remaining) with radial-gradient + CSS blur, no canvas/SVG (hero uses canvas)
