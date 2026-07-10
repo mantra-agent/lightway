@@ -230,22 +230,120 @@
       .blob-h { top: 50%; left: 50%; transform: translate(-50%, -50%); }
 
       /* ══════════════════════════════════════════
-         B.2 DEFINITION
+         B.2 DEFINITION — Split-Screen Agent at Work
          ══════════════════════════════════════════ */
       .section--definition {
-        padding: var(--space-section-md) 24px;
+        padding: var(--space-section-lg) 24px;
       }
 
-      .definition-content {
-        max-width: var(--max-text-narrow);
-        text-align: center;
+      .definition-split {
+        max-width: var(--max-content);
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+        align-items: center;
+      }
+
+      .definition-text-col {
+        display: flex;
+        align-items: center;
       }
 
       .definition-text {
-        font-size: var(--text-subtitle);
-        font-weight: 400;
-        line-height: var(--lh-subtitle);
+        font-size: clamp(1.5rem, 2.8vw, 2.25rem);
+        font-weight: 500;
+        line-height: 1.35;
+        letter-spacing: -0.01em;
         color: var(--color-fg);
+      }
+
+      .definition-text .def-emphasis {
+        font-weight: 700;
+        color: #fff;
+      }
+
+      /* Agent-at-work visualization */
+      .agent-work-viz {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        position: relative;
+        padding: 1.5rem 0;
+      }
+
+      .work-row {
+        background: var(--color-card);
+        border: 1px solid var(--color-card-border);
+        border-radius: 8px;
+        height: 48px;
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateX(20px);
+      }
+
+      .work-row-label {
+        position: absolute;
+        top: 50%;
+        left: 16px;
+        transform: translateY(-50%);
+        font-size: 0.7rem;
+        font-weight: 400;
+        color: var(--color-fg-muted);
+        opacity: 0.5;
+        letter-spacing: 0.02em;
+        z-index: 2;
+        pointer-events: none;
+      }
+
+      .work-row-progress {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 0%;
+        border-radius: 8px;
+        z-index: 1;
+      }
+
+      .work-row--default .work-row-progress {
+        background: linear-gradient(90deg, rgba(130, 138, 150, 0.06), rgba(130, 138, 150, 0.12));
+      }
+
+      .work-row--active .work-row-progress {
+        background: linear-gradient(90deg, rgba(26, 155, 219, 0.05), rgba(26, 155, 219, 0.15));
+      }
+
+      .work-row-orb {
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        z-index: 3;
+      }
+
+      .work-row--default .work-row-orb {
+        background: rgba(130, 138, 150, 0.3);
+        box-shadow: 0 0 6px rgba(130, 138, 150, 0.15);
+      }
+
+      .work-row--active .work-row-orb {
+        background: var(--color-accent);
+        box-shadow: 0 0 12px rgba(26, 155, 219, 0.5), 0 0 24px rgba(26, 155, 219, 0.25);
+      }
+
+      /* Connecting arcs (SVG) */
+      .agent-work-arcs {
+        position: absolute;
+        top: 0;
+        left: -24px;
+        width: calc(100% + 48px);
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
       }
 
       /* ══════════════════════════════════════════
@@ -482,6 +580,25 @@
         .hero-convergence-canvas {
           /* Canvas draws static composed state via JS check */
         }
+        .work-row {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+        .work-row-progress {
+          width: 55% !important;
+          animation: none !important;
+          transition: none !important;
+        }
+        .work-row--active .work-row-progress {
+          width: 65% !important;
+        }
+        .work-row-orb {
+          transition: none !important;
+          left: 55% !important;
+        }
+        .work-row--active .work-row-orb {
+          left: 65% !important;
+        }
       }
 
       /* ══════════════════════════════════════════
@@ -492,7 +609,11 @@
         .hero-content { padding: 80px 0 56px; }
         .hero-headline { font-size: clamp(2.4rem, 12vw, 4rem); }
         .hero-subhead { max-width: 90%; }
-        .section--definition { padding: 48px 24px; }
+        .section--definition { padding: 48px 16px; }
+        .definition-split { grid-template-columns: 1fr; gap: 2.5rem; }
+        .definition-text { font-size: 1.35rem; }
+        .work-row { height: 40px; }
+        .agent-work-arcs { display: none; }
         .section--vignettes { padding: 56px 24px; }
         .section--emergence { padding: 56px 24px; }
         .section--acceleration { padding: 48px 24px; }
@@ -544,8 +665,36 @@
       <div class="bg-layer" aria-hidden="true">
         <div class="parallax-blob blob-small blob-c"></div>
       </div>
-      <div class="section-content definition-content">
-        <p class="definition-text">An autonomous agent that works for you on whatever matters most in your life, saving you time, magnifying your impact.</p>
+      <div class="section-content definition-split">
+        <div class="definition-text-col">
+          <p class="definition-text">An <span class="def-emphasis">autonomous agent</span> that works for you on whatever matters most in your life, saving you time, magnifying your impact.</p>
+        </div>
+        <div class="agent-work-viz" aria-hidden="true">
+          <svg class="agent-work-arcs" viewBox="0 0 500 280" fill="none" preserveAspectRatio="none">
+            <path d="M50,40 Q-10,100 50,140" stroke="rgba(130,138,150,0.1)" stroke-width="1" fill="none"/>
+            <path d="M50,40 Q-20,140 50,210" stroke="rgba(130,138,150,0.08)" stroke-width="1" fill="none"/>
+            <path d="M50,140 Q-10,175 50,210" stroke="rgba(130,138,150,0.06)" stroke-width="1" fill="none"/>
+          </svg>
+          <div class="work-row work-row--default" data-duration="7">
+            <span class="work-row-label">researching</span>
+            <div class="work-row-progress"></div>
+            <div class="work-row-orb"></div>
+          </div>
+          <div class="work-row work-row--active" data-duration="5">
+            <span class="work-row-label">scheduling</span>
+            <div class="work-row-progress"></div>
+            <div class="work-row-orb"></div>
+          </div>
+          <div class="work-row work-row--default" data-duration="9">
+            <span class="work-row-label">following up</span>
+            <div class="work-row-progress"></div>
+            <div class="work-row-orb"></div>
+          </div>
+          <div class="work-row work-row--default" data-duration="6">
+            <div class="work-row-progress"></div>
+            <div class="work-row-orb"></div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -1011,8 +1160,9 @@
           });
         }
 
-        // ── B.2 Definition Reveal ──
+        // ── B.2 Definition — Split-Screen Agent at Work ──
         function initDefinition() {
+          // Text entrance
           gsap.from('.definition-text', {
             y: 24,
             opacity: 0,
@@ -1023,6 +1173,60 @@
               start: 'top 80%',
               once: true
             }
+          });
+
+          // Work rows staggered entrance
+          var rows = document.querySelectorAll('.work-row');
+          rows.forEach(function(row, i) {
+            gsap.to(row, {
+              opacity: 1,
+              x: 0,
+              duration: 0.6,
+              delay: i * 0.12,
+              ease: 'power3.out',
+              scrollTrigger: {
+                trigger: '.section--definition',
+                start: 'top 75%',
+                once: true
+              }
+            });
+          });
+
+          // Continuous progress-line animation
+          rows.forEach(function(row, idx) {
+            var progress = row.querySelector('.work-row-progress');
+            var orb = row.querySelector('.work-row-orb');
+            var dur = parseFloat(row.getAttribute('data-duration')) || 6;
+
+            function animateProgress() {
+              gsap.fromTo(progress,
+                { width: '0%' },
+                {
+                  width: '85%',
+                  duration: dur,
+                  ease: 'power1.inOut',
+                  onUpdate: function() {
+                    var w = parseFloat(progress.style.width) || 0;
+                    var parentW = row.offsetWidth;
+                    orb.style.left = (w / 100 * parentW) + 'px';
+                  },
+                  onComplete: function() {
+                    gsap.to([progress, orb], {
+                      opacity: 0,
+                      duration: 0.4,
+                      onComplete: function() {
+                        gsap.set(progress, { width: '0%', opacity: 1 });
+                        gsap.set(orb, { left: '0px', opacity: 1 });
+                        animateProgress();
+                      }
+                    });
+                  }
+                }
+              );
+            }
+
+            // Start each row at a different offset
+            gsap.delayedCall(idx * 1.2, animateProgress);
           });
         }
 
