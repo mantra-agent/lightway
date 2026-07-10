@@ -513,9 +513,9 @@
         height: 100%;
       }
 
-      .engine-layer--back { opacity: 0; }
-      .engine-layer--mid { opacity: 0; }
-      .engine-layer--front { opacity: 0; }
+      .engine-layer--back { opacity: 0; will-change: transform, opacity; }
+      .engine-layer--mid { opacity: 0; will-change: transform, opacity; }
+      .engine-layer--front { opacity: 0; will-change: transform, opacity; }
 
       /* The vertical beam */
       .beam-container {
@@ -1594,30 +1594,30 @@
           if (!backSvg) return;
 
           populateLayer(backSvg, {
-            threads: isMobile ? 12 : 28,
-            nodes: isMobile ? 15 : 35,
-            minOpacity: 0.03,
-            maxOpacity: 0.12,
-            maxWidth: 0.6,
+            threads: isMobile ? 15 : 36,
+            nodes: isMobile ? 20 : 50,
+            minOpacity: 0.05,
+            maxOpacity: 0.18,
+            maxWidth: 0.7,
             maxNodeRadius: 2
           });
 
           populateLayer(midSvg, {
-            threads: isMobile ? 16 : 35,
-            nodes: isMobile ? 20 : 45,
-            minOpacity: 0.06,
-            maxOpacity: 0.25,
-            maxWidth: 0.8,
-            maxNodeRadius: 2.5
+            threads: isMobile ? 20 : 44,
+            nodes: isMobile ? 25 : 55,
+            minOpacity: 0.1,
+            maxOpacity: 0.35,
+            maxWidth: 1.0,
+            maxNodeRadius: 3
           });
 
           populateLayer(frontSvg, {
-            threads: isMobile ? 10 : 25,
-            nodes: isMobile ? 12 : 30,
-            minOpacity: 0.1,
-            maxOpacity: 0.45,
-            maxWidth: 1.2,
-            maxNodeRadius: 3.5
+            threads: isMobile ? 14 : 32,
+            nodes: isMobile ? 15 : 40,
+            minOpacity: 0.15,
+            maxOpacity: 0.55,
+            maxWidth: 1.4,
+            maxNodeRadius: 4
           });
 
           // ── ScrollTrigger: Engine room ignites as section enters ──
@@ -1661,7 +1661,7 @@
           // Nodes pulse in staggered
           var allNodes = document.querySelectorAll('.engine-node');
           allNodes.forEach(function(node, i) {
-            var targetOp = node.classList.contains('engine-node--bright') ? 0.5 + Math.random() * 0.4 : 0.1 + Math.random() * 0.3;
+            var targetOp = node.classList.contains('engine-node--bright') ? 0.6 + Math.random() * 0.35 : 0.15 + Math.random() * 0.4;
             gsap.to(node, {
               opacity: targetOp,
               duration: 0.6 + Math.random() * 0.8,
