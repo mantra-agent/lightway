@@ -680,22 +680,23 @@
       }
 
       .warp-streak--blue {
-        background: linear-gradient(90deg, transparent, var(--color-accent));
-        box-shadow: 0 0 4px rgba(26, 155, 219, 0.3);
+        background: linear-gradient(90deg, transparent 10%, var(--color-accent));
+        box-shadow: 0 0 6px rgba(26, 155, 219, 0.4), 0 0 12px rgba(26, 155, 219, 0.15);
       }
 
       .warp-core {
         position: absolute;
         top: 45%;
         left: 62%;
-        width: 8px;
-        height: 8px;
+        width: 12px;
+        height: 12px;
         border-radius: 50%;
-        background: var(--color-accent);
+        background: #fff;
         box-shadow:
-          0 0 12px 4px rgba(26, 155, 219, 0.8),
-          0 0 40px 12px rgba(26, 155, 219, 0.4),
-          0 0 80px 24px rgba(26, 155, 219, 0.15);
+          0 0 8px 3px rgba(255, 255, 255, 0.9),
+          0 0 20px 8px rgba(26, 155, 219, 0.9),
+          0 0 50px 16px rgba(26, 155, 219, 0.5),
+          0 0 100px 32px rgba(26, 155, 219, 0.2);
         will-change: transform, box-shadow;
       }
 
@@ -1848,15 +1849,15 @@
           var coreY = 0.45;
           var section = document.querySelector('.section--acceleration');
           var layerConfigs = [
-            { el: section.querySelector('.warp-layer--back'), count: 40, minLen: 20, maxLen: 60, minOpacity: 0.06, maxOpacity: 0.2, speedMult: 0.6 },
-            { el: section.querySelector('.warp-layer--mid'), count: 35, minLen: 20, maxLen: 100, minOpacity: 0.1, maxOpacity: 0.35, speedMult: 1.0 },
-            { el: section.querySelector('.warp-layer--front'), count: 25, minLen: 40, maxLen: 160, minOpacity: 0.2, maxOpacity: 0.6, speedMult: 1.5 }
+            { el: section.querySelector('.warp-layer--back'), count: 70, minLen: 30, maxLen: 120, minOpacity: 0.08, maxOpacity: 0.3, speedMult: 0.5 },
+            { el: section.querySelector('.warp-layer--mid'), count: 55, minLen: 40, maxLen: 180, minOpacity: 0.12, maxOpacity: 0.5, speedMult: 1.0 },
+            { el: section.querySelector('.warp-layer--front'), count: 35, minLen: 60, maxLen: 260, minOpacity: 0.25, maxOpacity: 0.7, speedMult: 1.6 }
           ];
           var isMobile = window.innerWidth < 768;
           if (isMobile) {
-            layerConfigs[0].count = 20;
-            layerConfigs[1].count = 18;
-            layerConfigs[2].count = 12;
+            layerConfigs[0].count = 35;
+            layerConfigs[1].count = 28;
+            layerConfigs[2].count = 17;
           }
 
           var allStreaks = [];
@@ -1864,13 +1865,13 @@
             for (var i = 0; i < layer.count; i++) {
               var streak = document.createElement('div');
               streak.className = 'warp-streak';
-              var isBlue = Math.random() < 0.25;
+              var isBlue = Math.random() < 0.3;
               streak.classList.add(isBlue ? 'warp-streak--blue' : 'warp-streak--gray');
               var angle = Math.random() * Math.PI * 2;
-              var dist = 0.15 + Math.random() * 0.85;
+              var dist = 0.1 + Math.random() * 0.9;
               var len = layer.minLen + Math.random() * (layer.maxLen - layer.minLen);
               var opacity = layer.minOpacity + Math.random() * (layer.maxOpacity - layer.minOpacity);
-              var thickness = isBlue ? (1 + Math.random() * 1.5) : (0.5 + Math.random() * 1);
+              var thickness = isBlue ? (1.5 + Math.random() * 2) : (0.8 + Math.random() * 1.2);
               var x = coreX * 100 + Math.cos(angle) * dist * 50;
               var y = coreY * 100 + Math.sin(angle) * dist * 40;
               streak.style.left = x + '%';
@@ -1913,8 +1914,8 @@
           // Scroll-linked core intensity boost
           var core = section.querySelector('.warp-core');
           gsap.to(core, {
-            scale: 1.4,
-            boxShadow: '0 0 20px 8px rgba(26,155,219,1), 0 0 60px 20px rgba(26,155,219,0.6), 0 0 120px 40px rgba(26,155,219,0.25)',
+            scale: 1.6,
+            boxShadow: '0 0 12px 6px rgba(255,255,255,1), 0 0 30px 12px rgba(26,155,219,1), 0 0 80px 28px rgba(26,155,219,0.6), 0 0 140px 50px rgba(26,155,219,0.25)',
             scrollTrigger: {
               trigger: section,
               start: 'top 60%',
