@@ -441,12 +441,13 @@
         height: 1px;
         background: linear-gradient(90deg,
           rgba(255,255,255,0) 0%,
-          rgba(255,255,255,0.15) 10%,
-          rgba(255,255,255,0.3) 50%,
-          rgba(26,155,219,0.6) 78%,
-          rgba(26,155,219,0.9) 80%,
-          rgba(26,155,219,0.6) 82%,
-          rgba(255,255,255,0.15) 95%,
+          rgba(255,255,255,0.12) 10%,
+          rgba(255,255,255,0.25) 40%,
+          rgba(255,255,255,0.35) 60%,
+          rgba(26,155,219,0.7) 76%,
+          rgba(255,255,255,0.95) 80%,
+          rgba(26,155,219,0.7) 84%,
+          rgba(255,255,255,0.2) 92%,
           rgba(255,255,255,0) 100%
         );
         z-index: 5;
@@ -457,17 +458,19 @@
         top: 52%;
         left: 0;
         right: 0;
-        height: 3px;
+        height: 6px;
         transform: translateY(-50%);
         background: linear-gradient(90deg,
           transparent 0%,
-          rgba(26,155,219,0.05) 20%,
-          rgba(26,155,219,0.15) 50%,
-          rgba(26,155,219,0.4) 78%,
-          rgba(26,155,219,0.15) 85%,
+          rgba(26,155,219,0.06) 15%,
+          rgba(26,155,219,0.12) 40%,
+          rgba(26,155,219,0.5) 76%,
+          rgba(255,255,255,0.6) 80%,
+          rgba(26,155,219,0.5) 84%,
+          rgba(26,155,219,0.08) 92%,
           transparent 100%
         );
-        filter: blur(3px);
+        filter: blur(4px);
         z-index: 4;
       }
 
@@ -552,16 +555,16 @@
         left: 50%;
         top: 0;
         bottom: 48%;
-        width: 30px;
+        width: 40px;
         transform: translateX(-50%);
         background: linear-gradient(180deg,
           rgba(26,155,219,0) 0%,
-          rgba(26,155,219,0.15) 30%,
-          rgba(26,155,219,0.3) 50%,
-          rgba(26,155,219,0.15) 70%,
-          rgba(26,155,219,0) 100%
+          rgba(26,155,219,0.15) 20%,
+          rgba(26,155,219,0.35) 50%,
+          rgba(26,155,219,0.5) 80%,
+          rgba(26,155,219,0.3) 100%
         );
-        filter: blur(10px);
+        filter: blur(12px);
         opacity: 0;
       }
 
@@ -569,17 +572,37 @@
         position: absolute;
         left: 50%;
         top: 52%;
-        width: 120px;
-        height: 120px;
+        width: 160px;
+        height: 160px;
         transform: translate(-50%, -50%) scale(0);
         border-radius: 50%;
         background: radial-gradient(circle,
-          rgba(255,255,255,0.6) 0%,
-          rgba(26,155,219,0.3) 30%,
-          rgba(26,155,219,0.05) 60%,
+          rgba(255,255,255,0.85) 0%,
+          rgba(255,255,255,0.5) 8%,
+          rgba(26,155,219,0.45) 25%,
+          rgba(26,155,219,0.12) 50%,
           transparent 100%
         );
         z-index: 8;
+      }
+
+      /* Radial bloom below the beam base */
+      .beam-base-bloom {
+        position: absolute;
+        left: 50%;
+        top: 60%;
+        width: 260px;
+        height: 220px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        background: radial-gradient(ellipse,
+          rgba(26,155,219,0.25) 0%,
+          rgba(26,155,219,0.08) 40%,
+          transparent 70%
+        );
+        filter: blur(20px);
+        opacity: 0;
+        z-index: 1;
       }
 
       /* Beam below horizon */
@@ -603,14 +626,15 @@
         left: 50%;
         top: 52%;
         bottom: 0;
-        width: 40px;
+        width: 60px;
         transform: translateX(-50%);
         background: linear-gradient(180deg,
-          rgba(26,155,219,0.2) 0%,
-          rgba(26,155,219,0.05) 60%,
+          rgba(26,155,219,0.35) 0%,
+          rgba(26,155,219,0.15) 40%,
+          rgba(26,155,219,0.04) 80%,
           transparent 100%
         );
-        filter: blur(15px);
+        filter: blur(18px);
         opacity: 0;
       }
 
@@ -621,10 +645,11 @@
         .engine-layer--mid { opacity: 1; }
         .engine-layer--front { opacity: 1; }
         .beam-core { opacity: 1; }
-        .beam-glow { opacity: 0.6; }
+        .beam-glow { opacity: 0.7; }
         .beam-flare { transform: translate(-50%, -50%) scale(1); }
         .beam-below { opacity: 1; }
-        .beam-below-glow { opacity: 0.5; }
+        .beam-below-glow { opacity: 0.6; }
+        .beam-base-bloom { opacity: 0.7; }
         .you-dot { left: 35%; }
       }
 
@@ -1011,6 +1036,7 @@
           <div class="beam-below-glow"></div>
           <div class="beam-below"></div>
           <div class="beam-flare"></div>
+          <div class="beam-base-bloom"></div>
         </div>
 
         <!-- Engine room: 3 parallax depth layers of SVG threads/nodes -->
@@ -1549,17 +1575,18 @@
           function populateLayer(svg, config) {
             var ns = 'http://www.w3.org/2000/svg';
             var threadCount = config.threads;
-            var nodeCount = config.nodes;
             var beamX = isMobile ? 1220 : 1152; // ~80% of 1440
 
-            // Generate threads converging toward beam
+            // Generate threads converging toward beam — biased rightward
             for (var t = 0; t < threadCount; t++) {
               var path = document.createElementNS(ns, 'path');
-              var startX = Math.random() * 1440;
+              // Bias startX: 60% of threads start in the right half
+              var startX = Math.random() < 0.6
+                ? 700 + Math.random() * 740
+                : Math.random() * 700;
               var startY = 20 + Math.random() * 360;
-              // Curve toward the beam x position
-              var endX = beamX + (Math.random() - 0.5) * 60;
-              var endY = 10 + Math.random() * 80;
+              var endX = beamX + (Math.random() - 0.5) * 50;
+              var endY = 5 + Math.random() * 70;
               var cp1x = startX + (endX - startX) * (0.3 + Math.random() * 0.3);
               var cp1y = startY + (Math.random() - 0.5) * 150;
               var cp2x = startX + (endX - startX) * (0.6 + Math.random() * 0.2);
@@ -1577,20 +1604,18 @@
               path.setAttribute('opacity', (config.minOpacity + Math.random() * (config.maxOpacity - config.minOpacity)).toFixed(3));
               path.classList.add('engine-thread');
 
-              // Set dasharray for draw-in animation
               var len = 800 + Math.random() * 600;
               path.style.strokeDasharray = len;
               path.style.strokeDashoffset = len;
-
               svg.appendChild(path);
             }
 
             // Horizontal threads for density
-            var hCount = Math.floor(threadCount * 0.4);
+            var hCount = Math.floor(threadCount * 0.35);
             for (var h = 0; h < hCount; h++) {
               var hPath = document.createElementNS(ns, 'path');
               var hy = 30 + Math.random() * 340;
-              var hx1 = Math.random() * 400;
+              var hx1 = Math.random() * 500;
               var hx2 = hx1 + 300 + Math.random() * 700;
               var hcy = hy + (Math.random() - 0.5) * 80;
               var hd = 'M' + hx1 + ',' + hy + ' Q' + ((hx1+hx2)/2) + ',' + hcy + ' ' + hx2 + ',' + (hy + (Math.random()-0.5)*40);
@@ -1599,7 +1624,7 @@
               hPath.setAttribute('fill', 'none');
               hPath.setAttribute('stroke', ACCENT);
               hPath.setAttribute('stroke-width', (0.2 + Math.random() * 0.5).toFixed(2));
-              hPath.setAttribute('opacity', (config.minOpacity * 0.6 + Math.random() * config.maxOpacity * 0.5).toFixed(3));
+              hPath.setAttribute('opacity', (config.minOpacity * 0.5 + Math.random() * config.maxOpacity * 0.5).toFixed(3));
               hPath.classList.add('engine-thread');
               var hLen = 600 + Math.random() * 400;
               hPath.style.strokeDasharray = hLen;
@@ -1607,13 +1632,14 @@
               svg.appendChild(hPath);
             }
 
-            // Arc threads
+            // Arc threads — concentrated center-right
             var arcCount = Math.floor(threadCount * 0.3);
             for (var a = 0; a < arcCount; a++) {
               var arc = document.createElementNS(ns, 'path');
-              var acx = 200 + Math.random() * 1000;
+              // Bias arcs toward center-right
+              var acx = 400 + Math.random() * 900;
               var acy = 50 + Math.random() * 300;
-              var ar = 40 + Math.random() * 120;
+              var ar = 40 + Math.random() * 140;
               var aStart = Math.random() * Math.PI;
               var aEnd = aStart + 0.5 + Math.random() * 2;
               var ax1 = acx + Math.cos(aStart) * ar;
@@ -1636,70 +1662,128 @@
               svg.appendChild(arc);
             }
 
-            // Generate nodes
-            for (var n = 0; n < nodeCount; n++) {
-              var circle = document.createElementNS(ns, 'circle');
-              var nx = 50 + Math.random() * 1340;
-              var ny = 20 + Math.random() * 360;
-              var nr = 1 + Math.random() * config.maxNodeRadius;
-              circle.setAttribute('cx', nx.toFixed(1));
-              circle.setAttribute('cy', ny.toFixed(1));
-              circle.setAttribute('r', nr.toFixed(1));
-              circle.setAttribute('fill', ACCENT);
-              circle.setAttribute('opacity', '0');
-              circle.classList.add('engine-node');
-              svg.appendChild(circle);
+            // Short feeder threads near beam convergence
+            var feederCount = Math.floor(threadCount * 0.25);
+            for (var f = 0; f < feederCount; f++) {
+              var fp = document.createElementNS(ns, 'path');
+              var fsx = beamX + (Math.random() - 0.5) * 300;
+              var fsy = 80 + Math.random() * 280;
+              var fex = beamX + (Math.random() - 0.5) * 40;
+              var fey = 10 + Math.random() * 50;
+              var fcx = (fsx + fex) / 2 + (Math.random() - 0.5) * 60;
+              var fcy = (fsy + fey) / 2 + (Math.random() - 0.5) * 40;
+              var fd = 'M' + fsx.toFixed(1) + ',' + fsy.toFixed(1) +
+                       ' Q' + fcx.toFixed(1) + ',' + fcy.toFixed(1) +
+                       ' ' + fex.toFixed(1) + ',' + fey.toFixed(1);
+              fp.setAttribute('d', fd);
+              fp.setAttribute('fill', 'none');
+              fp.setAttribute('stroke', ACCENT);
+              fp.setAttribute('stroke-width', (0.3 + Math.random() * config.maxWidth * 0.8).toFixed(2));
+              fp.setAttribute('opacity', (config.minOpacity + Math.random() * (config.maxOpacity - config.minOpacity) * 1.2).toFixed(3));
+              fp.classList.add('engine-thread');
+              var fLen = 300 + Math.random() * 300;
+              fp.style.strokeDasharray = fLen;
+              fp.style.strokeDashoffset = fLen;
+              svg.appendChild(fp);
             }
 
-            // Bright nodes near the beam
-            var brightCount = Math.floor(nodeCount * 0.2);
-            for (var b = 0; b < brightCount; b++) {
-              var bc = document.createElementNS(ns, 'circle');
-              var bx = beamX + (Math.random() - 0.5) * 200;
-              var by = 10 + Math.random() * 150;
-              var br = 1.5 + Math.random() * 3;
-              bc.setAttribute('cx', bx.toFixed(1));
-              bc.setAttribute('cy', by.toFixed(1));
-              bc.setAttribute('r', br.toFixed(1));
-              bc.setAttribute('fill', ACCENT);
-              bc.setAttribute('opacity', '0');
-              bc.classList.add('engine-node', 'engine-node--bright');
-              svg.appendChild(bc);
+            // ── Node hierarchy ──
+            // Tier 1: Many tiny faint micro-nodes (spread across field)
+            var microCount = config.microNodes;
+            for (var m = 0; m < microCount; m++) {
+              var mc = document.createElementNS(ns, 'circle');
+              var mx = 50 + Math.random() * 1340;
+              var my = 20 + Math.random() * 360;
+              mc.setAttribute('cx', mx.toFixed(1));
+              mc.setAttribute('cy', my.toFixed(1));
+              mc.setAttribute('r', (0.5 + Math.random() * 1.2).toFixed(1));
+              mc.setAttribute('fill', ACCENT);
+              mc.setAttribute('opacity', '0');
+              mc.classList.add('engine-node', 'engine-node--micro');
+              svg.appendChild(mc);
+            }
+
+            // Tier 2: Medium nodes along strands
+            var medCount = config.medNodes;
+            for (var md = 0; md < medCount; md++) {
+              var mdc = document.createElementNS(ns, 'circle');
+              // Bias toward center-right
+              var mdx = 200 + Math.random() * 1100;
+              var mdy = 20 + Math.random() * 360;
+              mdc.setAttribute('cx', mdx.toFixed(1));
+              mdc.setAttribute('cy', mdy.toFixed(1));
+              mdc.setAttribute('r', (1.5 + Math.random() * 2.5).toFixed(1));
+              mdc.setAttribute('fill', ACCENT);
+              mdc.setAttribute('opacity', '0');
+              mdc.classList.add('engine-node', 'engine-node--med');
+              svg.appendChild(mdc);
+            }
+
+            // Tier 3: Bright pulse nodes with halos — concentrated near beam
+            var pulseCount = config.pulseNodes;
+            for (var p = 0; p < pulseCount; p++) {
+              // Halo circle (large, soft glow behind)
+              var halo = document.createElementNS(ns, 'circle');
+              var px = beamX + (Math.random() - 0.6) * 400;
+              var py = 20 + Math.random() * 250;
+              halo.setAttribute('cx', px.toFixed(1));
+              halo.setAttribute('cy', py.toFixed(1));
+              halo.setAttribute('r', (8 + Math.random() * 12).toFixed(1));
+              halo.setAttribute('fill', ACCENT);
+              halo.setAttribute('opacity', '0');
+              halo.classList.add('engine-node', 'engine-node--halo');
+              svg.appendChild(halo);
+
+              // Bright core
+              var pc = document.createElementNS(ns, 'circle');
+              pc.setAttribute('cx', px.toFixed(1));
+              pc.setAttribute('cy', py.toFixed(1));
+              pc.setAttribute('r', (2 + Math.random() * 2.5).toFixed(1));
+              pc.setAttribute('fill', ACCENT);
+              pc.setAttribute('opacity', '0');
+              pc.classList.add('engine-node', 'engine-node--pulse');
+              svg.appendChild(pc);
             }
           }
 
-          // Layer configs — back is sparse/dim, front is bright/detailed
+          // Layer configs — 2-3x thread volume, 3 clear depth layers
           var backSvg = document.querySelector('.engine-svg--back');
           var midSvg = document.querySelector('.engine-svg--mid');
           var frontSvg = document.querySelector('.engine-svg--front');
 
           if (!backSvg) return;
 
+          // Back: many thin threads, very low opacity (0.06-0.15), slow
           populateLayer(backSvg, {
-            threads: isMobile ? 15 : 36,
-            nodes: isMobile ? 20 : 50,
-            minOpacity: 0.05,
-            maxOpacity: 0.18,
-            maxWidth: 0.7,
-            maxNodeRadius: 2
+            threads: isMobile ? 30 : 80,
+            microNodes: isMobile ? 30 : 80,
+            medNodes: isMobile ? 8 : 20,
+            pulseNodes: 0,
+            minOpacity: 0.04,
+            maxOpacity: 0.15,
+            maxWidth: 0.5,
           });
 
+          // Mid: moderate threads, medium opacity (0.15-0.35)
           populateLayer(midSvg, {
-            threads: isMobile ? 20 : 44,
-            nodes: isMobile ? 25 : 55,
-            minOpacity: 0.1,
+            threads: isMobile ? 25 : 65,
+            microNodes: isMobile ? 20 : 50,
+            medNodes: isMobile ? 10 : 25,
+            pulseNodes: isMobile ? 2 : 4,
+            minOpacity: 0.12,
             maxOpacity: 0.35,
-            maxWidth: 1.0,
-            maxNodeRadius: 3
+            maxWidth: 0.9,
           });
 
+          // Front: fewer but brighter threads (0.25-0.6), plus bright pulse nodes
           populateLayer(frontSvg, {
-            threads: isMobile ? 14 : 32,
-            nodes: isMobile ? 15 : 40,
-            minOpacity: 0.15,
-            maxOpacity: 0.55,
+            threads: isMobile ? 18 : 50,
+            microNodes: isMobile ? 12 : 30,
+            medNodes: isMobile ? 6 : 15,
+            pulseNodes: isMobile ? 3 : 6,
+            minOpacity: 0.2,
+            maxOpacity: 0.6,
             maxWidth: 1.4,
-            maxNodeRadius: 4
           });
 
           // ── ScrollTrigger: Engine room ignites as section enters ──
@@ -1740,14 +1824,24 @@
             });
           });
 
-          // Nodes pulse in staggered
+          // Nodes pulse in staggered — tiered opacity targets
           var allNodes = document.querySelectorAll('.engine-node');
           allNodes.forEach(function(node, i) {
-            var targetOp = node.classList.contains('engine-node--bright') ? 0.6 + Math.random() * 0.35 : 0.15 + Math.random() * 0.4;
+            var targetOp;
+            if (node.classList.contains('engine-node--pulse')) {
+              targetOp = 0.7 + Math.random() * 0.3;
+            } else if (node.classList.contains('engine-node--halo')) {
+              targetOp = 0.06 + Math.random() * 0.08;
+            } else if (node.classList.contains('engine-node--med')) {
+              targetOp = 0.2 + Math.random() * 0.35;
+            } else {
+              // micro nodes
+              targetOp = 0.08 + Math.random() * 0.2;
+            }
             gsap.to(node, {
               opacity: targetOp,
-              duration: 0.6 + Math.random() * 0.8,
-              delay: 0.8 + (i % 30) * 0.04,
+              duration: 0.5 + Math.random() * 1.0,
+              delay: 0.6 + (i % 40) * 0.03,
               ease: 'power2.out',
               scrollTrigger: {
                 trigger: '.section--emergence',
@@ -1767,9 +1861,10 @@
           });
 
           beamTl.to('.beam-below', { opacity: 1, duration: 0.5, ease: 'power2.out' }, 0);
-          beamTl.to('.beam-below-glow', { opacity: 0.5, duration: 0.6, ease: 'power2.out' }, 0);
+          beamTl.to('.beam-below-glow', { opacity: 0.6, duration: 0.6, ease: 'power2.out' }, 0);
+          beamTl.to('.beam-base-bloom', { opacity: 0.7, duration: 0.8, ease: 'power2.out' }, 0);
           beamTl.to('.beam-core', { opacity: 1, duration: 0.4, ease: 'power2.in' }, 0.3);
-          beamTl.to('.beam-glow', { opacity: 0.6, duration: 0.5, ease: 'power2.out' }, 0.3);
+          beamTl.to('.beam-glow', { opacity: 0.7, duration: 0.5, ease: 'power2.out' }, 0.3);
           beamTl.to('.beam-flare', {
             scale: 1,
             duration: 0.6,
@@ -1823,18 +1918,59 @@
 
           // ── Continuous ambient life ──
           function ambientNodePulse() {
-            var nodes = document.querySelectorAll('.engine-node');
-            nodes.forEach(function(node) {
-              var delay = Math.random() * 8;
-              var dur = 2 + Math.random() * 4;
+            // Micro nodes: gentle subtle shimmer
+            var microNodes = document.querySelectorAll('.engine-node--micro');
+            microNodes.forEach(function(node) {
               gsap.to(node, {
-                opacity: '+=' + (Math.random() * 0.15 - 0.05),
-                duration: dur,
-                delay: delay,
+                opacity: '+=' + (Math.random() * 0.08 - 0.03),
+                duration: 3 + Math.random() * 5,
+                delay: Math.random() * 10,
+                ease: 'sine.inOut',
+                yoyo: true,
+                repeat: -1,
+                repeatDelay: Math.random() * 4
+              });
+            });
+
+            // Med nodes: moderate pulse
+            var medNodes = document.querySelectorAll('.engine-node--med');
+            medNodes.forEach(function(node) {
+              gsap.to(node, {
+                opacity: '+=' + (Math.random() * 0.12 - 0.04),
+                duration: 2 + Math.random() * 3,
+                delay: Math.random() * 6,
                 ease: 'sine.inOut',
                 yoyo: true,
                 repeat: -1,
                 repeatDelay: Math.random() * 3
+              });
+            });
+
+            // Pulse nodes: bright breathing with randomized stagger
+            var pulseNodes = document.querySelectorAll('.engine-node--pulse');
+            pulseNodes.forEach(function(node, i) {
+              gsap.to(node, {
+                opacity: 0.5 + Math.random() * 0.3,
+                duration: 1.2 + Math.random() * 1.5,
+                delay: i * 0.4 + Math.random() * 2,
+                ease: 'sine.inOut',
+                yoyo: true,
+                repeat: -1,
+                repeatDelay: 0.5 + Math.random() * 2.5
+              });
+            });
+
+            // Halo nodes: slow soft breathing
+            var haloNodes = document.querySelectorAll('.engine-node--halo');
+            haloNodes.forEach(function(node, i) {
+              gsap.to(node, {
+                opacity: 0.04 + Math.random() * 0.06,
+                duration: 2 + Math.random() * 3,
+                delay: i * 0.5 + Math.random() * 3,
+                ease: 'sine.inOut',
+                yoyo: true,
+                repeat: -1,
+                repeatDelay: 1 + Math.random() * 2
               });
             });
           }
