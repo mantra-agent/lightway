@@ -67,7 +67,7 @@ Canonical palette from Mantra Design Guide (dark mode):
 - Entrance choreography: hero timeline on load, scroll-triggered one-shot reveals per section
 - `prefers-reduced-motion` fallback: canvas draws static composed state, GSAP animations disabled
 - Mobile: reduced particle/line density, headline scales via clamp
-- CTA constant: `https://mono-prod-8d22.up.railway.app/waitlist?source=lightway`
+- CTA constant: `https://mono-prod-8d22.up.railway.app/start?source=lightway`
 
 ### /coaches
 - Uses GSAP + ScrollTrigger + SplitType (CDN)
