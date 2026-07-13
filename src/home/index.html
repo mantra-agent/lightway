@@ -264,7 +264,7 @@
         max-width: 1320px;
         margin: 0 auto;
         display: grid;
-        grid-template-columns: minmax(360px, 0.82fr) minmax(620px, 1.18fr);
+        grid-template-columns: minmax(340px, 0.72fr) minmax(680px, 1.28fr);
         gap: clamp(2rem, 4vw, 4.5rem);
         align-items: center;
       }
@@ -294,7 +294,7 @@
 
       .intelligence-field {
         position: relative;
-        width: min(100%, 700px);
+        width: min(100%, 800px);
         aspect-ratio: 1;
         margin-inline: auto;
         isolation: isolate;
@@ -302,48 +302,86 @@
 
       .intelligence-art {
         position: absolute;
-        inset: 3%;
-        width: 94%;
-        height: 94%;
+        inset: 0;
+        width: 100%;
+        height: 100%;
         object-fit: contain;
         opacity: 0;
-        transform: scale(0.97);
+        transform: scale(1.28);
         filter: saturate(0.9) contrast(1.05);
         pointer-events: none;
         user-select: none;
+      }
+
+
+      .field-links {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+        z-index: 1;
+        pointer-events: none;
+      }
+
+      .field-link {
+        fill: none;
+        stroke: rgba(211, 220, 232, 0.88);
+        stroke-width: 1.55;
+        stroke-linecap: round;
+        vector-effect: non-scaling-stroke;
+        filter: drop-shadow(0 0 4px rgba(89, 158, 205, 0.38));
+      }
+
+      .field-link--active {
+        stroke: rgba(67, 176, 232, 0.8);
+        filter: drop-shadow(0 0 5px rgba(26, 155, 219, 0.48));
       }
 
       .field-system {
         position: absolute;
         left: var(--x);
         top: var(--y);
-        transform: translate(-50%, -50%);
+        transform: translate(0, -50%);
         z-index: 2;
         display: inline-flex;
         align-items: center;
-        gap: 7px;
+        gap: 0;
+        padding-left: 9px;
         color: rgba(232, 234, 237, var(--alpha, 0.78));
         white-space: nowrap;
         opacity: 0;
       }
 
-      .field-system::before {
-        content: '';
-        width: 4px;
-        height: 4px;
-        flex: 0 0 auto;
-        border-radius: 50%;
-        background: currentColor;
-        box-shadow: 0 0 7px currentColor;
+      .field-system[data-side="left"] {
+        transform: translate(-100%, -50%);
+        padding-left: 0;
+        padding-right: 9px;
+      }
+
+      .field-node {
+        fill: #d3dce8;
+        stroke: #050608;
+        stroke-width: 0.45;
+        vector-effect: non-scaling-stroke;
+        filter: drop-shadow(0 0 4px rgba(211, 220, 232, 0.75));
+      }
+
+      .field-node--active {
+        fill: var(--color-accent);
+        filter: drop-shadow(0 0 6px rgba(26, 155, 219, 0.9));
+      }
+
+      .field-core-node {
+        fill: var(--color-accent);
+        stroke: rgba(224, 244, 255, 0.9);
+        stroke-width: 0.35;
+        vector-effect: non-scaling-stroke;
+        filter: drop-shadow(0 0 8px rgba(26, 155, 219, 0.95));
       }
 
       .field-system--active {
         color: rgba(232, 234, 237, 0.96);
-      }
-
-      .field-system--active::before {
-        background: var(--color-accent);
-        box-shadow: 0 0 10px rgba(26, 155, 219, 0.85);
       }
 
       .field-system-label {
@@ -869,7 +907,8 @@
         .hero-video { display: none; }
         .hero-video-poster { display: block; }
         .field-system,
-        .intelligence-art {
+        .intelligence-art,
+        .field-link {
           opacity: 1 !important;
           animation: none !important;
           transition: none !important;
@@ -904,18 +943,19 @@
           aspect-ratio: 1;
         }
         .intelligence-art {
-          inset: 5%;
-          width: 90%;
-          height: 90%;
+          inset: 0;
+          width: 100%;
+          height: 100%;
         }
+        .field-link { stroke-width: 0.9; }
         .field-system-label { font-size: 0.66rem; }
-        .field-system { gap: 5px; color: rgba(232, 234, 237, max(var(--alpha, 0.78), 0.76)); }
-        .field-system::before { width: 3px; height: 3px; }
-        .field-system[style*="--x:3%"] { --x: 8% !important; }
-        .field-system[style*="--x:8%"] { --x: 10% !important; }
-        .field-system[style*="--x:91%"] { --x: 87% !important; }
-        .field-system[style*="--x:92%"] { --x: 86% !important; }
-        .field-system[style*="--x:95%"] { --x: 84% !important; }
+        .field-system { gap: 0; color: rgba(232, 234, 237, max(var(--alpha, 0.78), 0.76)); }
+        .field-system[data-side="right"] {
+          transform: translate(-100%, -50%);
+          padding-left: 0;
+          padding-right: 7px;
+        }
+        .field-system[data-side="left"] { padding-right: 7px; }
         .section--vignettes { padding: 56px 24px; }
         .section--acceleration { min-height: 70vh; }
         .acceleration-content { padding: 48px 24px; }
@@ -974,18 +1014,45 @@
 
         <div class="intelligence-field" aria-label="Twelve life systems connected through one synthetic intelligence">
           <img class="intelligence-art" src="./intelligence-field.webp" alt="" width="1024" height="1024" loading="lazy" decoding="async" />
-          <div class="field-system" style="--x:15%;--y:18%;--alpha:.72"><span class="field-system-label">Goals</span></div>
-          <div class="field-system field-system--active" style="--x:78%;--y:12%"><span class="field-system-label">Email</span></div>
-          <div class="field-system" style="--x:8%;--y:37%;--alpha:.68"><span class="field-system-label">Notes</span></div>
-          <div class="field-system field-system--active" style="--x:91%;--y:34%"><span class="field-system-label">Projects</span></div>
-          <div class="field-system" style="--x:12%;--y:59%;--alpha:.82"><span class="field-system-label">People</span></div>
-          <div class="field-system" style="--x:92%;--y:57%;--alpha:.7"><span class="field-system-label">Health</span></div>
-          <div class="field-system" style="--x:25%;--y:86%;--alpha:.68"><span class="field-system-label">Finance</span></div>
-          <div class="field-system" style="--x:76%;--y:90%;--alpha:.64"><span class="field-system-label">Strategy</span></div>
-          <div class="field-system" style="--x:3%;--y:48%;--alpha:.58"><span class="field-system-label">News</span></div>
-          <div class="field-system field-system--active" style="--x:62%;--y:5%"><span class="field-system-label">Calendar</span></div>
-          <div class="field-system" style="--x:8%;--y:76%;--alpha:.72"><span class="field-system-label">Habits</span></div>
-          <div class="field-system" style="--x:95%;--y:72%;--alpha:.82"><span class="field-system-label">Meetings</span></div>
+          <svg class="field-links" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path class="field-link field-link--active" d="M70 48 C64 36, 57 27, 48 19" />
+            <path class="field-link" d="M72 47 C79 39, 85 30, 90 24" />
+            <path class="field-link" d="M73 49 C83 45, 91 39, 97 35" />
+            <path class="field-link field-link--active" d="M73 50 C83 50, 91 48, 97 46" />
+            <path class="field-link" d="M73 52 C83 53, 90 56, 96 57" />
+            <path class="field-link" d="M72 54 C81 60, 87 66, 90 71" />
+            <path class="field-link" d="M70 55 C76 65, 79 74, 81 81" />
+            <path class="field-link" d="M68 55 C64 67, 59 77, 55 84" />
+            <path class="field-link" d="M66 54 C55 65, 44 73, 35 79" />
+            <path class="field-link" d="M65 53 C48 61, 32 67, 18 70" />
+            <path class="field-link" d="M65 51 C45 51, 29 52, 13 52" />
+            <path class="field-link field-link--active" d="M66 48 C50 39, 35 32, 21 28" />
+            <circle class="field-core-node" cx="69.2" cy="51" r="1.05" />
+            <circle class="field-node field-node--active" cx="48" cy="19" r="0.55" />
+            <circle class="field-node" cx="90" cy="24" r="0.55" />
+            <circle class="field-node" cx="97" cy="35" r="0.55" />
+            <circle class="field-node field-node--active" cx="97" cy="46" r="0.55" />
+            <circle class="field-node" cx="96" cy="57" r="0.55" />
+            <circle class="field-node" cx="90" cy="71" r="0.55" />
+            <circle class="field-node" cx="81" cy="81" r="0.55" />
+            <circle class="field-node" cx="55" cy="84" r="0.55" />
+            <circle class="field-node" cx="35" cy="79" r="0.55" />
+            <circle class="field-node" cx="18" cy="70" r="0.55" />
+            <circle class="field-node" cx="13" cy="52" r="0.55" />
+            <circle class="field-node field-node--active" cx="21" cy="28" r="0.55" />
+          </svg>
+          <div class="field-system field-system--active" data-side="left" style="--x:48%;--y:19%"><span class="field-system-label">Calendar</span></div>
+          <div class="field-system" data-side="right" style="--x:90%;--y:24%;--alpha:.8"><span class="field-system-label">Goals</span></div>
+          <div class="field-system" data-side="right" style="--x:97%;--y:35%;--alpha:.76"><span class="field-system-label">Notes</span></div>
+          <div class="field-system field-system--active" data-side="right" style="--x:97%;--y:46%"><span class="field-system-label">Email</span></div>
+          <div class="field-system" data-side="right" style="--x:96%;--y:57%;--alpha:.86"><span class="field-system-label">People</span></div>
+          <div class="field-system" data-side="right" style="--x:90%;--y:71%;--alpha:.8"><span class="field-system-label">Health</span></div>
+          <div class="field-system" data-side="right" style="--x:81%;--y:81%;--alpha:.78"><span class="field-system-label">Finance</span></div>
+          <div class="field-system" data-side="left" style="--x:55%;--y:84%;--alpha:.76"><span class="field-system-label">Strategy</span></div>
+          <div class="field-system" data-side="left" style="--x:35%;--y:79%;--alpha:.76"><span class="field-system-label">News</span></div>
+          <div class="field-system" data-side="left" style="--x:18%;--y:70%;--alpha:.8"><span class="field-system-label">Habits</span></div>
+          <div class="field-system" data-side="left" style="--x:13%;--y:52%;--alpha:.88"><span class="field-system-label">Meetings</span></div>
+          <div class="field-system field-system--active" data-side="left" style="--x:21%;--y:28%"><span class="field-system-label">Projects</span></div>
         </div>
       </div>
     </section>
@@ -1205,9 +1272,18 @@
 
           gsap.to('.intelligence-art', {
             opacity: 1,
-            scale: 1,
+            scale: 1.28,
             duration: 1.15,
             ease: 'power3.out',
+            scrollTrigger: trigger
+          });
+
+          gsap.from('.field-link', {
+            strokeDasharray: 100,
+            strokeDashoffset: 100,
+            duration: 0.9,
+            stagger: 0.045,
+            ease: 'power2.out',
             scrollTrigger: trigger
           });
 
@@ -1221,7 +1297,7 @@
 
           gsap.to('.intelligence-art', {
             y: -4,
-            scale: 1.01,
+            scale: 1.295,
             duration: 5.5,
             repeat: -1,
             yoyo: true,
