@@ -348,327 +348,86 @@
       }
 
       /* ══════════════════════════════════════════
-         B.3 VIGNETTES (Kinetic Word Cloud)
+         B.4 WORKFLOWS — Concrete Agent Outcomes
          ══════════════════════════════════════════ */
-      .section--vignettes {
-        padding: var(--space-section-lg) 24px;
-        min-height: 500px;
-      }
-
-      .vignettes-header {
-        font-size: var(--text-display);
-        font-weight: 700;
-        line-height: var(--lh-display);
-        letter-spacing: var(--ls-display);
-        color: var(--color-fg);
-        text-align: center;
-        margin-bottom: var(--space-element-lg);
-      }
-
-      .word-field {
+      .section--workflows {
         position: relative;
-        width: 100%;
-        max-width: var(--max-content);
-        height: 360px;
-        margin: 0 auto;
-      }
-
-      .word-field span {
-        position: absolute;
-        white-space: nowrap;
-      }
-
-      .word-large {
-        font-size: var(--text-display);
-        font-weight: 600;
-        color: var(--color-accent);
-        opacity: 0.9;
-      }
-
-      .word-medium {
-        font-size: var(--text-subtitle);
-        font-weight: 500;
-        color: var(--color-fg);
-        opacity: 0.7;
-      }
-
-      .word-small {
-        font-size: var(--text-body-lg);
-        font-weight: 400;
-        color: var(--color-fg-muted);
-        opacity: 0.5;
-      }
-
-      /* ══════════════════════════════════════════
-         B.4 EMERGENCE — Iceberg Engine Room
-         ══════════════════════════════════════════ */
-      .section--emergence {
-        position: relative;
-        padding: 0;
-        min-height: 100vh;
-        overflow: hidden;
+        padding: var(--space-section-md) 24px;
+        min-height: auto;
         background: var(--color-canvas);
       }
 
-      .iceberg-container {
-        position: relative;
-        width: 100%;
-        height: 100vh;
-        min-height: 700px;
-        overflow: hidden;
+      .workflows-content {
+        width: min(100%, var(--max-content));
+        margin: 0 auto;
       }
 
-      /* Headline — oversized, upper-left, above horizon */
-      .emergence-headline {
-        position: absolute;
-        top: 12%;
-        left: 7%;
-        right: 20%;
-        font-size: clamp(2.2rem, 6vw, 5.5rem);
+      .workflows-header {
+        max-width: 700px;
+        margin-bottom: clamp(40px, 5vw, 64px);
+      }
+
+      .workflows-headline {
+        font-size: clamp(2.3rem, 4.8vw, 4.35rem);
         font-weight: 800;
-        line-height: 1.08;
-        letter-spacing: -0.02em;
+        line-height: 1.05;
+        letter-spacing: -0.03em;
         color: var(--color-fg);
-        z-index: 10;
-        opacity: 0;
       }
 
-      /* Horizon line */
-      .horizon-line {
-        position: absolute;
-        top: 52%;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: linear-gradient(90deg,
-          rgba(255,255,255,0) 0%,
-          rgba(255,255,255,0.12) 10%,
-          rgba(255,255,255,0.25) 40%,
-          rgba(255,255,255,0.35) 60%,
-          rgba(26,155,219,0.7) 76%,
-          rgba(255,255,255,0.95) 80%,
-          rgba(26,155,219,0.7) 84%,
-          rgba(255,255,255,0.2) 92%,
-          rgba(255,255,255,0) 100%
-        );
-        z-index: 5;
+      .workflows-subhead {
+        max-width: 620px;
+        margin-top: 22px;
+        font-size: var(--text-body-lg);
+        line-height: 1.55;
+        color: hsl(220, 10%, 67%);
       }
 
-      .horizon-glow {
-        position: absolute;
-        top: 52%;
-        left: 0;
-        right: 0;
-        height: 6px;
-        transform: translateY(-50%);
-        background: linear-gradient(90deg,
-          transparent 0%,
-          rgba(26,155,219,0.06) 15%,
-          rgba(26,155,219,0.12) 40%,
-          rgba(26,155,219,0.5) 76%,
-          rgba(255,255,255,0.6) 80%,
-          rgba(26,155,219,0.5) 84%,
-          rgba(26,155,219,0.08) 92%,
-          transparent 100%
-        );
-        filter: blur(4px);
-        z-index: 4;
+      .workflow-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        border-top: 1px solid var(--color-border);
       }
 
-      /* The drifting "you" dot */
-      .you-dot {
-        position: absolute;
-        top: 52%;
-        transform: translate(-50%, -50%);
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: radial-gradient(circle, #d4d4d4 0%, #8a8a8a 60%, #555 100%);
-        box-shadow: 0 0 6px rgba(200,200,200,0.3);
-        z-index: 6;
-        left: 15%;
+      .workflow-item {
+        position: relative;
+        min-height: 210px;
+        padding: 28px 40px 32px 0;
+        border-bottom: 1px solid var(--color-border);
       }
 
-      /* Engine room SVG container */
-      .engine-room {
-        position: absolute;
-        top: 52%;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        overflow: hidden;
-        z-index: 3;
+      .workflow-item:nth-child(odd) {
+        padding-right: 56px;
+        border-right: 1px solid var(--color-border);
       }
 
-      .engine-room svg {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+      .workflow-item:nth-child(even) {
+        padding-left: 56px;
       }
 
-      /* Engine room parallax layers */
-      .engine-layer {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+      .workflow-number {
+        display: block;
+        margin-bottom: 30px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        color: var(--color-accent);
       }
 
-      .engine-layer--back { opacity: 0; will-change: transform, opacity; }
-      .engine-layer--mid { opacity: 0; will-change: transform, opacity; }
-      .engine-layer--front { opacity: 0; will-change: transform, opacity; }
-
-      /* The vertical beam */
-      .beam-container {
-        position: absolute;
-        left: 80%;
-        top: 0;
-        bottom: 0;
-        width: 80px;
-        transform: translateX(-50%);
-        z-index: 7;
-        pointer-events: none;
+      .workflow-title {
+        font-size: clamp(1.45rem, 2.5vw, 2.25rem);
+        font-weight: 700;
+        line-height: 1.12;
+        letter-spacing: -0.025em;
+        color: var(--color-fg);
       }
 
-      .beam-core {
-        position: absolute;
-        left: 50%;
-        top: 0;
-        bottom: 48%;
-        width: 2px;
-        transform: translateX(-50%);
-        background: linear-gradient(180deg,
-          rgba(26,155,219,0) 0%,
-          rgba(26,155,219,0.7) 30%,
-          rgba(255,255,255,0.95) 50%,
-          rgba(26,155,219,0.7) 70%,
-          rgba(26,155,219,0) 100%
-        );
-        opacity: 0;
-        transform-origin: bottom center;
-      }
-
-      .beam-glow {
-        position: absolute;
-        left: 50%;
-        top: 0;
-        bottom: 48%;
-        width: 40px;
-        transform: translateX(-50%);
-        background: linear-gradient(180deg,
-          rgba(26,155,219,0) 0%,
-          rgba(26,155,219,0.15) 20%,
-          rgba(26,155,219,0.35) 50%,
-          rgba(26,155,219,0.5) 80%,
-          rgba(26,155,219,0.3) 100%
-        );
-        filter: blur(12px);
-        opacity: 0;
-      }
-
-      .beam-flare {
-        position: absolute;
-        left: 50%;
-        top: 52%;
-        width: 200px;
-        height: 200px;
-        transform: translate(-50%, -50%) scale(0);
-        border-radius: 50%;
-        background: radial-gradient(circle,
-          rgba(255,255,255,0.95) 0%,
-          rgba(255,255,255,0.6) 6%,
-          rgba(26,155,219,0.5) 20%,
-          rgba(26,155,219,0.15) 45%,
-          rgba(26,155,219,0.04) 65%,
-          transparent 100%
-        );
-        z-index: 8;
-      }
-
-      /* Radial bloom below the beam base */
-      .beam-base-bloom {
-        position: absolute;
-        left: 50%;
-        top: 58%;
-        width: 320px;
-        height: 280px;
-        transform: translate(-50%, -50%);
-        border-radius: 50%;
-        background: radial-gradient(ellipse,
-          rgba(26,155,219,0.35) 0%,
-          rgba(26,155,219,0.15) 35%,
-          rgba(26,155,219,0.04) 60%,
-          transparent 80%
-        );
-        filter: blur(24px);
-        opacity: 0;
-        z-index: 1;
-      }
-
-      /* Beam below horizon */
-      .beam-below {
-        position: absolute;
-        left: 50%;
-        top: 52%;
-        bottom: 0;
-        width: 2px;
-        transform: translateX(-50%);
-        background: linear-gradient(180deg,
-          rgba(26,155,219,0.9) 0%,
-          rgba(26,155,219,0.4) 40%,
-          rgba(26,155,219,0.1) 100%
-        );
-        opacity: 0;
-      }
-
-      .beam-below-glow {
-        position: absolute;
-        left: 50%;
-        top: 52%;
-        bottom: 0;
-        width: 60px;
-        transform: translateX(-50%);
-        background: linear-gradient(180deg,
-          rgba(26,155,219,0.35) 0%,
-          rgba(26,155,219,0.15) 40%,
-          rgba(26,155,219,0.04) 80%,
-          transparent 100%
-        );
-        filter: blur(18px);
-        opacity: 0;
-      }
-
-      /* Reduced motion: show everything composed */
-      @media (prefers-reduced-motion: reduce) {
-        .emergence-headline { opacity: 1; }
-        .engine-layer--back { opacity: 1; }
-        .engine-layer--mid { opacity: 1; }
-        .engine-layer--front { opacity: 1; }
-        .beam-core { opacity: 1; }
-        .beam-glow { opacity: 0.7; }
-        .beam-flare { transform: translate(-50%, -50%) scale(1); }
-        .beam-below { opacity: 1; }
-        .beam-below-glow { opacity: 0.6; }
-        .beam-base-bloom { opacity: 0.7; }
-        .you-dot { left: 35%; }
-      }
-
-      @media (max-width: 768px) {
-        .iceberg-container {
-          min-height: 600px;
-          height: 80vh;
-        }
-        .emergence-headline {
-          top: 8%;
-          left: 5%;
-          right: 5%;
-          font-size: clamp(1.8rem, 8vw, 3rem);
-        }
-        .beam-container { left: 85%; }
-        .you-dot { width: 8px; height: 8px; }
+      .workflow-description {
+        max-width: 470px;
+        margin-top: 14px;
+        font-size: 1rem;
+        line-height: 1.55;
+        color: hsl(220, 10%, 67%);
       }
 
       /* ══════════════════════════════════════════
@@ -895,7 +654,6 @@
           letter-spacing: 0.025em;
           fill: rgba(232, 234, 237, 0.9);
         }
-        .section--vignettes { padding: 56px 24px; }
         .section--acceleration { min-height: 70vh; }
         .acceleration-content { padding: 48px 24px; }
         .acceleration-headline { font-size: clamp(2rem, 10vw, 3rem); }
@@ -904,19 +662,21 @@
 
         .parallax-blob { transform: scale(0.6); }
 
-        .word-field {
-          position: static;
-          height: auto;
-          display: flex;
-          flex-wrap: wrap;
-          justify-content: center;
-          gap: 16px 24px;
-          padding: 0 16px;
+        .section--workflows { padding: 64px 24px; }
+        .workflows-header { margin-bottom: 34px; }
+        .workflows-headline { font-size: clamp(2.2rem, 11vw, 3.25rem); }
+        .workflows-subhead { margin-top: 18px; font-size: 1rem; }
+        .workflow-list { grid-template-columns: 1fr; }
+        .workflow-item,
+        .workflow-item:nth-child(odd),
+        .workflow-item:nth-child(even) {
+          min-height: 0;
+          padding: 22px 0 24px;
+          border-right: 0;
         }
-
-        .word-field span {
-          position: static;
-        }
+        .workflow-number { margin-bottom: 20px; }
+        .workflow-title { font-size: 1.5rem; }
+        .workflow-description { font-size: 0.95rem; }
 
       }
     </style>
@@ -993,73 +753,45 @@
     </section>
 
     <!-- ════════════════════════════════════════
-         SECTION 3: VIGNETTES (Kinetic Word Cloud)
+         SECTION 4: WORKFLOWS
          ════════════════════════════════════════ -->
-    <section class="section section--vignettes" id="vignettes">
-      <div class="bg-layer" aria-hidden="true">
-        <div class="parallax-blob blob-large blob-d"></div>
-        <div class="parallax-blob blob-medium blob-e"></div>
-      </div>
-      <div class="section-content" style="max-width: var(--max-content); margin: 0 auto;">
-        <h2 class="vignettes-header">Here's what that looks like.</h2>
-        <div class="word-field mid-layer-content">
-          <!-- Row 1: Large accent words -->
-          <span class="word-large" style="top: 10%; left: 8%;">Goals</span>
-          <span class="word-large" style="top: 45%; left: 65%;">Calendar</span>
-          <span class="word-large" style="top: 75%; left: 25%;">Memory</span>
-          <!-- Row 2: Medium white words -->
-          <span class="word-medium" style="top: 5%; left: 60%;">Email</span>
-          <span class="word-medium" style="top: 35%; left: 15%;">Health</span>
-          <span class="word-medium" style="top: 60%; left: 75%;">Finance</span>
-          <span class="word-medium" style="top: 80%; left: 65%;">News</span>
-          <!-- Row 3: Small muted words -->
-          <span class="word-small" style="top: 20%; left: 35%;">Relationships</span>
-          <span class="word-small" style="top: 50%; left: 40%;">Decisions</span>
-          <span class="word-small" style="top: 15%; left: 80%;">Wellness</span>
-          <span class="word-small" style="top: 70%; left: 50%;">Ideas</span>
-          <span class="word-small" style="top: 40%; left: 85%;">Plans</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ════════════════════════════════════════
-         SECTION 4: EMERGENCE — Iceberg Engine Room
-         ════════════════════════════════════════ -->
-    <section class="section section--emergence" id="emergence">
-      <div class="iceberg-container">
-        <h2 class="emergence-headline">You move through your day.<br>It moves your goals forward.</h2>
-
-        <!-- Horizon -->
-        <div class="horizon-glow" aria-hidden="true"></div>
-        <div class="horizon-line" aria-hidden="true"></div>
-
-        <!-- You dot — drifts along the horizon -->
-        <div class="you-dot" aria-hidden="true"></div>
-
-        <!-- Beam of light — pierces up through horizon -->
-        <div class="beam-container" aria-hidden="true">
-          <div class="beam-glow"></div>
-          <div class="beam-core"></div>
-          <div class="beam-below-glow"></div>
-          <div class="beam-below"></div>
-          <div class="beam-flare"></div>
-          <div class="beam-base-bloom"></div>
-        </div>
-
-        <!-- Engine room: 3 parallax depth layers of SVG threads/nodes -->
-        <div class="engine-room" aria-hidden="true">
-          <!-- Back layer: slow, dim -->
-          <div class="engine-layer engine-layer--back">
-            <svg viewBox="0 0 1440 400" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" class="engine-svg engine-svg--back"></svg>
-          </div>
-          <!-- Mid layer -->
-          <div class="engine-layer engine-layer--mid">
-            <svg viewBox="0 0 1440 400" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" class="engine-svg engine-svg--mid"></svg>
-          </div>
-          <!-- Front layer: brighter, faster -->
-          <div class="engine-layer engine-layer--front">
-            <svg viewBox="0 0 1440 400" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" class="engine-svg engine-svg--front"></svg>
-          </div>
+    <section class="section section--workflows" id="workflows">
+      <div class="workflows-content">
+        <header class="workflows-header">
+          <h2 class="workflows-headline">You move through your day.<br>It moves your goals forward.</h2>
+          <p class="workflows-subhead">Six workflows that run continuously across your meetings, email, calendar, and projects.</p>
+        </header>
+        <div class="workflow-list">
+          <article class="workflow-item">
+            <span class="workflow-number">01</span>
+            <h3 class="workflow-title">Builds project plans</h3>
+            <p class="workflow-description">Turns a goal into milestones, tasks, owners, and a clear next step.</p>
+          </article>
+          <article class="workflow-item">
+            <span class="workflow-number">02</span>
+            <h3 class="workflow-title">Tracks follow-ups</h3>
+            <p class="workflow-description">Finds open asks in email and meetings, then reminds you who owes what and when.</p>
+          </article>
+          <article class="workflow-item">
+            <span class="workflow-number">03</span>
+            <h3 class="workflow-title">Records meeting notes</h3>
+            <p class="workflow-description">Joins calls and captures attributed notes, decisions, and action items.</p>
+          </article>
+          <article class="workflow-item">
+            <span class="workflow-number">04</span>
+            <h3 class="workflow-title">Prepares meeting briefs</h3>
+            <p class="workflow-description">Pulls the agenda, attendee history, open threads, and related documents into one brief.</p>
+          </article>
+          <article class="workflow-item">
+            <span class="workflow-number">05</span>
+            <h3 class="workflow-title">Maintains your task list</h3>
+            <p class="workflow-description">Converts decisions and promises into dated tasks and keeps them visible until complete.</p>
+          </article>
+          <article class="workflow-item">
+            <span class="workflow-number">06</span>
+            <h3 class="workflow-title">Plans your day</h3>
+            <p class="workflow-description">Reconciles deadlines, meetings, priorities, and available time into a realistic daily schedule.</p>
+          </article>
         </div>
       </div>
     </section>
@@ -1207,447 +939,23 @@
 
         }
 
-        // ── B.3 Vignettes Word Cascade ──
-        function initVignettes() {
-          revealSection('.section--vignettes .section-content', { stagger: 0 });
-
-          var vigTl = gsap.timeline({
-            scrollTrigger: {
-              trigger: '.word-field',
-              start: 'top 80%',
-              once: true
-            }
+        // ── B.4 Workflows ──
+        function initWorkflows() {
+          gsap.from('.workflows-header', {
+            y: 20,
+            opacity: 0,
+            duration: 0.7,
+            ease: 'power3.out',
+            scrollTrigger: { trigger: '.section--workflows', start: 'top 78%', once: true }
           });
-          vigTl
-            .from('.word-large', {
-              y: 32, opacity: 0, duration: 0.9, stagger: 0.12,
-              ease: 'power3.out'
-            })
-            .from('.word-medium', {
-              y: 24, opacity: 0, duration: 0.8, stagger: 0.1,
-              ease: 'power3.out'
-            }, 0.2)
-            .from('.word-small', {
-              y: 16, opacity: 0, duration: 0.7, stagger: 0.08,
-              ease: 'power3.out'
-            }, 0.4);
-        }
-
-        // ── B.4 Emergence — Iceberg Engine Room ──
-        function initEmergence() {
-          var isMobile = window.innerWidth < 768;
-          var ACCENT = '#1A9BDB';
-
-          // ── Generate SVG engine room threads & nodes ──
-          function populateLayer(svg, config) {
-            var ns = 'http://www.w3.org/2000/svg';
-            var threadCount = config.threads;
-            var beamX = isMobile ? 1220 : 1152; // ~80% of 1440
-
-            // Generate threads converging toward beam — rightward bias with left fill
-            for (var t = 0; t < threadCount; t++) {
-              var path = document.createElementNS(ns, 'path');
-              // 50% right half (dense near beam), 30% mid, 20% far left
-              var roll = Math.random();
-              var startX = roll < 0.5
-                ? 700 + Math.random() * 740
-                : roll < 0.8
-                  ? 300 + Math.random() * 400
-                  : Math.random() * 300;
-              var startY = 20 + Math.random() * 360;
-              var endX = beamX + (Math.random() - 0.5) * 50;
-              var endY = 5 + Math.random() * 70;
-              var cp1x = startX + (endX - startX) * (0.3 + Math.random() * 0.3);
-              var cp1y = startY + (Math.random() - 0.5) * 150;
-              var cp2x = startX + (endX - startX) * (0.6 + Math.random() * 0.2);
-              var cp2y = endY + (Math.random() - 0.5) * 100;
-
-              var d = 'M' + startX + ',' + startY +
-                      ' C' + cp1x + ',' + cp1y +
-                      ' ' + cp2x + ',' + cp2y +
-                      ' ' + endX + ',' + endY;
-
-              path.setAttribute('d', d);
-              path.setAttribute('fill', 'none');
-              path.setAttribute('stroke', ACCENT);
-              path.setAttribute('stroke-width', (0.3 + Math.random() * config.maxWidth).toFixed(2));
-              path.setAttribute('opacity', (config.minOpacity + Math.random() * (config.maxOpacity - config.minOpacity)).toFixed(3));
-              path.classList.add('engine-thread');
-
-              var len = 800 + Math.random() * 600;
-              path.style.strokeDasharray = len;
-              path.style.strokeDashoffset = len;
-              svg.appendChild(path);
-            }
-
-            // Horizontal threads for density
-            var hCount = Math.floor(threadCount * 0.35);
-            for (var h = 0; h < hCount; h++) {
-              var hPath = document.createElementNS(ns, 'path');
-              var hy = 30 + Math.random() * 340;
-              var hx1 = Math.random() * 500;
-              var hx2 = hx1 + 300 + Math.random() * 700;
-              var hcy = hy + (Math.random() - 0.5) * 80;
-              var hd = 'M' + hx1 + ',' + hy + ' Q' + ((hx1+hx2)/2) + ',' + hcy + ' ' + hx2 + ',' + (hy + (Math.random()-0.5)*40);
-
-              hPath.setAttribute('d', hd);
-              hPath.setAttribute('fill', 'none');
-              hPath.setAttribute('stroke', ACCENT);
-              hPath.setAttribute('stroke-width', (0.2 + Math.random() * 0.5).toFixed(2));
-              hPath.setAttribute('opacity', (config.minOpacity * 0.5 + Math.random() * config.maxOpacity * 0.5).toFixed(3));
-              hPath.classList.add('engine-thread');
-              var hLen = 600 + Math.random() * 400;
-              hPath.style.strokeDasharray = hLen;
-              hPath.style.strokeDashoffset = hLen;
-              svg.appendChild(hPath);
-            }
-
-            // Arc threads — concentrated center-right
-            var arcCount = Math.floor(threadCount * 0.3);
-            for (var a = 0; a < arcCount; a++) {
-              var arc = document.createElementNS(ns, 'path');
-              // Bias arcs toward center-right
-              var acx = 400 + Math.random() * 900;
-              var acy = 50 + Math.random() * 300;
-              var ar = 40 + Math.random() * 140;
-              var aStart = Math.random() * Math.PI;
-              var aEnd = aStart + 0.5 + Math.random() * 2;
-              var ax1 = acx + Math.cos(aStart) * ar;
-              var ay1 = acy + Math.sin(aStart) * ar * 0.5;
-              var ax2 = acx + Math.cos(aEnd) * ar;
-              var ay2 = acy + Math.sin(aEnd) * ar * 0.5;
-              var ad = 'M' + ax1.toFixed(1) + ',' + ay1.toFixed(1) +
-                       ' A' + ar.toFixed(1) + ',' + (ar*0.5).toFixed(1) + ' 0 0 1 ' +
-                       ax2.toFixed(1) + ',' + ay2.toFixed(1);
-
-              arc.setAttribute('d', ad);
-              arc.setAttribute('fill', 'none');
-              arc.setAttribute('stroke', ACCENT);
-              arc.setAttribute('stroke-width', (0.2 + Math.random() * 0.4).toFixed(2));
-              arc.setAttribute('opacity', (config.minOpacity + Math.random() * config.maxOpacity * 0.7).toFixed(3));
-              arc.classList.add('engine-thread');
-              var arcLen = 300 + Math.random() * 300;
-              arc.style.strokeDasharray = arcLen;
-              arc.style.strokeDashoffset = arcLen;
-              svg.appendChild(arc);
-            }
-
-            // Short feeder threads near beam convergence
-            var feederCount = Math.floor(threadCount * 0.25);
-            for (var f = 0; f < feederCount; f++) {
-              var fp = document.createElementNS(ns, 'path');
-              var fsx = beamX + (Math.random() - 0.5) * 300;
-              var fsy = 80 + Math.random() * 280;
-              var fex = beamX + (Math.random() - 0.5) * 40;
-              var fey = 10 + Math.random() * 50;
-              var fcx = (fsx + fex) / 2 + (Math.random() - 0.5) * 60;
-              var fcy = (fsy + fey) / 2 + (Math.random() - 0.5) * 40;
-              var fd = 'M' + fsx.toFixed(1) + ',' + fsy.toFixed(1) +
-                       ' Q' + fcx.toFixed(1) + ',' + fcy.toFixed(1) +
-                       ' ' + fex.toFixed(1) + ',' + fey.toFixed(1);
-              fp.setAttribute('d', fd);
-              fp.setAttribute('fill', 'none');
-              fp.setAttribute('stroke', ACCENT);
-              fp.setAttribute('stroke-width', (0.3 + Math.random() * config.maxWidth * 0.8).toFixed(2));
-              fp.setAttribute('opacity', (config.minOpacity + Math.random() * (config.maxOpacity - config.minOpacity) * 1.2).toFixed(3));
-              fp.classList.add('engine-thread');
-              var fLen = 300 + Math.random() * 300;
-              fp.style.strokeDasharray = fLen;
-              fp.style.strokeDashoffset = fLen;
-              svg.appendChild(fp);
-            }
-
-            // ── Node hierarchy ──
-            // Tier 1: Many tiny faint micro-nodes (spread across field)
-            var microCount = config.microNodes;
-            for (var m = 0; m < microCount; m++) {
-              var mc = document.createElementNS(ns, 'circle');
-              var mx = 50 + Math.random() * 1340;
-              var my = 20 + Math.random() * 360;
-              mc.setAttribute('cx', mx.toFixed(1));
-              mc.setAttribute('cy', my.toFixed(1));
-              mc.setAttribute('r', (0.5 + Math.random() * 1.2).toFixed(1));
-              mc.setAttribute('fill', ACCENT);
-              mc.setAttribute('opacity', '0');
-              mc.classList.add('engine-node', 'engine-node--micro');
-              svg.appendChild(mc);
-            }
-
-            // Tier 2: Medium nodes along strands
-            var medCount = config.medNodes;
-            for (var md = 0; md < medCount; md++) {
-              var mdc = document.createElementNS(ns, 'circle');
-              // Bias toward center-right
-              var mdx = 200 + Math.random() * 1100;
-              var mdy = 20 + Math.random() * 360;
-              mdc.setAttribute('cx', mdx.toFixed(1));
-              mdc.setAttribute('cy', mdy.toFixed(1));
-              mdc.setAttribute('r', (1.5 + Math.random() * 2.5).toFixed(1));
-              mdc.setAttribute('fill', ACCENT);
-              mdc.setAttribute('opacity', '0');
-              mdc.classList.add('engine-node', 'engine-node--med');
-              svg.appendChild(mdc);
-            }
-
-            // Tier 3: Bright pulse nodes with halos — concentrated near beam
-            var pulseCount = config.pulseNodes;
-            for (var p = 0; p < pulseCount; p++) {
-              // Position biased center-right, near beam
-              var px = beamX + (Math.random() - 0.6) * 450;
-              var py = 30 + Math.random() * 280;
-
-              // Outer halo (large, very soft glow)
-              var halo = document.createElementNS(ns, 'circle');
-              halo.setAttribute('cx', px.toFixed(1));
-              halo.setAttribute('cy', py.toFixed(1));
-              halo.setAttribute('r', (12 + Math.random() * 16).toFixed(1));
-              halo.setAttribute('fill', ACCENT);
-              halo.setAttribute('opacity', '0');
-              halo.classList.add('engine-node', 'engine-node--halo');
-              svg.appendChild(halo);
-
-              // Bright core — visible, punchy
-              var pc = document.createElementNS(ns, 'circle');
-              pc.setAttribute('cx', px.toFixed(1));
-              pc.setAttribute('cy', py.toFixed(1));
-              pc.setAttribute('r', (2.5 + Math.random() * 3).toFixed(1));
-              pc.setAttribute('fill', ACCENT);
-              pc.setAttribute('opacity', '0');
-              pc.classList.add('engine-node', 'engine-node--pulse');
-              svg.appendChild(pc);
-            }
-          }
-
-          // Layer configs — 2-3x thread volume, 3 clear depth layers
-          var backSvg = document.querySelector('.engine-svg--back');
-          var midSvg = document.querySelector('.engine-svg--mid');
-          var frontSvg = document.querySelector('.engine-svg--front');
-
-          if (!backSvg) return;
-
-          // Back: dense base texture — many threads, low but visible opacity
-          populateLayer(backSvg, {
-            threads: isMobile ? 40 : 110,
-            microNodes: isMobile ? 40 : 100,
-            medNodes: isMobile ? 10 : 25,
-            pulseNodes: 0,
-            minOpacity: 0.06,
-            maxOpacity: 0.2,
-            maxWidth: 0.6,
+          gsap.from('.workflow-item', {
+            y: 16,
+            opacity: 0,
+            duration: 0.55,
+            stagger: 0.07,
+            ease: 'power3.out',
+            scrollTrigger: { trigger: '.workflow-list', start: 'top 84%', once: true }
           });
-
-          // Mid: moderate threads, medium opacity
-          populateLayer(midSvg, {
-            threads: isMobile ? 30 : 80,
-            microNodes: isMobile ? 25 : 60,
-            medNodes: isMobile ? 12 : 30,
-            pulseNodes: isMobile ? 2 : 5,
-            minOpacity: 0.15,
-            maxOpacity: 0.4,
-            maxWidth: 1.0,
-          });
-
-          // Front: fewer but brighter threads, plus bright pulse nodes
-          populateLayer(frontSvg, {
-            threads: isMobile ? 20 : 55,
-            microNodes: isMobile ? 15 : 35,
-            medNodes: isMobile ? 8 : 20,
-            pulseNodes: isMobile ? 3 : 7,
-            minOpacity: 0.25,
-            maxOpacity: 0.6,
-            maxWidth: 1.5,
-          });
-
-          // ── ScrollTrigger: Engine room ignites as section enters ──
-          var entranceTl = gsap.timeline({
-            scrollTrigger: {
-              trigger: '.section--emergence',
-              start: 'top 85%',
-              once: true
-            }
-          });
-
-          // Headline fades in
-          entranceTl.to('.emergence-headline', {
-            opacity: 1,
-            y: 0,
-            duration: 0.8,
-            ease: 'power3.out'
-          }, 0);
-
-          // Engine layers ignite staggered
-          entranceTl.to('.engine-layer--back', { opacity: 1, duration: 1.5, ease: 'power2.out' }, 0.2);
-          entranceTl.to('.engine-layer--mid', { opacity: 1, duration: 1.2, ease: 'power2.out' }, 0.5);
-          entranceTl.to('.engine-layer--front', { opacity: 1, duration: 1.0, ease: 'power2.out' }, 0.8);
-
-          // Threads draw in (stroke-dashoffset → 0)
-          var allThreads = document.querySelectorAll('.engine-thread');
-          allThreads.forEach(function(thread, i) {
-            gsap.to(thread, {
-              strokeDashoffset: 0,
-              duration: 1.5 + Math.random() * 1.5,
-              delay: 0.3 + (i % 20) * 0.05,
-              ease: 'power2.inOut',
-              scrollTrigger: {
-                trigger: '.section--emergence',
-                start: 'top 85%',
-                once: true
-              }
-            });
-          });
-
-          // Nodes pulse in staggered — tiered opacity targets
-          var allNodes = document.querySelectorAll('.engine-node');
-          allNodes.forEach(function(node, i) {
-            var targetOp;
-            if (node.classList.contains('engine-node--pulse')) {
-              targetOp = 0.75 + Math.random() * 0.25;
-            } else if (node.classList.contains('engine-node--halo')) {
-              targetOp = 0.08 + Math.random() * 0.1;
-            } else if (node.classList.contains('engine-node--med')) {
-              targetOp = 0.2 + Math.random() * 0.35;
-            } else {
-              // micro nodes
-              targetOp = 0.12 + Math.random() * 0.25;
-            }
-            gsap.to(node, {
-              opacity: targetOp,
-              duration: 0.5 + Math.random() * 1.0,
-              delay: 0.6 + (i % 40) * 0.03,
-              ease: 'power2.out',
-              scrollTrigger: {
-                trigger: '.section--emergence',
-                start: 'top 85%',
-                once: true
-              }
-            });
-          });
-
-          // ── Beam fires when headline locks into place ──
-          var beamTl = gsap.timeline({
-            scrollTrigger: {
-              trigger: '.section--emergence',
-              start: 'top 40%',
-              once: true
-            }
-          });
-
-          beamTl.to('.beam-below', { opacity: 1, duration: 0.5, ease: 'power2.out' }, 0);
-          beamTl.to('.beam-below-glow', { opacity: 0.6, duration: 0.6, ease: 'power2.out' }, 0);
-          beamTl.to('.beam-base-bloom', { opacity: 0.7, duration: 0.8, ease: 'power2.out' }, 0);
-          beamTl.to('.beam-core', { opacity: 1, duration: 0.4, ease: 'power2.in' }, 0.3);
-          beamTl.to('.beam-glow', { opacity: 0.7, duration: 0.5, ease: 'power2.out' }, 0.3);
-          beamTl.to('.beam-flare', {
-            scale: 1,
-            duration: 0.6,
-            ease: 'back.out(1.2)'
-          }, 0.4);
-
-          // ── Scroll-linked "you" dot drifts left-to-right ──
-          gsap.to('.you-dot', {
-            left: '70%',
-            ease: 'none',
-            scrollTrigger: {
-              trigger: '.section--emergence',
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: 1
-            }
-          });
-
-          // ── Parallax depth on engine layers ──
-          gsap.to('.engine-layer--back', {
-            y: -15,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: '.section--emergence',
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: true
-            }
-          });
-          gsap.to('.engine-layer--mid', {
-            y: -30,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: '.section--emergence',
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: true
-            }
-          });
-          gsap.to('.engine-layer--front', {
-            y: -50,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: '.section--emergence',
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: true
-            }
-          });
-
-          // ── Continuous ambient life ──
-          function ambientNodePulse() {
-            // Micro nodes: gentle subtle shimmer
-            var microNodes = document.querySelectorAll('.engine-node--micro');
-            microNodes.forEach(function(node) {
-              gsap.to(node, {
-                opacity: '+=' + (Math.random() * 0.08 - 0.03),
-                duration: 3 + Math.random() * 5,
-                delay: Math.random() * 10,
-                ease: 'sine.inOut',
-                yoyo: true,
-                repeat: -1,
-                repeatDelay: Math.random() * 4
-              });
-            });
-
-            // Med nodes: moderate pulse
-            var medNodes = document.querySelectorAll('.engine-node--med');
-            medNodes.forEach(function(node) {
-              gsap.to(node, {
-                opacity: '+=' + (Math.random() * 0.12 - 0.04),
-                duration: 2 + Math.random() * 3,
-                delay: Math.random() * 6,
-                ease: 'sine.inOut',
-                yoyo: true,
-                repeat: -1,
-                repeatDelay: Math.random() * 3
-              });
-            });
-
-            // Pulse nodes: bright breathing with randomized stagger
-            var pulseNodes = document.querySelectorAll('.engine-node--pulse');
-            pulseNodes.forEach(function(node, i) {
-              gsap.to(node, {
-                opacity: 0.5 + Math.random() * 0.3,
-                duration: 1.2 + Math.random() * 1.5,
-                delay: i * 0.4 + Math.random() * 2,
-                ease: 'sine.inOut',
-                yoyo: true,
-                repeat: -1,
-                repeatDelay: 0.5 + Math.random() * 2.5
-              });
-            });
-
-            // Halo nodes: slow soft breathing
-            var haloNodes = document.querySelectorAll('.engine-node--halo');
-            haloNodes.forEach(function(node, i) {
-              gsap.to(node, {
-                opacity: 0.05 + Math.random() * 0.08,
-                duration: 2 + Math.random() * 3,
-                delay: i * 0.5 + Math.random() * 3,
-                ease: 'sine.inOut',
-                yoyo: true,
-                repeat: -1,
-                repeatDelay: 1 + Math.random() * 2
-              });
-            });
-          }
-
-          // Start ambient after entrance completes
-          gsap.delayedCall(3, ambientNodePulse);
         }
 
         // ── B.5 Acceleration — Warp Field ──
@@ -1780,8 +1088,7 @@
         // ── Init ──
         function initScrollAnimations() {
           initDefinition();
-          initVignettes();
-          initEmergence();
+          initWorkflows();
           initAcceleration();
           initTrust();
           initClose();
