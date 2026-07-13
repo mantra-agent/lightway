@@ -939,7 +939,7 @@
         .definition-headline { font-size: clamp(2rem, 10vw, 3rem); }
         .definition-body { margin-top: 18px; font-size: 1rem; }
         .intelligence-field {
-          width: min(100%, 440px);
+          width: min(90%, 400px);
           aspect-ratio: 1;
         }
         .intelligence-art {
@@ -953,9 +953,16 @@
         .field-system[data-side="right"] {
           transform: translate(-100%, -50%);
           padding-left: 0;
-          padding-right: 7px;
+          padding-right: 10px;
         }
         .field-system[data-side="left"] { padding-right: 7px; }
+        .field-system[style*="--x:97%"] { --x: 94% !important; }
+        .field-system[style*="--x:96%"] { --x: 93% !important; }
+        .field-link { stroke-width: 1.05; opacity: 0.8; }
+        .field-system[data-side="right"] .field-system-label {
+          background: rgba(0, 0, 0, 0.9);
+          box-shadow: 0 0 7px 3px rgba(0, 0, 0, 0.9);
+        }
         .section--vignettes { padding: 56px 24px; }
         .section--acceleration { min-height: 70vh; }
         .acceleration-content { padding: 48px 24px; }
