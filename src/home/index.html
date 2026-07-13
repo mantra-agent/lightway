@@ -252,47 +252,69 @@
       .blob-h { top: 50%; left: 50%; transform: translate(-50%, -50%); }
 
       /* ══════════════════════════════════════════
-         B.2 DEFINITION — Twelve Systems, One Intelligence
+         B.2 DEFINITION — Intelligence Field
          ══════════════════════════════════════════ */
       .section--definition {
+        min-height: 100vh;
         padding: var(--space-section-lg) 24px;
+        overflow: hidden;
       }
 
       .definition-split {
-        max-width: var(--max-content);
+        max-width: 1320px;
         margin: 0 auto;
         display: grid;
-        grid-template-columns: minmax(0, 0.82fr) minmax(560px, 1.18fr);
-        gap: clamp(2rem, 5vw, 5rem);
+        grid-template-columns: minmax(360px, 0.82fr) minmax(650px, 1.18fr);
+        gap: clamp(2rem, 4vw, 4.5rem);
         align-items: center;
       }
 
-      .definition-text-col {
-        display: flex;
-        align-items: center;
+      .definition-copy {
+        position: relative;
+        z-index: 3;
+        max-width: 500px;
       }
 
-      .definition-text {
-        font-size: clamp(1.5rem, 2.8vw, 2.25rem);
-        font-weight: 500;
-        line-height: 1.35;
-        letter-spacing: -0.01em;
+      .definition-headline {
+        margin: 0;
+        font-size: clamp(2.15rem, 4.2vw, 4rem);
+        font-weight: 650;
+        line-height: 1.04;
+        letter-spacing: -0.035em;
         color: var(--color-fg);
       }
 
-      .definition-text .def-emphasis {
-        font-weight: 700;
-        color: #fff;
+      .definition-body {
+        margin: 24px 0 0;
+        max-width: 470px;
+        font-size: clamp(1rem, 1.4vw, 1.18rem);
+        line-height: 1.6;
+        color: var(--color-fg-muted);
       }
 
-      .systems-viz {
+      .intelligence-field {
         position: relative;
-        width: min(100%, 660px);
-        aspect-ratio: 1;
+        width: min(100%, 760px);
+        aspect-ratio: 760 / 650;
         margin-inline: auto;
+        isolation: isolate;
       }
 
-      .systems-connections {
+      .intelligence-field::before {
+        content: '';
+        position: absolute;
+        left: 53%;
+        top: 50%;
+        width: 62%;
+        aspect-ratio: 1;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(26, 155, 219, 0.08) 0, rgba(26, 155, 219, 0.025) 38%, transparent 70%);
+        filter: blur(12px);
+        pointer-events: none;
+      }
+
+      .field-connections {
         position: absolute;
         inset: 0;
         width: 100%;
@@ -302,87 +324,115 @@
         z-index: 0;
       }
 
-      .system-connection {
-        stroke: rgba(130, 138, 150, 0.38);
+      .field-filament {
+        fill: none;
+        stroke: rgba(130, 138, 150, 0.36);
         stroke-width: 1;
         vector-effect: non-scaling-stroke;
       }
 
-      .system-node {
+      .field-filament--near { stroke: rgba(232, 234, 237, 0.42); }
+      .field-filament--far { stroke: rgba(130, 138, 150, 0.22); }
+      .field-filament--active {
+        stroke: rgba(26, 155, 219, 0.72);
+        filter: drop-shadow(0 0 5px rgba(26, 155, 219, 0.45));
+      }
+
+      .field-signal {
+        fill: var(--color-accent);
+        filter: drop-shadow(0 0 6px rgba(26, 155, 219, 0.7));
+      }
+
+      .field-brain {
         position: absolute;
-        left: var(--x);
-        top: var(--y);
+        left: 53%;
+        top: 50%;
+        width: 332px;
+        height: 276px;
         transform: translate(-50%, -50%);
-        min-width: 112px;
-        height: 46px;
-        padding: 0 14px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 10px;
-        border-radius: 10px;
-        border: 1px solid var(--color-card-border);
-        background: var(--color-card);
-        color: var(--color-fg);
         z-index: 2;
         opacity: 0;
-        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+        color: rgba(232, 234, 237, 0.88);
+        filter: drop-shadow(0 18px 36px rgba(0, 0, 0, 0.7));
       }
 
-      .system-node-icon {
-        width: 19px;
-        height: 19px;
-        flex: 0 0 auto;
-        color: var(--color-fg-muted);
-        stroke-width: 1.6;
+      .brain-lobe {
+        fill: rgba(11, 14, 19, 0.76);
+        stroke: currentColor;
+        stroke-width: 1.35;
       }
 
-      .system-node-label {
-        font-size: 0.76rem;
-        line-height: 1;
-        white-space: nowrap;
-        color: var(--color-fg);
+      .brain-fold {
+        fill: none;
+        stroke: rgba(130, 138, 150, 0.72);
+        stroke-width: 1.05;
+        stroke-linecap: round;
       }
 
-      .systems-brain {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        width: 142px;
-        height: 142px;
-        transform: translate(-50%, -50%);
-        border: 1px solid rgba(130, 138, 150, 0.45);
-        border-radius: 50%;
-        background: #0b0e13;
-        display: grid;
-        place-items: center;
-        z-index: 3;
-        opacity: 0;
-        box-shadow: inset 0 0 28px rgba(232, 234, 237, 0.025), 0 0 30px rgba(0, 0, 0, 0.45);
+      .brain-fold--blue {
+        stroke: rgba(26, 155, 219, 0.72);
+        filter: drop-shadow(0 0 4px rgba(26, 155, 219, 0.4));
       }
 
-      .brain-mark {
-        width: 92px;
-        height: 92px;
-        color: rgba(232, 234, 237, 0.9);
+      .brain-node { fill: rgba(232, 234, 237, 0.52); }
+      .brain-node--active {
+        fill: var(--color-accent);
+        filter: drop-shadow(0 0 7px rgba(26, 155, 219, 0.8));
       }
 
       .brain-core {
         fill: var(--color-accent);
-        filter: drop-shadow(0 0 8px rgba(26, 155, 219, 0.75));
+        filter: drop-shadow(0 0 12px rgba(26, 155, 219, 0.9));
       }
 
-      .systems-viz::before {
-        content: '';
+      .field-system {
         position: absolute;
-        left: 50%;
+        left: var(--x);
+        top: var(--y);
+        transform: translate(-50%, -50%);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 3;
+        opacity: 0;
+        color: var(--color-fg);
+        white-space: nowrap;
+      }
+
+      .field-system[data-depth="far"] { opacity: 0; color: rgba(130, 138, 150, 0.84); }
+      .field-system[data-depth="mid"] { color: rgba(232, 234, 237, 0.82); }
+
+      .field-glyph {
+        position: relative;
+        width: 15px;
+        height: 15px;
+        flex: 0 0 auto;
+        color: currentColor;
+        stroke-width: 1.55;
+      }
+
+      .field-glyph-dot {
+        position: absolute;
+        left: -3px;
         top: 50%;
-        width: 280px;
-        height: 280px;
+        width: 4px;
+        height: 4px;
         transform: translate(-50%, -50%);
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(26, 155, 219, 0.035), transparent 68%);
-        pointer-events: none;
+        background: currentColor;
+        box-shadow: 0 0 5px currentColor;
+      }
+
+      .field-system--active { color: #fff; }
+      .field-system--active .field-glyph-dot {
+        background: var(--color-accent);
+        box-shadow: 0 0 9px rgba(26, 155, 219, 0.9);
+      }
+
+      .field-system-label {
+        font-size: 0.78rem;
+        line-height: 1;
+        letter-spacing: 0.01em;
       }
 
       /* ══════════════════════════════════════════
@@ -901,13 +951,15 @@
         }
         .hero-video { display: none; }
         .hero-video-poster { display: block; }
-        .system-node,
-        .systems-brain {
+        .field-system,
+        .field-brain {
           opacity: 1 !important;
-          transform: translate(-50%, -50%) !important;
           animation: none !important;
           transition: none !important;
         }
+        .field-system { transform: translate(-50%, -50%) !important; }
+        .field-brain { transform: translate(-50%, -50%) !important; }
+        .field-signal { display: none !important; }
         .warp-streak {
           animation: none !important;
           transition: none !important;
@@ -926,37 +978,42 @@
         .hero-content { padding: 80px 0 56px; }
         .hero-headline { font-size: clamp(2.25rem, 10vw, 3.25rem); }
         .hero-subhead { max-width: 90%; }
-        .section--definition { padding: 48px 16px; }
-        .definition-split { grid-template-columns: 1fr; gap: 2.5rem; }
-        .definition-text { font-size: 1.35rem; }
-        .systems-viz {
+        .section--definition { min-height: auto; padding: 72px 16px 64px; }
+        .definition-split { grid-template-columns: 1fr; gap: 2.75rem; }
+        .definition-copy { max-width: 100%; }
+        .definition-headline { font-size: clamp(2rem, 10vw, 3rem); }
+        .definition-body { margin-top: 18px; font-size: 1rem; }
+        .intelligence-field {
           width: 100%;
-          aspect-ratio: auto;
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 10px;
-          padding-top: 156px;
+          aspect-ratio: 1 / 1.08;
+          max-height: 620px;
         }
-        .systems-viz::before,
-        .systems-connections { display: none; }
-        .systems-brain {
-          top: 0;
-          width: 126px;
-          height: 126px;
-          transform: translate(-50%, 0);
+        .field-brain {
+          left: 50%;
+          top: 45%;
+          width: 214px;
+          height: 178px;
         }
-        .brain-mark { width: 80px; height: 80px; }
-        .system-node {
-          position: relative;
-          inset: auto;
-          transform: none;
-          min-width: 0;
-          width: 100%;
-          height: 44px;
-          padding: 0 12px;
+        .intelligence-field::before {
+          left: 50%;
+          top: 45%;
+          width: 78%;
         }
-        .system-node-label { font-size: 0.72rem; }
-        .system-node-icon { width: 18px; height: 18px; }
+        .field-system-label { font-size: 0.68rem; }
+        .field-glyph { width: 13px; height: 13px; }
+        .field-system { gap: 6px; }
+        .field-system[data-depth="far"] { color: rgba(232, 234, 237, 0.74); }
+        .field-system[style*="--x:95%"],
+        .field-system[style*="--x:96%"],
+        .field-system[style*="--x:92%"],
+        .field-system[style*="--x:88%"] { --x: 82% !important; }
+        .field-system[style*="--x:81%"] { --x: 76% !important; }
+        .field-system[style*="--x:78%"] { --x: 72% !important; }
+        .field-system:last-child { --x: 72% !important; }
+        .field-connections {
+          transform: scale(0.96);
+          transform-origin: center;
+        }
         .section--vignettes { padding: 56px 24px; }
         .section--acceleration { min-height: 70vh; }
         .acceleration-content { padding: 48px 24px; }
@@ -1004,50 +1061,58 @@
     </section>
 
     <!-- ════════════════════════════════════════
-         SECTION 2: DEFINITION
+         SECTION 2: LIFE CONTEXT — Intelligence Field
          ════════════════════════════════════════ -->
     <section class="section section--definition" id="definition">
       <div class="section-content definition-split">
-        <div class="definition-text-col">
-          <p class="definition-text">An <span class="def-emphasis">autonomous agent</span> that works for you on whatever matters most in your life, saving you time, magnifying your impact.</p>
+        <div class="definition-copy">
+          <h2 class="definition-headline">An autonomous agent with the context of your life.</h2>
+          <p class="definition-body">Mantra automates the little things, connects the bigger picture, and helps you operate at a higher level.</p>
         </div>
-        <div class="systems-viz" aria-label="Twelve life systems connected to one synthetic intelligence">
-          <svg class="systems-connections" viewBox="0 0 660 660" fill="none" aria-hidden="true">
-            <line class="system-connection" x1="330" y1="259" x2="330" y2="96" />
-            <line class="system-connection" x1="366" y1="268" x2="446" y2="129" />
-            <line class="system-connection" x1="392" y1="294" x2="516" y2="223" />
-            <line class="system-connection" x1="401" y1="330" x2="552" y2="330" />
-            <line class="system-connection" x1="392" y1="366" x2="516" y2="437" />
-            <line class="system-connection" x1="366" y1="392" x2="446" y2="531" />
-            <line class="system-connection" x1="330" y1="401" x2="330" y2="584" />
-            <line class="system-connection" x1="294" y1="392" x2="214" y2="531" />
-            <line class="system-connection" x1="268" y1="366" x2="144" y2="437" />
-            <line class="system-connection" x1="259" y1="330" x2="108" y2="330" />
-            <line class="system-connection" x1="268" y1="294" x2="144" y2="223" />
-            <line class="system-connection" x1="294" y1="268" x2="214" y2="129" />
+
+        <div class="intelligence-field" aria-label="Twelve life systems connected through one synthetic intelligence">
+          <svg class="field-connections" viewBox="0 0 760 650" fill="none" aria-hidden="true">
+            <path class="field-filament field-filament--near" data-path="goals" d="M402 326 C350 250 266 175 146 112"/>
+            <path class="field-filament field-filament--active" data-path="email" d="M398 318 C432 246 522 188 660 102"/>
+            <path class="field-filament" data-path="notes" d="M390 320 C340 260 262 228 148 220"/>
+            <path class="field-filament field-filament--active" data-path="projects" d="M410 328 C492 302 575 286 700 260"/>
+            <path class="field-filament field-filament--near" data-path="people" d="M395 334 C326 318 248 327 102 360"/>
+            <path class="field-filament field-filament--far" data-path="health" d="M414 345 C500 365 585 405 704 462"/>
+            <path class="field-filament" data-path="finance" d="M400 350 C352 405 294 473 190 548"/>
+            <path class="field-filament field-filament--far" data-path="strategy" d="M416 342 C476 410 535 490 628 560"/>
+            <path class="field-filament field-filament--far" data-path="news" d="M386 328 C308 278 218 264 70 282"/>
+            <path class="field-filament field-filament--active" data-path="calendar" d="M404 316 C455 230 529 142 616 56"/>
+            <path class="field-filament" data-path="habits" d="M390 344 C312 390 230 426 92 454"/>
+            <path class="field-filament field-filament--near" data-path="meetings" d="M416 330 C505 304 587 320 724 352"/>
+
+            <path id="signal-email-calendar" d="M660 102 C522 188 432 246 398 318 C445 236 529 142 616 56" opacity="0"/>
+            <path id="signal-notes-projects" d="M148 220 C262 228 340 260 390 320 C490 302 575 286 700 260" opacity="0"/>
+            <circle class="field-signal field-signal--one" r="3.3"><animateMotion dur="4.8s" repeatCount="indefinite"><mpath href="#signal-email-calendar"/></animateMotion></circle>
+            <circle class="field-signal field-signal--two" r="2.8"><animateMotion dur="5.6s" begin="1.5s" repeatCount="indefinite"><mpath href="#signal-notes-projects"/></animateMotion></circle>
           </svg>
 
-          <div class="systems-brain" aria-hidden="true">
-            <svg class="brain-mark" viewBox="0 0 96 96" fill="none">
-              <path d="M47 22c-4-8-17-7-20 2-8-1-14 7-10 14-7 5-5 16 3 19-2 9 7 16 15 12 3 7 12 9 17 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <path d="M49 22c4-8 17-7 20 2 8-1 14 7 10 14 7 5 5 16-3 19 2 9-7 16-15 12-3 7-12 9-17 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <path d="M48 24v48M30 31c7 1 11 6 11 13M25 48c7-3 14-1 18 5M66 31c-7 1-11 6-11 13M71 48c-7-3-14-1-18 5M31 65c5-5 10-5 16-1M65 65c-5-5-10-5-16-1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".78"/>
-              <circle class="brain-core" cx="48" cy="50" r="4.5"/>
-            </svg>
-          </div>
+          <svg class="field-brain" viewBox="0 0 300 250" fill="none" aria-hidden="true">
+            <path class="brain-lobe" d="M146 36c-17-24-58-21-70 8-27-5-49 23-39 48-24 16-22 53 3 66-9 28 18 55 46 44 14 24 51 24 65 0 14 24 51 24 65 0 28 11 55-16 46-44 25-13 27-50 3-66 10-25-12-53-39-48-12-29-53-32-70-8-3 5-6 12-6 20-1-8-4-15-4-20z"/>
+            <path class="brain-fold" d="M149 49v151M102 56c20 8 30 26 26 50M67 91c25-4 48 9 57 31M57 137c28-12 55-2 72 23M92 186c16-20 37-24 57-12M198 56c-20 8-30 26-26 50M233 91c-25-4-48 9-57 31M243 137c-28-12-55-2-72 23M208 186c-16-20-37-24-57-12"/>
+            <path class="brain-fold" d="M91 70c8 14 8 28-2 42M119 77c14 15 15 31 4 46M70 119c17 5 27 16 29 34M105 140c14 4 24 14 28 28M209 70c-8 14-8 28 2 42M181 77c-14 15-15 31-4 46M230 119c-17 5-27 16-29 34M195 140c-14 4-24 14-28 28"/>
+            <path class="brain-fold brain-fold--blue" d="M85 97c28 3 46 17 65 43 19-26 37-40 65-43M94 160c24-2 40 8 56 25 16-17 32-27 56-25"/>
+            <circle class="brain-node" cx="91" cy="97" r="2.2"/><circle class="brain-node" cx="119" cy="125" r="2.2"/><circle class="brain-node" cx="183" cy="123" r="2.2"/><circle class="brain-node" cx="211" cy="97" r="2.2"/>
+            <circle class="brain-node--active" cx="111" cy="158" r="3"/><circle class="brain-node--active" cx="189" cy="158" r="3"/>
+            <circle class="brain-core" cx="150" cy="142" r="5.5"/>
+          </svg>
 
-          <div class="system-node" style="--x:50%;--y:7.9%"><svg class="system-node-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg><span class="system-node-label">Goals</span></div>
-          <div class="system-node" style="--x:71%;--y:13.5%"><svg class="system-node-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg><span class="system-node-label">Email</span></div>
-          <div class="system-node" style="--x:86.5%;--y:29%"><svg class="system-node-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h4"/></svg><span class="system-node-label">Notes</span></div>
-          <div class="system-node" style="--x:92.1%;--y:50%"><svg class="system-node-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7h7l2 2h9v10H3z"/><path d="M7 4h5l2 3"/></svg><span class="system-node-label">Projects</span></div>
-          <div class="system-node" style="--x:86.5%;--y:71%"><svg class="system-node-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="10" r="2"/><path d="M3 20c0-4 2-6 6-6s6 2 6 6M15 15c3 0 5 2 5 5"/></svg><span class="system-node-label">People</span></div>
-          <div class="system-node" style="--x:71%;--y:86.5%"><svg class="system-node-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s-8-5-8-11a4 4 0 0 1 7-3 4 4 0 0 1 7 3c0 6-6 10-6 11z"/><path d="M7 12h3l2-4 2 8 2-4h2"/></svg><span class="system-node-label">Health</span></div>
-          <div class="system-node" style="--x:50%;--y:92.1%"><svg class="system-node-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h2M14 11h2M8 15h2M14 15h2"/></svg><span class="system-node-label">Finance</span></div>
-          <div class="system-node" style="--x:29%;--y:86.5%"><svg class="system-node-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/><path d="m4 8 6-5 6 8 5-4"/></svg><span class="system-node-label">Strategy</span></div>
-          <div class="system-node" style="--x:13.5%;--y:71%"><svg class="system-node-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h6M7 12h10M7 16h7M17 8h1"/></svg><span class="system-node-label">News</span></div>
-          <div class="system-node" style="--x:7.9%;--y:50%"><svg class="system-node-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/><path d="M8 14h3v3H8z"/></svg><span class="system-node-label">Calendar</span></div>
-          <div class="system-node" style="--x:13.5%;--y:29%"><svg class="system-node-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 20V10M12 20V4M18 20v-7"/><circle cx="6" cy="7" r="2"/><circle cx="12" cy="2" r="2"/><circle cx="18" cy="10" r="2"/></svg><span class="system-node-label">Habits</span></div>
-          <div class="system-node" style="--x:29%;--y:13.5%"><svg class="system-node-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/><circle cx="9" cy="15" r="2"/><path d="M13 15h4"/></svg><span class="system-node-label">Meetings</span></div>
+          <div class="field-system" data-depth="near" style="--x:19%;--y:17%"><i class="field-glyph-dot"></i><svg class="field-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg><span class="field-system-label">Goals</span></div>
+          <div class="field-system field-system--active" data-depth="near" style="--x:87%;--y:15%"><i class="field-glyph-dot"></i><svg class="field-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg><span class="field-system-label">Email</span></div>
+          <div class="field-system" data-depth="mid" style="--x:19%;--y:34%"><i class="field-glyph-dot"></i><svg class="field-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h4"/></svg><span class="field-system-label">Notes</span></div>
+          <div class="field-system field-system--active" data-depth="near" style="--x:92%;--y:40%"><i class="field-glyph-dot"></i><svg class="field-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7h7l2 2h9v10H3z"/><path d="M7 4h5l2 3"/></svg><span class="field-system-label">Projects</span></div>
+          <div class="field-system" data-depth="near" style="--x:13%;--y:55%"><i class="field-glyph-dot"></i><svg class="field-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="10" r="2"/><path d="M3 20c0-4 2-6 6-6s6 2 6 6M15 15c3 0 5 2 5 5"/></svg><span class="field-system-label">People</span></div>
+          <div class="field-system" data-depth="far" style="--x:88%;--y:69%"><i class="field-glyph-dot"></i><svg class="field-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s-8-5-8-11a4 4 0 0 1 7-3 4 4 0 0 1 7 3c0 6-6 10-6 11z"/><path d="M7 12h3l2-4 2 8 2-4h2"/></svg><span class="field-system-label">Health</span></div>
+          <div class="field-system" data-depth="mid" style="--x:25%;--y:84%"><i class="field-glyph-dot"></i><svg class="field-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h2M14 11h2M8 15h2M14 15h2"/></svg><span class="field-system-label">Finance</span></div>
+          <div class="field-system" data-depth="far" style="--x:78%;--y:89%"><i class="field-glyph-dot"></i><svg class="field-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/><path d="m4 8 6-5 6 8 5-4"/></svg><span class="field-system-label">Strategy</span></div>
+          <div class="field-system" data-depth="far" style="--x:9%;--y:43%"><i class="field-glyph-dot"></i><svg class="field-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h6M7 12h10M7 16h7M17 8h1"/></svg><span class="field-system-label">News</span></div>
+          <div class="field-system field-system--active" data-depth="mid" style="--x:81%;--y:9%"><i class="field-glyph-dot"></i><svg class="field-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span class="field-system-label">Calendar</span></div>
+          <div class="field-system" data-depth="mid" style="--x:12%;--y:70%"><i class="field-glyph-dot"></i><svg class="field-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 20V10M12 20V4M18 20v-7"/><circle cx="6" cy="7" r="2"/><circle cx="12" cy="2" r="2"/><circle cx="18" cy="10" r="2"/></svg><span class="field-system-label">Habits</span></div>
+          <div class="field-system" data-depth="near" style="--x:96%;--y:55%"><i class="field-glyph-dot"></i><svg class="field-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/><circle cx="9" cy="15" r="2"/><path d="M13 15h4"/></svg><span class="field-system-label">Meetings</span></div>
         </div>
       </div>
     </section>
@@ -1248,54 +1313,75 @@
             .from('.hero-cta', { y: 16, opacity: 0, duration: 0.8 }, 0.3);
         }
 
-        // ── B.2 Definition — Twelve Systems, One Intelligence ──
+        // ── B.2 Definition — Intelligence Field ──
         function initDefinition() {
           var trigger = {
             trigger: '.section--definition',
-            start: 'top 76%',
+            start: 'top 74%',
             once: true
           };
 
-          gsap.from('.definition-text', {
+          gsap.from('.definition-headline, .definition-body', {
             y: 24,
             opacity: 0,
-            duration: 0.7,
+            duration: 0.78,
+            stagger: 0.12,
             ease: 'power3.out',
             scrollTrigger: trigger
           });
 
-          gsap.to('.systems-brain', {
+          gsap.to('.field-brain', {
             opacity: 1,
             scale: 1,
-            duration: 0.8,
+            duration: 1.05,
             ease: 'power3.out',
             scrollTrigger: trigger
           });
 
-          gsap.to('.system-node', {
-            opacity: 1,
-            duration: 0.55,
-            stagger: 0.055,
+          gsap.to('.field-system', {
+            opacity: function(index, target) {
+              return target.dataset.depth === 'far' ? 0.72 : 1;
+            },
+            duration: 0.65,
+            stagger: 0.065,
             ease: 'power3.out',
             scrollTrigger: trigger
           });
 
-          gsap.from('.system-connection', {
-            strokeDasharray: 420,
-            strokeDashoffset: 420,
-            duration: 1.15,
-            stagger: 0.035,
+          gsap.from('.field-filament', {
+            strokeDasharray: 520,
+            strokeDashoffset: 520,
+            duration: 1.35,
+            stagger: 0.045,
             ease: 'power2.out',
             scrollTrigger: trigger
           });
 
-          gsap.to('.brain-core', {
-            scale: 1.35,
-            transformOrigin: 'center',
-            duration: 1.8,
+          gsap.to('.field-brain', {
+            y: -5,
+            scale: 1.018,
+            duration: 3.4,
             repeat: -1,
             yoyo: true,
             ease: 'sine.inOut'
+          });
+
+          gsap.to('.brain-core', {
+            scale: 1.45,
+            transformOrigin: 'center',
+            duration: 1.9,
+            repeat: -1,
+            yoyo: true,
+            ease: 'sine.inOut'
+          });
+
+          gsap.to('.field-system[data-depth="near"]', {
+            y: -3,
+            duration: 4.8,
+            repeat: -1,
+            yoyo: true,
+            ease: 'sine.inOut',
+            stagger: 0.35
           });
         }
 
