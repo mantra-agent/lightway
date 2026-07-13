@@ -338,6 +338,8 @@
         filter: drop-shadow(0 0 5px rgba(26, 155, 219, 0.48));
       }
 
+      .field-links--mobile { display: none; }
+
       .field-system {
         position: absolute;
         left: var(--x);
@@ -958,10 +960,47 @@
         .field-system[data-side="left"] { padding-right: 7px; }
         .field-system[style*="--x:97%"] { --x: 94% !important; }
         .field-system[style*="--x:96%"] { --x: 93% !important; }
+        .field-links--desktop { display: none; }
+        .field-links--mobile { display: block; }
         .field-link { stroke-width: 1.05; opacity: 0.8; }
-        .field-system[data-side="right"] .field-system-label {
-          background: rgba(0, 0, 0, 0.9);
-          box-shadow: 0 0 7px 3px rgba(0, 0, 0, 0.9);
+        .field-system-label--callout {
+          position: relative;
+          z-index: 3;
+          padding: 3px 6px;
+          border-radius: 3px;
+          background: #000;
+          box-shadow: 0 0 10px 5px #000;
+        }
+        .field-system:has(.field-system-label--callout) {
+          transform: translate(0, -50%);
+          padding: 0;
+        }
+        .field-system:has(.field-system-label--callout)::before {
+          content: '';
+          position: absolute;
+          left: -8px;
+          top: 50%;
+          width: 4px;
+          height: 4px;
+          transform: translate(-50%, -50%);
+          border-radius: 50%;
+          background: #d3dce8;
+          box-shadow: 0 0 5px rgba(211, 220, 232, 0.85);
+        }
+        .field-system:has(.field-system-label--callout)[style*="--y:35%"] { --x: 76% !important; --y: 29% !important; }
+        .field-system:has(.field-system-label--callout)[style*="--y:46%"] { --x: 76% !important; --y: 44% !important; }
+        .field-system:has(.field-system-label--callout)[style*="--y:57%"] { --x: 75% !important; --y: 59% !important; }
+        .field-system:has(.field-system-label--callout)[style*="--y:71%"] { --x: 75% !important; --y: 74% !important; }
+        .intelligence-field::after {
+          content: '';
+          position: absolute;
+          z-index: 1;
+          top: 0;
+          right: 0;
+          width: 9%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, #000 82%);
+          pointer-events: none;
         }
         .section--vignettes { padding: 56px 24px; }
         .section--acceleration { min-height: 70vh; }
@@ -1021,7 +1060,7 @@
 
         <div class="intelligence-field" aria-label="Twelve life systems connected through one synthetic intelligence">
           <img class="intelligence-art" src="./intelligence-field.webp" alt="" width="1024" height="1024" loading="lazy" decoding="async" />
-          <svg class="field-links" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <svg class="field-links field-links--desktop" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
             <path class="field-link field-link--active" d="M70 48 C64 36, 57 27, 48 19" />
             <path class="field-link" d="M72 47 C79 39, 85 30, 90 24" />
             <path class="field-link" d="M73 49 C83 45, 91 39, 97 35" />
@@ -1048,12 +1087,39 @@
             <circle class="field-node" cx="13" cy="52" r="0.55" />
             <circle class="field-node field-node--active" cx="21" cy="28" r="0.55" />
           </svg>
+          <svg class="field-links field-links--mobile" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path class="field-link field-link--active" d="M70 48 C64 36, 57 27, 48 19" />
+            <path class="field-link" d="M72 47 C79 39, 85 30, 90 24" />
+            <path class="field-link" d="M73 49 C78 42, 76 34, 73 29" />
+            <path class="field-link field-link--active" d="M73 50 C77 49, 76 46, 73 44" />
+            <path class="field-link" d="M73 52 C77 54, 76 57, 72 59" />
+            <path class="field-link" d="M72 54 C77 63, 76 69, 72 74" />
+            <path class="field-link" d="M70 55 C76 65, 79 74, 81 81" />
+            <path class="field-link" d="M68 55 C64 67, 59 77, 55 84" />
+            <path class="field-link" d="M66 54 C55 65, 44 73, 35 79" />
+            <path class="field-link" d="M65 53 C48 61, 32 67, 18 70" />
+            <path class="field-link" d="M65 51 C45 51, 29 52, 13 52" />
+            <path class="field-link field-link--active" d="M66 48 C50 39, 35 32, 21 28" />
+            <circle class="field-core-node" cx="69.2" cy="51" r="1.05" />
+            <circle class="field-node field-node--active" cx="48" cy="19" r="0.55" />
+            <circle class="field-node" cx="90" cy="24" r="0.55" />
+            <circle class="field-node" cx="73" cy="29" r="0.55" />
+            <circle class="field-node field-node--active" cx="73" cy="44" r="0.55" />
+            <circle class="field-node" cx="72" cy="59" r="0.55" />
+            <circle class="field-node" cx="72" cy="74" r="0.55" />
+            <circle class="field-node" cx="81" cy="81" r="0.55" />
+            <circle class="field-node" cx="55" cy="84" r="0.55" />
+            <circle class="field-node" cx="35" cy="79" r="0.55" />
+            <circle class="field-node" cx="18" cy="70" r="0.55" />
+            <circle class="field-node" cx="13" cy="52" r="0.55" />
+            <circle class="field-node field-node--active" cx="21" cy="28" r="0.55" />
+          </svg>
           <div class="field-system field-system--active" data-side="left" style="--x:48%;--y:19%"><span class="field-system-label">Calendar</span></div>
           <div class="field-system" data-side="right" style="--x:90%;--y:24%;--alpha:.8"><span class="field-system-label">Goals</span></div>
-          <div class="field-system" data-side="right" style="--x:97%;--y:35%;--alpha:.76"><span class="field-system-label">Notes</span></div>
-          <div class="field-system field-system--active" data-side="right" style="--x:97%;--y:46%"><span class="field-system-label">Email</span></div>
-          <div class="field-system" data-side="right" style="--x:96%;--y:57%;--alpha:.86"><span class="field-system-label">People</span></div>
-          <div class="field-system" data-side="right" style="--x:90%;--y:71%;--alpha:.8"><span class="field-system-label">Health</span></div>
+          <div class="field-system" data-side="right" style="--x:97%;--y:35%;--alpha:.76"><span class="field-system-label field-system-label--callout">Notes</span></div>
+          <div class="field-system field-system--active" data-side="right" style="--x:97%;--y:46%"><span class="field-system-label field-system-label--callout">Email</span></div>
+          <div class="field-system" data-side="right" style="--x:96%;--y:57%;--alpha:.86"><span class="field-system-label field-system-label--callout">People</span></div>
+          <div class="field-system" data-side="right" style="--x:90%;--y:71%;--alpha:.8"><span class="field-system-label field-system-label--callout">Health</span></div>
           <div class="field-system" data-side="right" style="--x:81%;--y:81%;--alpha:.78"><span class="field-system-label">Finance</span></div>
           <div class="field-system" data-side="left" style="--x:55%;--y:84%;--alpha:.76"><span class="field-system-label">Strategy</span></div>
           <div class="field-system" data-side="left" style="--x:35%;--y:79%;--alpha:.76"><span class="field-system-label">News</span></div>
