@@ -294,102 +294,57 @@
 
       .intelligence-field {
         position: relative;
-        width: min(100%, 800px);
+        width: min(100%, 620px);
         aspect-ratio: 1;
         margin-inline: auto;
-        isolation: isolate;
       }
 
-      .intelligence-art {
-        position: absolute;
-        inset: 0;
+      .brain-radial {
         width: 100%;
         height: 100%;
-        object-fit: contain;
-        opacity: 0;
-        transform: scale(1.28);
-        filter: saturate(0.9) contrast(1.05);
-        pointer-events: none;
-        user-select: none;
-      }
-
-
-      .field-links {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
+        display: block;
         overflow: visible;
-        z-index: 1;
-        pointer-events: none;
       }
 
-      .field-link {
+      .brain-spoke {
+        stroke: rgba(232, 234, 237, 0.18);
+        stroke-width: 0.65;
+        vector-effect: non-scaling-stroke;
+      }
+
+      .brain-shell {
+        fill: rgba(17, 28, 38, 0.96);
+        stroke: rgba(141, 212, 240, 0.72);
+        stroke-width: 1.1;
+        vector-effect: non-scaling-stroke;
+      }
+
+      .brain-detail {
         fill: none;
-        stroke: rgba(211, 220, 232, 0.88);
-        stroke-width: 1.55;
+        stroke: rgba(141, 212, 240, 0.48);
+        stroke-width: 1.15;
         stroke-linecap: round;
         vector-effect: non-scaling-stroke;
-        filter: drop-shadow(0 0 4px rgba(89, 158, 205, 0.38));
       }
 
-      .field-link--active {
-        stroke: rgba(67, 176, 232, 0.8);
-        filter: drop-shadow(0 0 5px rgba(26, 155, 219, 0.48));
-      }
-
-      .field-links--mobile { display: none; }
-
-      .field-system {
-        position: absolute;
-        left: var(--x);
-        top: var(--y);
-        transform: translate(0, -50%);
-        z-index: 2;
-        display: inline-flex;
-        align-items: center;
-        gap: 0;
-        padding-left: 9px;
-        color: rgba(232, 234, 237, var(--alpha, 0.78));
-        white-space: nowrap;
-        opacity: 0;
-      }
-
-      .field-system[data-side="left"] {
-        transform: translate(-100%, -50%);
-        padding-left: 0;
-        padding-right: 9px;
-      }
-
-      .field-node {
-        fill: #d3dce8;
-        stroke: #050608;
-        stroke-width: 0.45;
+      .brain-midline {
+        fill: none;
+        stroke: rgba(232, 234, 237, 0.36);
+        stroke-width: 0.8;
         vector-effect: non-scaling-stroke;
-        filter: drop-shadow(0 0 4px rgba(211, 220, 232, 0.75));
       }
 
-      .field-node--active {
+      .brain-node {
         fill: var(--color-accent);
-        filter: drop-shadow(0 0 6px rgba(26, 155, 219, 0.9));
       }
 
-      .field-core-node {
-        fill: var(--color-accent);
-        stroke: rgba(224, 244, 255, 0.9);
-        stroke-width: 0.35;
-        vector-effect: non-scaling-stroke;
-        filter: drop-shadow(0 0 8px rgba(26, 155, 219, 0.95));
-      }
-
-      .field-system--active {
-        color: rgba(232, 234, 237, 0.96);
-      }
-
-      .field-system-label {
-        font-size: 0.72rem;
-        line-height: 1;
-        letter-spacing: 0.025em;
+      .brain-label {
+        fill: rgba(232, 234, 237, 0.82);
+        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-size: 2.25px;
+        font-weight: 500;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
       }
 
       /* ══════════════════════════════════════════
@@ -908,15 +863,6 @@
         }
         .hero-video { display: none; }
         .hero-video-poster { display: block; }
-        .field-system,
-        .intelligence-art,
-        .field-link {
-          opacity: 1 !important;
-          animation: none !important;
-          transition: none !important;
-        }
-        .field-system { transform: translate(-50%, -50%) !important; }
-        .intelligence-art { transform: none !important; }
         .warp-streak {
           animation: none !important;
           transition: none !important;
@@ -941,66 +887,13 @@
         .definition-headline { font-size: clamp(2rem, 10vw, 3rem); }
         .definition-body { margin-top: 18px; font-size: 1rem; }
         .intelligence-field {
-          width: min(90%, 400px);
-          aspect-ratio: 1;
+          width: min(100%, 390px);
         }
-        .intelligence-art {
-          inset: 0;
-          width: 100%;
-          height: 100%;
-        }
-        .field-link { stroke-width: 0.9; }
-        .field-system-label { font-size: 0.66rem; }
-        .field-system { gap: 0; color: rgba(232, 234, 237, max(var(--alpha, 0.78), 0.76)); }
-        .field-system[data-side="right"] {
-          transform: translate(-100%, -50%);
-          padding-left: 0;
-          padding-right: 10px;
-        }
-        .field-system[data-side="left"] { padding-right: 7px; }
-        .field-system[style*="--x:97%"] { --x: 94% !important; }
-        .field-system[style*="--x:96%"] { --x: 93% !important; }
-        .field-links--desktop { display: none; }
-        .field-links--mobile { display: block; }
-        .field-link { stroke-width: 1.05; opacity: 0.8; }
-        .field-system-label--callout {
-          position: relative;
-          z-index: 3;
-          padding: 3px 6px;
-          border-radius: 3px;
-          background: #000;
-          box-shadow: 0 0 10px 5px #000;
-        }
-        .field-system:has(.field-system-label--callout) {
-          transform: translate(0, -50%);
-          padding: 0;
-        }
-        .field-system:has(.field-system-label--callout)::before {
-          content: '';
-          position: absolute;
-          left: -8px;
-          top: 50%;
-          width: 4px;
-          height: 4px;
-          transform: translate(-50%, -50%);
-          border-radius: 50%;
-          background: #d3dce8;
-          box-shadow: 0 0 5px rgba(211, 220, 232, 0.85);
-        }
-        .field-system:has(.field-system-label--callout)[style*="--y:35%"] { --x: 76% !important; --y: 29% !important; }
-        .field-system:has(.field-system-label--callout)[style*="--y:46%"] { --x: 76% !important; --y: 44% !important; }
-        .field-system:has(.field-system-label--callout)[style*="--y:57%"] { --x: 75% !important; --y: 59% !important; }
-        .field-system:has(.field-system-label--callout)[style*="--y:71%"] { --x: 75% !important; --y: 74% !important; }
-        .intelligence-field::after {
-          content: '';
-          position: absolute;
-          z-index: 1;
-          top: 0;
-          right: 0;
-          width: 9%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, #000 82%);
-          pointer-events: none;
+        .brain-label {
+          font-size: 3.05px;
+          font-weight: 600;
+          letter-spacing: 0.025em;
+          fill: rgba(232, 234, 237, 0.9);
         }
         .section--vignettes { padding: 56px 24px; }
         .section--acceleration { min-height: 70vh; }
@@ -1058,74 +951,43 @@
           <p class="definition-body">Mantra automates the little things, connects the bigger picture, and helps you operate at a higher level.</p>
         </div>
 
-        <div class="intelligence-field" aria-label="Twelve life systems connected through one synthetic intelligence">
-          <img class="intelligence-art" src="./intelligence-field.webp" alt="" width="1024" height="1024" loading="lazy" decoding="async" />
-          <svg class="field-links field-links--desktop" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <path class="field-link field-link--active" d="M70 48 C64 36, 57 27, 48 19" />
-            <path class="field-link" d="M72 47 C79 39, 85 30, 90 24" />
-            <path class="field-link" d="M73 49 C83 45, 91 39, 97 35" />
-            <path class="field-link field-link--active" d="M73 50 C83 50, 91 48, 97 46" />
-            <path class="field-link" d="M73 52 C83 53, 90 56, 96 57" />
-            <path class="field-link" d="M72 54 C81 60, 87 66, 90 71" />
-            <path class="field-link" d="M70 55 C76 65, 79 74, 81 81" />
-            <path class="field-link" d="M68 55 C64 67, 59 77, 55 84" />
-            <path class="field-link" d="M66 54 C55 65, 44 73, 35 79" />
-            <path class="field-link" d="M65 53 C48 61, 32 67, 18 70" />
-            <path class="field-link" d="M65 51 C45 51, 29 52, 13 52" />
-            <path class="field-link field-link--active" d="M66 48 C50 39, 35 32, 21 28" />
-            <circle class="field-core-node" cx="69.2" cy="51" r="1.05" />
-            <circle class="field-node field-node--active" cx="48" cy="19" r="0.55" />
-            <circle class="field-node" cx="90" cy="24" r="0.55" />
-            <circle class="field-node" cx="97" cy="35" r="0.55" />
-            <circle class="field-node field-node--active" cx="97" cy="46" r="0.55" />
-            <circle class="field-node" cx="96" cy="57" r="0.55" />
-            <circle class="field-node" cx="90" cy="71" r="0.55" />
-            <circle class="field-node" cx="81" cy="81" r="0.55" />
-            <circle class="field-node" cx="55" cy="84" r="0.55" />
-            <circle class="field-node" cx="35" cy="79" r="0.55" />
-            <circle class="field-node" cx="18" cy="70" r="0.55" />
-            <circle class="field-node" cx="13" cy="52" r="0.55" />
-            <circle class="field-node field-node--active" cx="21" cy="28" r="0.55" />
+        <div class="intelligence-field" aria-label="Twelve life systems connected through one intelligence">
+          <svg class="brain-radial" viewBox="0 0 100 100" role="img" aria-labelledby="brain-radial-title brain-radial-desc">
+            <title id="brain-radial-title">Your life, connected through one intelligence</title>
+            <desc id="brain-radial-desc">A top-down brain at the center of twelve life systems.</desc>
+            <line class="brain-spoke" x1="50.00" y1="31.00" x2="50.00" y2="14.00" />
+            <line class="brain-spoke" x1="59.50" y1="33.55" x2="68.00" y2="18.82" />
+            <line class="brain-spoke" x1="66.45" y1="40.50" x2="81.18" y2="32.00" />
+            <line class="brain-spoke" x1="69.00" y1="50.00" x2="86.00" y2="50.00" />
+            <line class="brain-spoke" x1="66.45" y1="59.50" x2="81.18" y2="68.00" />
+            <line class="brain-spoke" x1="59.50" y1="66.45" x2="68.00" y2="81.18" />
+            <line class="brain-spoke" x1="50.00" y1="69.00" x2="50.00" y2="86.00" />
+            <line class="brain-spoke" x1="40.50" y1="66.45" x2="32.00" y2="81.18" />
+            <line class="brain-spoke" x1="33.55" y1="59.50" x2="18.82" y2="68.00" />
+            <line class="brain-spoke" x1="31.00" y1="50.00" x2="14.00" y2="50.00" />
+            <line class="brain-spoke" x1="33.55" y1="40.50" x2="18.82" y2="32.00" />
+            <line class="brain-spoke" x1="40.50" y1="33.55" x2="32.00" y2="18.82" />
+            <g aria-hidden="true">
+              <path class="brain-shell" d="M49.3 30.5C43.8 25.6 34.5 27.3 31.7 34.8C25.9 36.8 23.8 43.2 27.2 48.1C23.7 53.1 26 59.8 31.7 61.8C34.4 69.5 43.6 71.4 49.3 66.4Z" />
+              <path class="brain-shell" d="M50.7 30.5C56.2 25.6 65.5 27.3 68.3 34.8C74.1 36.8 76.2 43.2 72.8 48.1C76.3 53.1 74 59.8 68.3 61.8C65.6 69.5 56.4 71.4 50.7 66.4Z" />
+              <path class="brain-midline" d="M50 29.2V68.1" />
+              <path class="brain-detail" d="M45.1 31.5C40.9 33.2 41.4 37.1 37.5 38.7M34 36.7C31.8 40 34.6 43.1 31.2 46M28.9 49.3C32.6 51.2 30.5 55.8 34.7 57M34.1 61.8C38.2 60.6 39.2 65 43 65.5M46 40.1C42 40.2 42.3 44.8 38.7 45.6M47 51.3C42.7 49.5 40.2 53 37.1 51.6M47.2 59.7C43.5 58.7 42.2 61.2 39.5 61.7" />
+              <path class="brain-detail" d="M54.9 31.5C59.1 33.2 58.6 37.1 62.5 38.7M66 36.7C68.2 40 65.4 43.1 68.8 46M71.1 49.3C67.4 51.2 69.5 55.8 65.3 57M65.9 61.8C61.8 60.6 60.8 65 57 65.5M54 40.1C58 40.2 57.7 44.8 61.3 45.6M53 51.3C57.3 49.5 59.8 53 62.9 51.6M52.8 59.7C56.5 58.7 57.8 61.2 60.5 61.7" />
+              <circle class="brain-node" cx="50" cy="50" r="1.35" />
+            </g>
+            <text class="brain-label" x="50" y="5" text-anchor="middle" dominant-baseline="middle">Calendar</text>
+            <text class="brain-label" x="72.5" y="11" text-anchor="middle" dominant-baseline="middle">Goals</text>
+            <text class="brain-label" x="89" y="27" text-anchor="middle" dominant-baseline="middle">Notes</text>
+            <text class="brain-label" x="95" y="50" text-anchor="middle" dominant-baseline="middle">Email</text>
+            <text class="brain-label" x="89" y="73" text-anchor="middle" dominant-baseline="middle">People</text>
+            <text class="brain-label" x="72.5" y="89" text-anchor="middle" dominant-baseline="middle">Health</text>
+            <text class="brain-label" x="50" y="95" text-anchor="middle" dominant-baseline="middle">Finance</text>
+            <text class="brain-label" x="27.5" y="89" text-anchor="middle" dominant-baseline="middle">Strategy</text>
+            <text class="brain-label" x="11" y="73" text-anchor="middle" dominant-baseline="middle">News</text>
+            <text class="brain-label" x="5" y="50" text-anchor="middle" dominant-baseline="middle">Habits</text>
+            <text class="brain-label" x="11" y="27" text-anchor="middle" dominant-baseline="middle">Meetings</text>
+            <text class="brain-label" x="27.5" y="11" text-anchor="middle" dominant-baseline="middle">Projects</text>
           </svg>
-          <svg class="field-links field-links--mobile" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <path class="field-link field-link--active" d="M70 48 C64 36, 57 27, 48 19" />
-            <path class="field-link" d="M72 47 C79 39, 85 30, 90 24" />
-            <path class="field-link" d="M73 49 C78 42, 76 34, 73 29" />
-            <path class="field-link field-link--active" d="M73 50 C77 49, 76 46, 73 44" />
-            <path class="field-link" d="M73 52 C77 54, 76 57, 72 59" />
-            <path class="field-link" d="M72 54 C77 63, 76 69, 72 74" />
-            <path class="field-link" d="M70 55 C76 65, 79 74, 81 81" />
-            <path class="field-link" d="M68 55 C64 67, 59 77, 55 84" />
-            <path class="field-link" d="M66 54 C55 65, 44 73, 35 79" />
-            <path class="field-link" d="M65 53 C48 61, 32 67, 18 70" />
-            <path class="field-link" d="M65 51 C45 51, 29 52, 13 52" />
-            <path class="field-link field-link--active" d="M66 48 C50 39, 35 32, 21 28" />
-            <circle class="field-core-node" cx="69.2" cy="51" r="1.05" />
-            <circle class="field-node field-node--active" cx="48" cy="19" r="0.55" />
-            <circle class="field-node" cx="90" cy="24" r="0.55" />
-            <circle class="field-node" cx="73" cy="29" r="0.55" />
-            <circle class="field-node field-node--active" cx="73" cy="44" r="0.55" />
-            <circle class="field-node" cx="72" cy="59" r="0.55" />
-            <circle class="field-node" cx="72" cy="74" r="0.55" />
-            <circle class="field-node" cx="81" cy="81" r="0.55" />
-            <circle class="field-node" cx="55" cy="84" r="0.55" />
-            <circle class="field-node" cx="35" cy="79" r="0.55" />
-            <circle class="field-node" cx="18" cy="70" r="0.55" />
-            <circle class="field-node" cx="13" cy="52" r="0.55" />
-            <circle class="field-node field-node--active" cx="21" cy="28" r="0.55" />
-          </svg>
-          <div class="field-system field-system--active" data-side="left" style="--x:48%;--y:19%"><span class="field-system-label">Calendar</span></div>
-          <div class="field-system" data-side="right" style="--x:90%;--y:24%;--alpha:.8"><span class="field-system-label">Goals</span></div>
-          <div class="field-system" data-side="right" style="--x:97%;--y:35%;--alpha:.76"><span class="field-system-label field-system-label--callout">Notes</span></div>
-          <div class="field-system field-system--active" data-side="right" style="--x:97%;--y:46%"><span class="field-system-label field-system-label--callout">Email</span></div>
-          <div class="field-system" data-side="right" style="--x:96%;--y:57%;--alpha:.86"><span class="field-system-label field-system-label--callout">People</span></div>
-          <div class="field-system" data-side="right" style="--x:90%;--y:71%;--alpha:.8"><span class="field-system-label field-system-label--callout">Health</span></div>
-          <div class="field-system" data-side="right" style="--x:81%;--y:81%;--alpha:.78"><span class="field-system-label">Finance</span></div>
-          <div class="field-system" data-side="left" style="--x:55%;--y:84%;--alpha:.76"><span class="field-system-label">Strategy</span></div>
-          <div class="field-system" data-side="left" style="--x:35%;--y:79%;--alpha:.76"><span class="field-system-label">News</span></div>
-          <div class="field-system" data-side="left" style="--x:18%;--y:70%;--alpha:.8"><span class="field-system-label">Habits</span></div>
-          <div class="field-system" data-side="left" style="--x:13%;--y:52%;--alpha:.88"><span class="field-system-label">Meetings</span></div>
-          <div class="field-system field-system--active" data-side="left" style="--x:21%;--y:28%"><span class="field-system-label">Projects</span></div>
         </div>
       </div>
     </section>
@@ -1343,39 +1205,6 @@
             scrollTrigger: trigger
           });
 
-          gsap.to('.intelligence-art', {
-            opacity: 1,
-            scale: 1.28,
-            duration: 1.15,
-            ease: 'power3.out',
-            scrollTrigger: trigger
-          });
-
-          gsap.from('.field-link', {
-            strokeDasharray: 100,
-            strokeDashoffset: 100,
-            duration: 0.9,
-            stagger: 0.045,
-            ease: 'power2.out',
-            scrollTrigger: trigger
-          });
-
-          gsap.to('.field-system', {
-            opacity: 1,
-            duration: 0.5,
-            stagger: 0.055,
-            ease: 'power2.out',
-            scrollTrigger: trigger
-          });
-
-          gsap.to('.intelligence-art', {
-            y: -4,
-            scale: 1.295,
-            duration: 5.5,
-            repeat: -1,
-            yoyo: true,
-            ease: 'sine.inOut'
-          });
         }
 
         // ── B.3 Vignettes Word Cascade ──
