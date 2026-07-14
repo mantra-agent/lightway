@@ -604,6 +604,22 @@
         margin-top: var(--space-element-lg);
       }
 
+      .site-footer {
+        width: min(calc(100% - 48px), var(--max-content));
+        min-height: 96px;
+        margin: 0 auto;
+        border-top: 1px solid var(--color-card-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: var(--color-fg-muted);
+        font-size: var(--text-caption);
+      }
+
+      .footer-links { display: flex; gap: 24px; }
+      .footer-links a { transition: color 150ms var(--ease-smooth); }
+      .footer-links a:hover { color: var(--color-fg); }
+
       /* ══════════════════════════════════════════
          A.4 REDUCED MOTION
          ══════════════════════════════════════════ */
@@ -659,6 +675,10 @@
         .acceleration-headline { font-size: clamp(2rem, 10vw, 3rem); }
         .section--trust { padding: 40px 24px; }
         .section--close { padding: 56px 24px; }
+        .site-footer {
+          width: min(calc(100% - 32px), var(--max-content));
+          min-height: 88px;
+        }
 
         .parallax-blob { transform: scale(0.6); }
 
@@ -842,6 +862,14 @@
         <a href="https://mono-prod-8d22.up.railway.app/start?source=lightway" class="btn-primary close-cta">Try Mantra →</a>
       </div>
     </section>
+
+    <footer class="site-footer">
+      <span>© 2026 Mantra</span>
+      <nav class="footer-links" aria-label="Legal">
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+      </nav>
+    </footer>
 
     <!-- GSAP + ScrollTrigger (CDN) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
