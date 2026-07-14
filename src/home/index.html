@@ -431,69 +431,73 @@
       }
 
       /* ══════════════════════════════════════════
-         B.5 ACCELERATION — Warp Field
+         B.5 ACCELERATION — Scroll-Driven Hyperspace
          ══════════════════════════════════════════ */
       .section--acceleration {
         position: relative;
+        height: 320vh;
         padding: 0;
-        min-height: 100vh;
+        overflow: clip;
+        background: #000;
+      }
+
+      .acceleration-stage {
+        position: sticky;
+        top: 0;
+        width: 100%;
+        flex: 0 0 auto;
+        height: 100vh;
         overflow: hidden;
         display: flex;
         align-items: center;
+        isolation: isolate;
       }
 
-      .warp-field {
+      .warp-canvas {
         position: absolute;
         inset: 0;
-        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        background: #000;
       }
 
-      .warp-layer {
+      .warp-bloom,
+      .warp-flash,
+      .warp-vignette {
         position: absolute;
         inset: 0;
-        will-change: transform;
+        pointer-events: none;
       }
 
-      .warp-streak {
-        position: absolute;
-        height: 1px;
-        border-radius: 1px;
-        transform-origin: left center;
+      .warp-bloom {
+        background:
+          radial-gradient(circle at 62% 46%, rgba(255,255,255,0.96) 0, rgba(112,211,255,0.72) 1.5%, rgba(26,155,219,0.24) 7%, transparent 25%);
+        opacity: 0.04;
+        transform: scale(0.35);
         will-change: transform, opacity;
+        mix-blend-mode: screen;
       }
 
-      .warp-streak--gray {
-        background: linear-gradient(90deg, transparent, hsl(220, 10%, 60%));
+      .warp-flash {
+        z-index: 3;
+        background: white;
+        opacity: 0;
+        will-change: opacity;
       }
 
-      .warp-streak--blue {
-        background: linear-gradient(90deg, transparent 10%, var(--color-accent));
-        box-shadow: 0 0 6px rgba(26, 155, 219, 0.4), 0 0 12px rgba(26, 155, 219, 0.15);
-      }
-
-      .warp-core {
-        position: absolute;
-        top: 45%;
-        left: 62%;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: #fff;
-        box-shadow:
-          0 0 8px 3px rgba(255, 255, 255, 0.9),
-          0 0 20px 8px rgba(26, 155, 219, 0.9),
-          0 0 50px 16px rgba(26, 155, 219, 0.5),
-          0 0 100px 32px rgba(26, 155, 219, 0.2);
-        will-change: transform, box-shadow;
+      .warp-vignette {
+        z-index: 2;
+        background: radial-gradient(ellipse at 62% 46%, transparent 20%, rgba(0,0,0,0.18) 58%, rgba(0,0,0,0.84) 100%);
       }
 
       .acceleration-content {
         position: relative;
-        z-index: 2;
+        z-index: 4;
         padding: var(--space-section-md) 24px;
         max-width: var(--max-content);
         margin: 0 auto;
         width: 100%;
+        will-change: transform;
       }
 
       .acceleration-text-zone {
@@ -504,8 +508,8 @@
       .acceleration-text-zone::before {
         content: '';
         position: absolute;
-        inset: -40px -60px -30px -40px;
-        background: radial-gradient(ellipse at center, rgba(0,0,0,0.6) 0%, transparent 70%);
+        inset: -50px -80px -40px -50px;
+        background: radial-gradient(ellipse at center, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.32) 48%, transparent 76%);
         pointer-events: none;
         z-index: -1;
       }
@@ -522,9 +526,15 @@
         font-size: var(--text-body-lg);
         font-weight: 400;
         line-height: var(--lh-body);
-        color: var(--color-fg-muted);
+        color: hsl(220, 10%, 70%);
         margin-top: var(--space-element-md);
         max-width: 480px;
+      }
+
+      @media (max-width: 768px) {
+        .section--acceleration { height: 280vh; }
+        .warp-bloom,
+        .warp-vignette { transform-origin: 70% 44%; }
       }
 
       /* ══════════════════════════════════════════
@@ -638,13 +648,12 @@
         }
         .hero-video { display: none; }
         .hero-video-poster { display: block; }
-        .warp-streak {
-          animation: none !important;
-          transition: none !important;
+        .acceleration-stage {
+          transform: none !important;
         }
-        .warp-core {
-          animation: none !important;
-          transition: none !important;
+        .warp-bloom,
+        .warp-flash {
+          display: none;
         }
       }
 
@@ -670,7 +679,7 @@
           letter-spacing: 0.025em;
           fill: rgba(232, 234, 237, 0.9);
         }
-        .section--acceleration { min-height: 70vh; }
+        .section--acceleration { min-height: 0; }
         .acceleration-content { padding: 48px 24px; }
         .acceleration-headline { font-size: clamp(2rem, 10vw, 3rem); }
         .section--trust { padding: 40px 24px; }
@@ -819,16 +828,16 @@
          SECTION 5: ACCELERATION — Warp Field
          ════════════════════════════════════════ -->
     <section class="section section--acceleration" id="acceleration">
-      <div class="warp-field" aria-hidden="true">
-        <div class="warp-layer warp-layer--back"></div>
-        <div class="warp-layer warp-layer--mid"></div>
-        <div class="warp-layer warp-layer--front"></div>
-        <div class="warp-core"></div>
-      </div>
-      <div class="acceleration-content">
-        <div class="acceleration-text-zone">
-          <h2 class="acceleration-headline">Everything you do starts moving faster.</h2>
-          <p class="acceleration-subhead">Week one it helps. Month six it's an extension of you. The longer you run, the faster you go.</p>
+      <div class="acceleration-stage">
+        <canvas class="warp-canvas" aria-hidden="true"></canvas>
+        <div class="warp-bloom" aria-hidden="true"></div>
+        <div class="warp-vignette" aria-hidden="true"></div>
+        <div class="warp-flash" aria-hidden="true"></div>
+        <div class="acceleration-content">
+          <div class="acceleration-text-zone">
+            <h2 class="acceleration-headline">Everything you do starts moving faster.</h2>
+            <p class="acceleration-subhead">Week one it helps. Month six it's an extension of you. The longer you run, the faster you go.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -985,98 +994,185 @@
           });
         }
 
-        // ── B.5 Acceleration — Warp Field ──
-        function createWarpStreaks() {
-          var coreX = 0.62;
-          var coreY = 0.45;
+        // ── B.5 Acceleration — Scroll-Driven Hyperspace ──
+        function createHyperspace() {
           var section = document.querySelector('.section--acceleration');
-          var layerConfigs = [
-            { el: section.querySelector('.warp-layer--back'), count: 70, minLen: 30, maxLen: 120, minOpacity: 0.08, maxOpacity: 0.3, speedMult: 0.5 },
-            { el: section.querySelector('.warp-layer--mid'), count: 55, minLen: 40, maxLen: 180, minOpacity: 0.12, maxOpacity: 0.5, speedMult: 1.0 },
-            { el: section.querySelector('.warp-layer--front'), count: 35, minLen: 60, maxLen: 260, minOpacity: 0.25, maxOpacity: 0.7, speedMult: 1.6 }
-          ];
-          var isMobile = window.innerWidth < 768;
-          if (isMobile) {
-            layerConfigs[0].count = 35;
-            layerConfigs[1].count = 28;
-            layerConfigs[2].count = 17;
+          var canvas = section.querySelector('.warp-canvas');
+          var context = canvas.getContext('2d', { alpha: false });
+          var stage = section.querySelector('.acceleration-stage');
+          var bloom = section.querySelector('.warp-bloom');
+          var flash = section.querySelector('.warp-flash');
+          var content = section.querySelector('.acceleration-content');
+          var mobile = window.innerWidth < 768;
+          var stars = [];
+          var progress = 0;
+          var targetProgress = 0;
+          var frame = 0;
+          var width = 0;
+          var height = 0;
+          var dpr = 1;
+          var centerX = 0;
+          var centerY = 0;
+          var starCount = mobile ? 260 : 520;
+
+          function randomStar(star, initial) {
+            var angle = Math.random() * Math.PI * 2;
+            var radius = 0.02 + Math.pow(Math.random(), 0.72) * 0.98;
+            star.angle = angle;
+            star.radius = radius;
+            star.depth = initial ? Math.random() : 0;
+            star.speed = 0.72 + Math.random() * 1.65;
+            star.size = 0.45 + Math.random() * 1.5;
+            star.blue = Math.random() < 0.28;
+            star.twinkle = Math.random() * Math.PI * 2;
+            return star;
           }
 
-          var allStreaks = [];
-          layerConfigs.forEach(function(layer) {
-            for (var i = 0; i < layer.count; i++) {
-              var streak = document.createElement('div');
-              streak.className = 'warp-streak';
-              var isBlue = Math.random() < 0.3;
-              streak.classList.add(isBlue ? 'warp-streak--blue' : 'warp-streak--gray');
-              var angle = Math.random() * Math.PI * 2;
-              var dist = 0.1 + Math.random() * 0.9;
-              var len = layer.minLen + Math.random() * (layer.maxLen - layer.minLen);
-              var opacity = layer.minOpacity + Math.random() * (layer.maxOpacity - layer.minOpacity);
-              var thickness = isBlue ? (1.5 + Math.random() * 2) : (0.8 + Math.random() * 1.2);
-              var x = coreX * 100 + Math.cos(angle) * dist * 50;
-              var y = coreY * 100 + Math.sin(angle) * dist * 40;
-              streak.style.left = x + '%';
-              streak.style.top = y + '%';
-              streak.style.width = (len * dist) + 'px';
-              streak.style.height = thickness + 'px';
-              streak.style.opacity = opacity * dist;
-              streak.style.transform = 'rotate(' + (angle * 180 / Math.PI) + 'deg)';
-              layer.el.appendChild(streak);
-              allStreaks.push({
-                el: streak,
-                baseDist: dist,
-                baseLen: len,
-                baseOpacity: opacity,
-                speedMult: layer.speedMult
-              });
+          function resize() {
+            width = stage.clientWidth;
+            height = stage.clientHeight;
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            context.setTransform(dpr, 0, 0, dpr, 0, 0);
+            centerX = width * (mobile ? 0.70 : 0.62);
+            centerY = height * (mobile ? 0.44 : 0.46);
+          }
+
+          function easeIn(value) {
+            return value * value * value;
+          }
+
+          function draw() {
+            progress += (targetProgress - progress) * 0.12;
+            var velocity = 0.15 + easeIn(progress) * 9.5;
+            var trail = 1.5 + Math.pow(progress, 2.35) * Math.min(width, height) * 0.42;
+            var spread = 0.22 + progress * 0.98;
+            var visibleCount = Math.round(starCount * (0.38 + progress * 0.62));
+
+            context.fillStyle = '#000';
+            context.fillRect(0, 0, width, height);
+            context.globalCompositeOperation = 'lighter';
+            context.lineCap = 'round';
+
+            for (var i = 0; i < visibleCount; i++) {
+              var star = stars[i];
+              star.depth += velocity * star.speed * 0.0028;
+              if (star.depth > 1) randomStar(star, false);
+
+              var radial = Math.pow(star.depth, 1.85) * spread;
+              var maxRadius = Math.hypot(width, height) * 0.72;
+              var distance = star.radius * maxRadius * radial;
+              var dx = Math.cos(star.angle);
+              var dy = Math.sin(star.angle) * (height / width + 0.38);
+              var x = centerX + dx * distance;
+              var y = centerY + dy * distance;
+              var localTrail = trail * star.depth * star.speed;
+              var startX = x - dx * localTrail;
+              var startY = y - dy * localTrail;
+              var alpha = Math.min(1, (0.12 + star.depth * 0.78) * (0.48 + progress * 0.9));
+              var gradient = context.createLinearGradient(startX, startY, x, y);
+              gradient.addColorStop(0, 'rgba(26,155,219,0)');
+              gradient.addColorStop(0.58, star.blue ? 'rgba(42,174,238,' + alpha * 0.38 + ')' : 'rgba(178,203,218,' + alpha * 0.32 + ')');
+              gradient.addColorStop(1, star.blue ? 'rgba(118,220,255,' + alpha + ')' : 'rgba(255,255,255,' + alpha + ')');
+              context.strokeStyle = gradient;
+              context.lineWidth = Math.min(4.5, star.size * (0.65 + progress * 1.65) * (0.42 + star.depth));
+              context.beginPath();
+              context.moveTo(startX, startY);
+              context.lineTo(x, y);
+              context.stroke();
+
+              if (progress > 0.72 && star.depth > 0.55) {
+                context.fillStyle = 'rgba(255,255,255,' + ((progress - 0.72) * star.depth) + ')';
+                context.beginPath();
+                context.arc(x, y, context.lineWidth * 0.7, 0, Math.PI * 2);
+                context.fill();
+              }
             }
-          });
-          return allStreaks;
-        }
 
-        function initAcceleration() {
-          var section = document.querySelector('.section--acceleration');
-          var allStreaks = createWarpStreaks();
+            context.globalCompositeOperation = 'source-over';
+            bloom.style.opacity = String(0.03 + Math.pow(progress, 2.2) * 0.82);
+            bloom.style.transform = 'scale(' + (0.32 + progress * 2.9) + ')';
+            flash.style.opacity = String(Math.max(0, (progress - 0.92) / 0.08) * 0.82);
 
-          // Continuous warp animation — streaks pulse in length/opacity
-          allStreaks.forEach(function(s) {
-            var duration = (2 + Math.random() * 3) / s.speedMult;
-            gsap.to(s.el, {
-              keyframes: [
-                { opacity: s.baseOpacity * s.baseDist * 1.3, width: '+=' + (s.baseLen * 0.3) + 'px', duration: duration * 0.4 },
-                { opacity: s.baseOpacity * s.baseDist * 0.5, width: '-=' + (s.baseLen * 0.3) + 'px', duration: duration * 0.6 }
-              ],
-              repeat: -1,
-              delay: Math.random() * duration,
-              ease: 'sine.inOut'
-            });
-          });
-
-          // Scroll-linked core intensity boost
-          var core = section.querySelector('.warp-core');
-          gsap.to(core, {
-            scale: 1.6,
-            boxShadow: '0 0 12px 6px rgba(255,255,255,1), 0 0 30px 12px rgba(26,155,219,1), 0 0 80px 28px rgba(26,155,219,0.6), 0 0 140px 50px rgba(26,155,219,0.25)',
-            scrollTrigger: {
-              trigger: section,
-              start: 'top 60%',
-              end: 'center center',
-              scrub: 1
+            var shake = progress > 0.77 ? Math.pow((progress - 0.77) / 0.23, 2) * (mobile ? 2.2 : 4.5) : 0;
+            if (shake > 0) {
+              var sx = Math.sin(frame * 1.91) * shake;
+              var sy = Math.cos(frame * 2.37) * shake * 0.65;
+              canvas.style.transform = 'translate3d(' + sx + 'px,' + sy + 'px,0) scale(' + (1 + shake * 0.0007) + ')';
+              bloom.style.marginLeft = sx + 'px';
+              bloom.style.marginTop = sy + 'px';
+            } else {
+              canvas.style.transform = '';
+              bloom.style.marginLeft = '';
+              bloom.style.marginTop = '';
             }
+            frame += 1;
+            requestAnimationFrame(draw);
+          }
+
+          resize();
+          for (var i = 0; i < starCount; i++) stars.push(randomStar({}, true));
+          window.addEventListener('resize', resize, { passive: true });
+
+          ScrollTrigger.create({
+            trigger: section,
+            start: 'top top',
+            end: 'bottom bottom',
+            scrub: 0.15,
+            onUpdate: function(self) { targetProgress = self.progress; }
           });
 
-          // Text entrance
           var textTl = gsap.timeline({
             scrollTrigger: {
               trigger: section,
-              start: 'top 75%',
-              once: true
+              start: 'top 68%',
+              end: 'top 10%',
+              scrub: 0.6
             }
           });
           textTl
-            .from('.acceleration-headline', { y: 30, opacity: 0, duration: 0.8, ease: 'power3.out' })
-            .from('.acceleration-subhead', { y: 20, opacity: 0, duration: 0.7, ease: 'power3.out' }, 0.15);
+            .fromTo('.acceleration-headline', { y: 34, opacity: 0 }, { y: 0, opacity: 1, ease: 'power3.out' })
+            .fromTo('.acceleration-subhead', { y: 22, opacity: 0 }, { y: 0, opacity: 1, ease: 'power3.out' }, 0.12);
+
+          gsap.to(content, {
+            opacity: 0.12,
+            scale: 0.96,
+            scrollTrigger: {
+              trigger: section,
+              start: '55% top',
+              end: '88% top',
+              scrub: true
+            }
+          });
+
+          draw();
+        }
+
+        function createStaticHyperspace() {
+          var section = document.querySelector('.section--acceleration');
+          var canvas = section.querySelector('.warp-canvas');
+          var context = canvas.getContext('2d');
+          var width = canvas.clientWidth;
+          var height = canvas.clientHeight;
+          var dpr = Math.min(window.devicePixelRatio || 1, 2);
+          canvas.width = width * dpr;
+          canvas.height = height * dpr;
+          context.scale(dpr, dpr);
+          context.fillStyle = '#000';
+          context.fillRect(0, 0, width, height);
+          context.fillStyle = 'rgba(200,225,240,0.7)';
+          for (var i = 0; i < (window.innerWidth < 768 ? 90 : 180); i++) {
+            context.beginPath();
+            context.arc(Math.random() * width, Math.random() * height, 0.5 + Math.random() * 1.3, 0, Math.PI * 2);
+            context.fill();
+          }
+        }
+
+        function initAcceleration() {
+          createHyperspace();
         }
 
         // ── B.6 Trust Stagger ──
@@ -1126,7 +1222,7 @@
           initScrollAnimations();
           initParallax();
         } else {
-          createWarpStreaks();
+          createStaticHyperspace();
         }
       })();
     </script>
