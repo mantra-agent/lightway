@@ -15,8 +15,8 @@ const CONFIG = Object.freeze({
   microCount: isMobile ? 760 : 1500,
   streakCount: isMobile ? 260 : 560,
   pulseCount: isMobile ? 64 : 120,
-  hubFogParticleCount: isMobile ? 1700 : 3600,
-  interstitialFogParticleCount: isMobile ? 380 : 900,
+  hubFogParticleCount: isMobile ? 567 : 1200,
+  interstitialFogParticleCount: isMobile ? 127 : 300,
   localSegments: 12,
   highwaySegments: 34,
   depthFar: 96,
@@ -394,7 +394,7 @@ class NeuralWorld {
           sourceType: 'hub',
           sourceIndex: clusterIndex,
           direction: new THREE.Vector3(Math.cos(angle), Math.sin(angle) * 0.72, -0.18 - branchIndex * 0.08).normalize(),
-          length: 1.0 + branchIndex * 0.55 + random() * 0.5,
+          length: (1.0 + branchIndex * 0.55 + random() * 0.5) * 3,
           arc: 0.34 + random() * 0.34,
           sign: branchIndex % 2 === 0 ? 1 : -1,
           phase: cluster.phase + branchIndex,
@@ -408,7 +408,7 @@ class NeuralWorld {
         sourceType: 'satellite',
         sourceIndex: satelliteIndex,
         direction: new THREE.Vector3(Math.cos(angle), Math.sin(angle), -0.12).normalize(),
-        length: 0.48 + random() * 0.52,
+        length: (0.48 + random() * 0.52) * 3,
         arc: 0.18 + random() * 0.24,
         sign: satelliteIndex % 2 === 0 ? 1 : -1,
         phase: satellite.phase,
@@ -518,7 +518,7 @@ class NeuralWorld {
       positions[index * 3] = cluster.x + Math.sin(phi) * Math.cos(theta) * horizontalRadius * radius;
       positions[index * 3 + 1] = cluster.y + Math.cos(phi) * verticalRadius * radius;
       positions[index * 3 + 2] = cluster.z + Math.sin(phi) * Math.sin(theta) * depthRadius * radius;
-      sizes[index] = 0.55 + Math.pow(random(), 1.8) * 2.3;
+      sizes[index] = (0.55 + Math.pow(random(), 1.8) * 2.3) * 3;
       phases[index] = random() * Math.PI * 2;
       densities[index] = 0.42 + random() * 0.58;
     }
@@ -531,7 +531,7 @@ class NeuralWorld {
       positions[writeIndex * 3] = lerp(from.x, to.x, t) + (random() - 0.5) * (isMobile ? 2.2 : 3.2);
       positions[writeIndex * 3 + 1] = lerp(from.y, to.y, t) + (random() - 0.5) * (isMobile ? 3.0 : 2.4);
       positions[writeIndex * 3 + 2] = lerp(from.z, to.z, t) + (random() - 0.5) * 4.8;
-      sizes[writeIndex] = 0.38 + random() * 1.2;
+      sizes[writeIndex] = (0.38 + random() * 1.2) * 3;
       phases[writeIndex] = random() * Math.PI * 2;
       densities[writeIndex] = 0.18 + random() * 0.38;
     }
