@@ -78,7 +78,8 @@ Canonical palette from Mantra Design Guide (dark mode):
 - Connector tendrils terminate outside sphere membranes, widen at both membrane roots, and narrow through the middle; no connector geometry may target or visibly penetrate a sphere center
 - Connector tendrils belong to the low/mid-speed neuron state and fully fade before the high-speed climax, where micro-traffic and velocity streaks own motion
 - Camera pose is scroll-owned only; pointer and tap input never alter framing, rotation, or parallax
-- Depth fog is strongest in the neuron state and relaxes with scroll; mobile and desktop velocity streaks both project along the depth axis
+- Neural shells, satellites, tendrils, pulses, particles, and streaks use the deeper CTA-blue family rather than pearl-white
+- Depth fog is strongest in the neuron state and relaxes with scroll; visible blue atmospheric dust and haze sprites make the depth medium legible; mobile and desktop velocity streaks both project along the depth axis
 - Scroll releases additional hubs, satellites, micro-nodes, connectors, camera travel, velocity, bloom, and white arrival
 - Caps DPR at 1.5, pauses when hidden, handles WebGL context loss, and honors reduced motion
 
