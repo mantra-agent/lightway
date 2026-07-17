@@ -223,7 +223,7 @@ const fogParticleVertexShader = `
     float scrollFade = 1.0 - smoothstep(0.72, 0.98, uProgress) * 0.72;
     vDensity = aDensity;
     vAlpha = distanceFade * scrollFade * (0.2 + aDensity * 0.72);
-    gl_PointSize = clamp(aSize * (150.0 / max(1.0, -viewPosition.z)), 1.0, 14.0);
+    gl_PointSize = clamp(aSize * (150.0 / max(1.0, -viewPosition.z)), 1.0, 140.0);
     gl_Position = projectionMatrix * viewPosition;
   }
 `;
@@ -518,7 +518,7 @@ class NeuralWorld {
       positions[index * 3] = cluster.x + Math.sin(phi) * Math.cos(theta) * horizontalRadius * radius;
       positions[index * 3 + 1] = cluster.y + Math.cos(phi) * verticalRadius * radius;
       positions[index * 3 + 2] = cluster.z + Math.sin(phi) * Math.sin(theta) * depthRadius * radius;
-      sizes[index] = (0.55 + Math.pow(random(), 1.8) * 2.3) * 3;
+      sizes[index] = (0.55 + Math.pow(random(), 1.8) * 2.3) * 30;
       phases[index] = random() * Math.PI * 2;
       densities[index] = 0.42 + random() * 0.58;
     }
@@ -531,7 +531,7 @@ class NeuralWorld {
       positions[writeIndex * 3] = lerp(from.x, to.x, t) + (random() - 0.5) * (isMobile ? 2.2 : 3.2);
       positions[writeIndex * 3 + 1] = lerp(from.y, to.y, t) + (random() - 0.5) * (isMobile ? 3.0 : 2.4);
       positions[writeIndex * 3 + 2] = lerp(from.z, to.z, t) + (random() - 0.5) * 4.8;
-      sizes[writeIndex] = (0.38 + random() * 1.2) * 3;
+      sizes[writeIndex] = (0.38 + random() * 1.2) * 30;
       phases[writeIndex] = random() * Math.PI * 2;
       densities[writeIndex] = 0.18 + random() * 0.38;
     }
