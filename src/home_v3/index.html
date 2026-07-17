@@ -5,14 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#000000" />
     <meta name="robots" content="noindex" />
-    <title>Mantra V3</title>
+    <title>Mantra — Reach Your Full Potential</title>
     <link rel="icon" href="data:," />
     <style>
       :root {
         color-scheme: dark;
         --canvas: #000000;
         --foreground: #e8eaed;
-        --muted: #828a96;
+        --muted: #9299a5;
+        --accent: #1a9bdb;
+        --panel: rgba(232, 234, 237, 0.055);
+        --panel-border: rgba(232, 234, 237, 0.1);
       }
 
       * { box-sizing: border-box; }
@@ -27,17 +30,15 @@
       }
 
       body {
-        height: 520vh;
         overflow-x: hidden;
       }
 
-      body::-webkit-scrollbar {
-        display: none;
-      }
+      body::-webkit-scrollbar { display: none; }
 
       .neural-stage {
         position: fixed;
         inset: 0;
+        z-index: 0;
         overflow: hidden;
         background:
           radial-gradient(circle at 50% 45%, rgba(25, 42, 58, 0.12), transparent 42%),
@@ -62,10 +63,10 @@
 
       .atmosphere {
         background:
-          radial-gradient(ellipse at 50% 45%, rgba(141, 212, 240, 0.06), transparent 38%),
-          radial-gradient(ellipse at 20% 80%, rgba(32, 168, 142, 0.025), transparent 38%);
+          radial-gradient(ellipse at 50% 45%, rgba(141, 212, 240, 0.04), transparent 38%),
+          radial-gradient(ellipse at 20% 80%, rgba(26, 155, 219, 0.02), transparent 38%);
         mix-blend-mode: screen;
-        opacity: 0.45;
+        opacity: 0.4;
       }
 
       .vignette {
@@ -76,6 +77,196 @@
         background: white;
         opacity: 0;
         will-change: opacity;
+      }
+
+      .narrative {
+        position: relative;
+        z-index: 2;
+      }
+
+      .story-section {
+        min-height: 100svh;
+        display: grid;
+        grid-template-columns: minmax(24px, 1fr) minmax(0, 620px) minmax(0, 620px) minmax(24px, 1fr);
+        align-items: center;
+        padding: 9svh 0;
+      }
+
+      .hero-section {
+        min-height: 112svh;
+        text-align: center;
+      }
+
+      .section-content {
+        opacity: 0.14;
+        transform: translateY(30px);
+        filter: blur(7px);
+        transition:
+          opacity 650ms cubic-bezier(0.22, 1, 0.36, 1),
+          transform 650ms cubic-bezier(0.22, 1, 0.36, 1),
+          filter 650ms cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: opacity, transform, filter;
+      }
+
+      .story-section.is-active .section-content {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+      }
+
+      .hero-content {
+        grid-column: 2 / 4;
+        width: min(900px, calc(100vw - 48px));
+        justify-self: center;
+      }
+
+      .wordmark {
+        margin: 0 0 28px;
+        color: rgba(232, 234, 237, 0.62);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      p { margin-top: 0; }
+
+      h1 {
+        margin-bottom: 26px;
+        color: var(--foreground);
+        font-size: clamp(54px, 8vw, 116px);
+        font-weight: 520;
+        letter-spacing: -0.065em;
+        line-height: 0.93;
+        text-wrap: balance;
+      }
+
+      .hero-copy {
+        width: min(640px, 100%);
+        margin: 0 auto 36px;
+        color: rgba(232, 234, 237, 0.7);
+        font-size: clamp(18px, 2vw, 24px);
+        line-height: 1.55;
+        text-wrap: balance;
+      }
+
+      .cta {
+        display: inline-flex;
+        min-height: 48px;
+        align-items: center;
+        justify-content: center;
+        padding: 0 24px;
+        border: 1px solid rgba(26, 155, 219, 0.48);
+        border-radius: 999px;
+        background: var(--accent);
+        box-shadow: 0 0 36px rgba(26, 155, 219, 0.2);
+        color: #001018;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        text-decoration: none;
+        pointer-events: auto;
+        transition: transform 180ms ease, box-shadow 180ms ease;
+      }
+
+      .cta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 48px rgba(26, 155, 219, 0.34);
+      }
+
+      .story-card {
+        position: relative;
+        width: min(520px, calc(100vw - 48px));
+        padding: clamp(28px, 4vw, 44px);
+        overflow: hidden;
+        border: 1px solid var(--panel-border);
+        border-radius: 18px;
+        background: var(--panel);
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.34);
+        backdrop-filter: blur(16px) saturate(118%);
+        -webkit-backdrop-filter: blur(16px) saturate(118%);
+      }
+
+      .story-card::before {
+        content: "";
+        position: absolute;
+        inset: 20px auto 20px 0;
+        width: 2px;
+        border-radius: 2px;
+        background: linear-gradient(to bottom, transparent, var(--accent) 28%, var(--accent) 72%, transparent);
+        opacity: 0.8;
+      }
+
+      .align-left .story-card {
+        grid-column: 2;
+        justify-self: start;
+      }
+
+      .align-right .story-card {
+        grid-column: 3;
+        justify-self: end;
+      }
+
+      .eyebrow {
+        margin-bottom: 20px;
+        color: rgba(26, 155, 219, 0.88);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      h2 {
+        margin-bottom: 20px;
+        color: var(--foreground);
+        font-size: clamp(36px, 5vw, 64px);
+        font-weight: 520;
+        letter-spacing: -0.05em;
+        line-height: 0.98;
+        text-wrap: balance;
+      }
+
+      .story-copy {
+        margin-bottom: 0;
+        color: rgba(232, 234, 237, 0.68);
+        font-size: clamp(16px, 1.5vw, 19px);
+        line-height: 1.65;
+      }
+
+      .proof-line {
+        margin: 26px 0 0;
+        padding-top: 20px;
+        border-top: 1px solid rgba(232, 234, 237, 0.08);
+        color: rgba(232, 234, 237, 0.92);
+        font-size: 14px;
+        font-weight: 620;
+        letter-spacing: -0.01em;
+      }
+
+      .final-section {
+        min-height: 125svh;
+        text-align: center;
+      }
+
+      .final-content {
+        grid-column: 2 / 4;
+        width: min(820px, calc(100vw - 48px));
+        justify-self: center;
+      }
+
+      .final-content h2 {
+        color: #0a1016;
+        font-size: clamp(48px, 7vw, 96px);
+      }
+
+      .final-content p {
+        width: min(560px, 100%);
+        margin: 0 auto 32px;
+        color: rgba(10, 16, 22, 0.68);
+        font-size: clamp(18px, 2vw, 23px);
+        line-height: 1.55;
       }
 
       .scroll-cue {
@@ -125,10 +316,9 @@
       .fallback-graph {
         opacity: 0;
         background:
-          radial-gradient(circle at 24% 31%, transparent 0 14px, rgba(141, 212, 240, 0.48) 15px, transparent 17px),
-          radial-gradient(circle at 52% 43%, transparent 0 20px, rgba(232, 234, 237, 0.46) 21px, transparent 23px),
-          radial-gradient(circle at 76% 65%, transparent 0 12px, rgba(141, 212, 240, 0.42) 13px, transparent 15px),
-          linear-gradient(24deg, transparent 42%, rgba(141, 212, 240, 0.13) 43%, transparent 44%);
+          radial-gradient(circle at 24% 31%, transparent 0 14px, rgba(26, 155, 219, 0.42) 15px, transparent 17px),
+          radial-gradient(circle at 52% 43%, transparent 0 20px, rgba(232, 234, 237, 0.4) 21px, transparent 23px),
+          radial-gradient(circle at 76% 65%, transparent 0 12px, rgba(26, 155, 219, 0.38) 13px, transparent 15px);
       }
 
       @keyframes cue {
@@ -136,18 +326,33 @@
         50% { transform: scaleY(1); opacity: 1; }
       }
 
-      @media (max-width: 700px) {
-        body { height: 440vh; }
-        .scroll-cue {
-          bottom: 76px;
-          color: rgba(232, 234, 237, 0.84);
-          font-size: 13px;
-          letter-spacing: 0.15em;
+      @media (max-width: 760px) {
+        .story-section {
+          grid-template-columns: 24px minmax(0, 1fr) 24px;
+          min-height: 110svh;
+          padding: 12svh 0;
         }
+
+        .hero-section { min-height: 112svh; }
+        .hero-content,
+        .final-content,
+        .align-left .story-card,
+        .align-right .story-card {
+          grid-column: 2;
+          justify-self: center;
+        }
+
+        .story-card { backdrop-filter: blur(13px) saturate(115%); }
+        .scroll-cue { bottom: 42px; }
       }
 
       @media (prefers-reduced-motion: reduce) {
-        body { height: 100vh; }
+        .section-content {
+          opacity: 1;
+          transform: none;
+          filter: none;
+          transition: none;
+        }
         .scroll-cue { display: none; }
         .atmosphere { opacity: 0.3; }
       }
@@ -162,13 +367,78 @@
     </script>
   </head>
   <body>
-    <main class="neural-stage" aria-label="Mantra V3 neural narrative background">
+    <main class="neural-stage" aria-label="Mantra neural narrative background">
       <div class="fallback-graph" aria-hidden="true"></div>
       <div class="atmosphere" aria-hidden="true"></div>
       <div class="vignette" aria-hidden="true"></div>
       <div class="white-arrival" aria-hidden="true"></div>
     </main>
-    <div class="scroll-cue" aria-hidden="true">Scroll to accelerate</div>
+
+    <div class="narrative">
+      <section class="story-section hero-section is-active" data-scene-progress="0">
+        <div class="section-content hero-content">
+          <p class="wordmark">Mantra</p>
+          <h1>Reach your full potential.</h1>
+          <p class="hero-copy">Your life is complex. Your system should be intelligent.</p>
+          <a class="cta" href="https://mono-prod-8d22.up.railway.app/start?source=lightway">Start With Mantra</a>
+        </div>
+      </section>
+
+      <section class="story-section align-left" data-scene-progress="0.14">
+        <article class="section-content story-card">
+          <p class="eyebrow">01 · Connection</p>
+          <h2>Everything, connected.</h2>
+          <p class="story-copy">Your goals, calendar, relationships, health, money, and decisions stop living in separate systems. The whole picture becomes visible.</p>
+          <p class="proof-line">Connected systems produce judgment.</p>
+        </article>
+      </section>
+
+      <section class="story-section align-right" data-scene-progress="0.32">
+        <article class="section-content story-card">
+          <p class="eyebrow">02 · Continuity</p>
+          <h2>Keep the whole thread.</h2>
+          <p class="story-copy">Every conversation, commitment, and decision stays connected to what came before and what matters next.</p>
+          <p class="proof-line">Memory that gets more valuable over time.</p>
+        </article>
+      </section>
+
+      <section class="story-section align-left" data-scene-progress="0.5">
+        <article class="section-content story-card">
+          <p class="eyebrow">03 · Action</p>
+          <h2>Follow through.</h2>
+          <p class="story-copy">The right next step surfaces with the context to act. Coordination happens underneath, on your agenda.</p>
+          <p class="proof-line">Intention becomes movement.</p>
+        </article>
+      </section>
+
+      <section class="story-section align-right" data-scene-progress="0.68">
+        <article class="section-content story-card">
+          <p class="eyebrow">04 · Compounding</p>
+          <h2>Your life compounds.</h2>
+          <p class="story-copy">Every kept habit, hard decision, warm relationship, and finished commitment strengthens the system carrying you forward.</p>
+          <p class="proof-line">Month six should feel different from day one.</p>
+        </article>
+      </section>
+
+      <section class="story-section align-left" data-scene-progress="0.83">
+        <article class="section-content story-card">
+          <p class="eyebrow">05 · Ambient</p>
+          <h2>The interface disappears.</h2>
+          <p class="story-copy">Talk through an idea on a walk. Find it captured, structured, and connected when you sit down. No new behavior required.</p>
+          <p class="proof-line">One intelligence layer. Every surface.</p>
+        </article>
+      </section>
+
+      <section class="story-section final-section" data-scene-progress="1">
+        <div class="section-content final-content">
+          <h2>Your judgment. Multiplied.</h2>
+          <p>Build the intelligence layer your life deserves.</p>
+          <a class="cta" href="https://mono-prod-8d22.up.railway.app/start?source=lightway">Start With Mantra</a>
+        </div>
+      </section>
+    </div>
+
+    <div class="scroll-cue" aria-hidden="true">Scroll to explore</div>
     <p class="fallback-message" role="status">This visual requires WebGL. The rest of Mantra remains available.</p>
     <script type="module" src="./neural-hyperspace.js"></script>
   </body>

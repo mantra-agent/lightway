@@ -7,6 +7,7 @@ const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matc
 const stage = document.querySelector('.neural-stage');
 const arrival = document.querySelector('.white-arrival');
 const scrollCue = document.querySelector('.scroll-cue');
+const narrativeSections = Array.from(document.querySelectorAll('[data-scene-progress]'));
 const isMobile = window.innerWidth < 700;
 
 const CONFIG = Object.freeze({
@@ -701,7 +702,7 @@ class NeuralWorld {
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     });
-    this.pulseMesh = new THREE.InstancedMesh(geometry, this.pulseMaterial, CONFIG.pulseCount * 3);
+    this.pulseMesh = new THREE.InstancedMesh(geometry, this.pulseMaterial, CONFIG.pulseCount * 5);
     this.pulseMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.pulseMesh.frustumCulled = false;
     this.pulses = Array.from({ length: CONFIG.pulseCount }, (_, index) => ({
@@ -1093,14 +1094,14 @@ class NeuralWorld {
       const visible = this.highwayVisible(highway, progress) && pulse.rank <= 0.34 + smoothstep(0.0, 0.5, progress) * 0.46 + smoothstep(0.5, 1, progress) * 0.2;
       const speed = pulse.speed * (1 + progress * 4.2);
       const t = (elapsed * speed + pulse.offset) % 1;
-      for (let ghost = 0; ghost < 3; ghost += 1) {
-        const ghostT = Math.max(0, t - ghost * (0.018 + progress * 0.012));
+      for (let ghost = 0; ghost < 5; ghost += 1) {
+        const ghostT = Math.max(0, t - ghost * (0.006 + progress * 0.004));
         if (visible) {
           this.curvePoint(this.highwayCurve(highway), ghostT, position);
         } else position.set(0, 0, -120);
         const endpointEnvelope = smoothstep(0, 0.045, ghostT) * (1 - smoothstep(0.955, 1, ghostT));
         const scale = visible
-          ? pulse.scale * (1 - ghost * 0.3) * (1.05 + progress * 0.36) * (isMobile ? 0.5 : 1) * endpointEnvelope
+          ? pulse.scale * (1 - ghost * 0.16) * (1.05 + progress * 0.36) * (isMobile ? 0.5 : 1) * endpointEnvelope
           : 0;
         matrix.compose(position, quaternion, new THREE.Vector3(scale, scale, scale));
         this.pulseMesh.setMatrixAt(instanceIndex, matrix);
@@ -1190,8 +1191,47 @@ function resize() {
 }
 
 function updateScrollProgress() {
-  const range = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-  state.targetProgress = reducedMotion ? 0.16 : clamp(window.scrollY / range, 0, 1);
+  if (reducedMotion) {
+    state.targetProgress = 0.16;
+    narrativeSections.forEach((section, index) => section.classList.toggle('is-active', index === 0));
+    return;
+  }
+
+  const viewportCenter = window.scrollY + window.innerHeight * 0.5;
+  const anchors = narrativeSections.map((section) => ({
+    section,
+    center: section.offsetTop + section.offsetHeight * 0.5,
+    progress: Number(section.dataset.sceneProgress),
+  }));
+  let activeIndex = 0;
+  let closestDistance = Infinity;
+  for (let index = 0; index < anchors.length; index += 1) {
+    const distance = Math.abs(viewportCenter - anchors[index].center);
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      activeIndex = index;
+    }
+  }
+  narrativeSections.forEach((section, index) => section.classList.toggle('is-active', index === activeIndex));
+
+  if (viewportCenter <= anchors[0].center) {
+    state.targetProgress = anchors[0].progress;
+    return;
+  }
+  const lastAnchor = anchors[anchors.length - 1];
+  if (viewportCenter >= lastAnchor.center) {
+    state.targetProgress = lastAnchor.progress;
+    return;
+  }
+  for (let index = 0; index < anchors.length - 1; index += 1) {
+    const current = anchors[index];
+    const next = anchors[index + 1];
+    if (viewportCenter >= current.center && viewportCenter <= next.center) {
+      const localProgress = clamp((viewportCenter - current.center) / (next.center - current.center), 0, 1);
+      state.targetProgress = lerp(current.progress, next.progress, localProgress);
+      return;
+    }
+  }
 }
 
 function updateCamera(progress, elapsed, delta) {
