@@ -258,18 +258,18 @@ class NeuralWorld {
 
   createClusters() {
     const positions = isMobile ? [
-      [-0.7, -0.15, -6.5, 0.72],
-      [1.55, 3.0, -12.0, 0.58],
-      [-1.75, -3.15, -16.5, 0.62],
+      [-1.7, -0.55, -7.0, 0.54],
+      [3.75, 5.15, -12.0, 0.44],
+      [-4.15, -5.55, -16.5, 0.46],
       [1.95, -0.75, -28.0, 0.44],
       [-1.55, 3.8, -39.0, 0.42],
       [0.6, -4.6, -51.0, 0.44],
       [-1.15, 0.75, -66.0, 0.4],
       [1.35, 4.8, -82.0, 0.42],
     ] : [
-      [-2.75, -0.45, -5.8, 0.92],
-      [1.15, 2.55, -11.5, 0.68],
-      [4.45, -2.05, -15.5, 0.74],
+      [-4.1, -0.75, -6.6, 0.68],
+      [3.45, 3.75, -11.5, 0.51],
+      [8.1, -3.2, -16.0, 0.55],
       [-4.85, 2.8, -27.0, 0.5],
       [0.15, -3.35, -34.0, 0.48],
       [4.7, 1.1, -43.0, 0.52],
@@ -425,39 +425,50 @@ class NeuralWorld {
     this.group.add(this.microField);
   }
 
-  createLineSystem(maxLinks, segments, opacity) {
-    const vertexCount = maxLinks * segments * 2;
+  createTendrilSystem(maxTendrils, segments, radialSegments, opacity) {
+    const vertexCount = maxTendrils * segments * radialSegments * 6;
     const positions = new Float32Array(vertexCount * 3);
     const colors = new Float32Array(vertexCount * 3);
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3).setUsage(THREE.DynamicDrawUsage));
     geometry.setDrawRange(0, 0);
-    const material = new THREE.LineBasicMaterial({
+    const material = new THREE.MeshBasicMaterial({
       vertexColors: true,
       transparent: true,
       opacity,
       depthWrite: false,
+      depthTest: true,
+      side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
       fog: true,
     });
-    const mesh = new THREE.LineSegments(geometry, material);
+    const mesh = new THREE.Mesh(geometry, material);
     mesh.frustumCulled = false;
     this.group.add(mesh);
-    return { positions, colors, geometry, material, mesh, segments };
+    return { positions, colors, geometry, material, mesh, segments, radialSegments };
   }
 
   createLocalLinks() {
-    const linkCount = this.satellites.length * 4;
-    this.localLineSystem = this.createLineSystem(linkCount, CONFIG.localSegments, 0.54);
+    this.localTendrilSystem = this.createTendrilSystem(
+      this.satellites.length * 2,
+      CONFIG.localSegments,
+      isMobile ? 4 : 5,
+      0.62,
+    );
   }
 
   createHighwayLinks() {
-    this.highwayLineSystem = this.createLineSystem(this.highways.length * 2, CONFIG.highwaySegments, 0.82);
+    this.highwayTendrilSystem = this.createTendrilSystem(
+      this.highways.length,
+      CONFIG.highwaySegments,
+      isMobile ? 5 : 6,
+      0.78,
+    );
   }
 
   createPulses() {
-    const geometry = new THREE.SphereGeometry(0.105, 8, 8);
+    const geometry = new THREE.SphereGeometry(0.048, 7, 7);
     this.pulseMaterial = new THREE.MeshBasicMaterial({
       color: 0xd9f5ff,
       transparent: true,
@@ -473,7 +484,7 @@ class NeuralWorld {
       offset: random(),
       speed: 0.055 + random() * 0.11,
       rank: index / CONFIG.pulseCount,
-      scale: 0.72 + random() * 1.25,
+      scale: 0.62 + random() * 0.78,
     }));
     this.group.add(this.pulseMesh);
   }
@@ -593,47 +604,105 @@ class NeuralWorld {
     ]) attribute.needsUpdate = true;
   }
 
-  quadraticPoint(start, end, arc, sign, t, target) {
-    const control = new THREE.Vector3().lerpVectors(start, end, 0.5);
+  quadraticControl(start, end, arc, sign, target = new THREE.Vector3()) {
+    target.lerpVectors(start, end, 0.5);
     const dx = end.x - start.x;
     const dy = end.y - start.y;
     const length = Math.max(0.1, Math.hypot(dx, dy));
-    control.x += (-dy / length) * arc * sign;
-    control.y += (dx / length) * arc * sign + arc * 0.28;
-    control.z -= arc * 0.34;
+    target.x += (-dy / length) * arc * sign;
+    target.y += (dx / length) * arc * sign + arc * 0.28;
+    target.z -= arc * 0.34;
+    return target;
+  }
+
+  surfaceCurve(startCenter, endCenter, startRadius, endRadius, arc, sign) {
+    const centerControl = this.quadraticControl(startCenter, endCenter, arc, sign);
+    const startDirection = centerControl.clone().sub(startCenter).normalize();
+    const endDirection = endCenter.clone().sub(centerControl).normalize();
+    const endpointPadding = isMobile ? 0.018 : 0.014;
+    const start = startCenter.clone().addScaledVector(startDirection, startRadius + endpointPadding);
+    const end = endCenter.clone().addScaledVector(endDirection, -(endRadius + endpointPadding));
+    const control = this.quadraticControl(start, end, arc, sign);
+    return { start, control, end };
+  }
+
+  curvePoint(curve, t, target = new THREE.Vector3()) {
     const inverse = 1 - t;
     return target.set(
-      inverse * inverse * start.x + 2 * inverse * t * control.x + t * t * end.x,
-      inverse * inverse * start.y + 2 * inverse * t * control.y + t * t * end.y,
-      inverse * inverse * start.z + 2 * inverse * t * control.z + t * t * end.z,
+      inverse * inverse * curve.start.x + 2 * inverse * t * curve.control.x + t * t * curve.end.x,
+      inverse * inverse * curve.start.y + 2 * inverse * t * curve.control.y + t * t * curve.end.y,
+      inverse * inverse * curve.start.z + 2 * inverse * t * curve.control.z + t * t * curve.end.z,
     );
   }
 
-  writeCurve(system, start, end, arc, sign, intensity, color, vertexOffset) {
-    const pointA = new THREE.Vector3();
-    const pointB = new THREE.Vector3();
+  curveTangent(curve, t, target = new THREE.Vector3()) {
+    return target.set(
+      2 * (1 - t) * (curve.control.x - curve.start.x) + 2 * t * (curve.end.x - curve.control.x),
+      2 * (1 - t) * (curve.control.y - curve.start.y) + 2 * t * (curve.end.y - curve.control.y),
+      2 * (1 - t) * (curve.control.z - curve.start.z) + 2 * t * (curve.end.z - curve.control.z),
+    ).normalize();
+  }
+
+  writeTendril(system, curve, startWidth, endWidth, intensity, color, vertexOffset) {
+    const point0 = new THREE.Vector3();
+    const point1 = new THREE.Vector3();
+    const tangent0 = new THREE.Vector3();
+    const tangent1 = new THREE.Vector3();
+    const normal0 = new THREE.Vector3();
+    const normal1 = new THREE.Vector3();
+    const binormal0 = new THREE.Vector3();
+    const binormal1 = new THREE.Vector3();
+    const up = new THREE.Vector3(0, 1, 0);
+    const side = new THREE.Vector3(1, 0, 0);
+    const corners = Array.from({ length: 4 }, () => new THREE.Vector3());
+
+    const buildFrame = (tangent, normal, binormal) => {
+      const reference = Math.abs(tangent.dot(up)) > 0.88 ? side : up;
+      normal.crossVectors(tangent, reference).normalize();
+      binormal.crossVectors(tangent, normal).normalize();
+    };
+
     for (let segment = 0; segment < system.segments; segment += 1) {
       const t0 = segment / system.segments;
       const t1 = (segment + 1) / system.segments;
-      this.quadraticPoint(start, end, arc, sign, t0, pointA);
-      this.quadraticPoint(start, end, arc, sign, t1, pointB);
-      const fade = (0.18 + Math.sin((t0 + t1) * 0.5 * Math.PI) * 0.82) * intensity;
-      for (const point of [pointA, pointB]) {
-        system.positions[vertexOffset * 3] = point.x;
-        system.positions[vertexOffset * 3 + 1] = point.y;
-        system.positions[vertexOffset * 3 + 2] = point.z;
-        system.colors[vertexOffset * 3] = color.r * fade;
-        system.colors[vertexOffset * 3 + 1] = color.g * fade;
-        system.colors[vertexOffset * 3 + 2] = color.b * fade;
-        vertexOffset += 1;
+      this.curvePoint(curve, t0, point0);
+      this.curvePoint(curve, t1, point1);
+      this.curveTangent(curve, t0, tangent0);
+      this.curveTangent(curve, t1, tangent1);
+      buildFrame(tangent0, normal0, binormal0);
+      buildFrame(tangent1, normal1, binormal1);
+
+      const radius0 = lerp(startWidth, endWidth, Math.pow(t0, 0.78));
+      const radius1 = lerp(startWidth, endWidth, Math.pow(t1, 0.78));
+      const longitudinalGlow = 0.42 + Math.sin((t0 + t1) * 0.5 * Math.PI) * 0.58;
+      const segmentIntensity = intensity * longitudinalGlow;
+
+      for (let radial = 0; radial < system.radialSegments; radial += 1) {
+        const angle0 = radial / system.radialSegments * Math.PI * 2;
+        const angle1 = (radial + 1) / system.radialSegments * Math.PI * 2;
+        corners[0].copy(point0).addScaledVector(normal0, Math.cos(angle0) * radius0).addScaledVector(binormal0, Math.sin(angle0) * radius0);
+        corners[1].copy(point1).addScaledVector(normal1, Math.cos(angle0) * radius1).addScaledVector(binormal1, Math.sin(angle0) * radius1);
+        corners[2].copy(point1).addScaledVector(normal1, Math.cos(angle1) * radius1).addScaledVector(binormal1, Math.sin(angle1) * radius1);
+        corners[3].copy(point0).addScaledVector(normal0, Math.cos(angle1) * radius0).addScaledVector(binormal0, Math.sin(angle1) * radius0);
+
+        for (const cornerIndex of [0, 1, 2, 0, 2, 3]) {
+          const point = corners[cornerIndex];
+          system.positions[vertexOffset * 3] = point.x;
+          system.positions[vertexOffset * 3 + 1] = point.y;
+          system.positions[vertexOffset * 3 + 2] = point.z;
+          system.colors[vertexOffset * 3] = color.r * segmentIntensity;
+          system.colors[vertexOffset * 3 + 1] = color.g * segmentIntensity;
+          system.colors[vertexOffset * 3 + 2] = color.b * segmentIntensity;
+          vertexOffset += 1;
+        }
       }
     }
     return vertexOffset;
   }
 
   updateLocalLinks(progress, elapsed) {
-    const system = this.localLineSystem;
-    const color = new THREE.Color(0.22, 0.55, 0.75);
+    const system = this.localTendrilSystem;
+    const color = new THREE.Color(0.2, 0.58, 0.82);
     let vertexOffset = 0;
     this.satellites.forEach((satellite, index) => {
       const cluster = this.clusters[satellite.clusterIndex];
@@ -645,23 +714,54 @@ class NeuralWorld {
       const localIndex = index % CONFIG.satellitesPerCluster;
       if (localIndex % 3 === 0) {
         const sign = localIndex % 2 ? 1 : -1;
-        vertexOffset = this.writeCurve(system, start, end, 0.4, sign, visibility * (0.3 + fire * 0.22), color, vertexOffset);
-        vertexOffset = this.writeCurve(system, start, end, 0.53, sign, visibility * (0.1 + fire * 0.09), new THREE.Color(0.12, 0.34, 0.52), vertexOffset);
+        const curve = this.surfaceCurve(
+          start,
+          end,
+          this.hubScale[satellite.clusterIndex],
+          this.satelliteScale[index],
+          0.44,
+          sign,
+        );
+        vertexOffset = this.writeTendril(
+          system,
+          curve,
+          isMobile ? 0.061 : 0.042,
+          isMobile ? 0.017 : 0.009,
+          visibility * (0.38 + fire * 0.22),
+          color,
+          vertexOffset,
+        );
       }
       if (localIndex === 1 || localIndex === 6) {
         const siblingIndex = satellite.clusterIndex * CONFIG.satellitesPerCluster + (localIndex + 2) % CONFIG.satellitesPerCluster;
         const sibling = this.satellitePositions[siblingIndex];
         if (sibling) {
           const sign = localIndex === 1 ? 1 : -1;
-          vertexOffset = this.writeCurve(system, end, sibling, 0.46, sign, visibility * (0.3 + fire * 0.12), color, vertexOffset);
-          vertexOffset = this.writeCurve(system, end, sibling, 0.6, sign, visibility * 0.12, new THREE.Color(0.1, 0.3, 0.48), vertexOffset);
+          const curve = this.surfaceCurve(
+            end,
+            sibling,
+            this.satelliteScale[index],
+            this.satelliteScale[siblingIndex],
+            0.5,
+            sign,
+          );
+          vertexOffset = this.writeTendril(
+            system,
+            curve,
+            isMobile ? 0.033 : 0.021,
+            isMobile ? 0.01 : 0.006,
+            visibility * (0.28 + fire * 0.12),
+            color,
+            vertexOffset,
+          );
         }
       }
     });
     system.geometry.setDrawRange(0, vertexOffset);
     system.geometry.attributes.position.needsUpdate = true;
     system.geometry.attributes.color.needsUpdate = true;
-    system.material.opacity = isMobile ? 0.54 * (1 - smoothstep(0.62, 0.9, progress) * 0.78) : 0.54;
+    const denseFieldFade = 1 - smoothstep(0.3, 0.78, progress);
+    system.material.opacity = (isMobile ? 0.72 : 0.62) * denseFieldFade;
   }
 
   highwayVisible(highway, progress) {
@@ -672,27 +772,44 @@ class NeuralWorld {
     return separation < 33 && highway.rank <= threshold;
   }
 
+  highwayCurve(highway) {
+    return this.surfaceCurve(
+      this.hubPositions[highway.from],
+      this.hubPositions[highway.to],
+      this.hubScale[highway.from],
+      this.hubScale[highway.to],
+      highway.arc,
+      highway.sign,
+    );
+  }
+
   updateHighways(progress, elapsed) {
-    const system = this.highwayLineSystem;
+    const system = this.highwayTendrilSystem;
     let vertexOffset = 0;
     this.highways.forEach((highway) => {
       if (!this.highwayVisible(highway, progress)) return;
-      const start = this.hubPositions[highway.from];
-      const end = this.hubPositions[highway.to];
       const fire = smoothstep(0.42, 1, Math.sin(elapsed * (0.55 + progress * 1.6) + highway.phase) * 0.5 + 0.5);
-      const color = new THREE.Color(0.42, 0.74, 0.94).lerp(new THREE.Color(0.9, 0.98, 1), fire * 0.72);
+      const color = new THREE.Color(0.28, 0.66, 0.9).lerp(new THREE.Color(0.88, 0.98, 1), fire * 0.64);
       const mobileHighwayEnergy = isMobile
         ? lerp(0.68, 0.9, smoothstep(0.1, 0.55, progress)) * (1 - smoothstep(0.72, 0.9, progress))
         : 1;
-      const intensity = (0.72 + progress * 0.72 + fire * 0.34) * mobileHighwayEnergy;
-      vertexOffset = this.writeCurve(system, start, end, highway.arc, highway.sign, intensity, color, vertexOffset);
-      const companionColor = new THREE.Color(0.12, 0.38, 0.58).lerp(new THREE.Color(0.48, 0.78, 0.92), fire * 0.4);
-      vertexOffset = this.writeCurve(system, start, end, highway.arc + 0.24, highway.sign, intensity * 0.24, companionColor, vertexOffset);
+      const intensity = (0.62 + progress * 0.68 + fire * 0.3) * mobileHighwayEnergy;
+      const curve = this.highwayCurve(highway);
+      vertexOffset = this.writeTendril(
+        system,
+        curve,
+        (isMobile ? 0.094 : 0.068) + progress * 0.018,
+        (isMobile ? 0.028 : 0.012) + progress * 0.004,
+        intensity,
+        color,
+        vertexOffset,
+      );
     });
     system.geometry.setDrawRange(0, vertexOffset);
     system.geometry.attributes.position.needsUpdate = true;
     system.geometry.attributes.color.needsUpdate = true;
-    system.material.opacity = isMobile ? 0.94 * (1 - smoothstep(0.58, 0.84, progress) * 0.96) : 0.94;
+    const denseFieldFade = 1 - smoothstep(0.34, 0.82, progress);
+    system.material.opacity = (isMobile ? 0.94 : 0.88) * denseFieldFade;
   }
 
   updatePulses(progress, elapsed) {
@@ -708,14 +825,7 @@ class NeuralWorld {
       for (let ghost = 0; ghost < 3; ghost += 1) {
         const ghostT = Math.max(0, t - ghost * (0.018 + progress * 0.012));
         if (visible) {
-          this.quadraticPoint(
-            this.hubPositions[highway.from],
-            this.hubPositions[highway.to],
-            highway.arc,
-            highway.sign,
-            ghostT,
-            position,
-          );
+          this.curvePoint(this.highwayCurve(highway), ghostT, position);
         } else position.set(0, 0, -120);
         const mobilePulseFade = isMobile ? 1 - smoothstep(0.56, 0.8, progress) : 1;
       const scale = visible ? pulse.scale * (1 - ghost * 0.27) * (0.82 + progress * 0.7) * (isMobile ? 0.42 : 1) * mobilePulseFade : 0;
