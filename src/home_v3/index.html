@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="robots" content="noindex" />
+    <title>Mantra V3</title>
+    <link rel="icon" href="data:," />
+    <style>
+      :root {
+        color-scheme: dark;
+        --canvas: #000000;
+        --foreground: #e8eaed;
+        --muted: #828a96;
+      }
+
+      * { box-sizing: border-box; }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--canvas);
+        scrollbar-width: none;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      body {
+        height: 520vh;
+        overflow-x: hidden;
+      }
+
+      body::-webkit-scrollbar {
+        display: none;
+      }
+
+      .neural-stage {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 45%, rgba(25, 42, 58, 0.12), transparent 42%),
+          var(--canvas);
+      }
+
+      .neural-stage canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: pan-y;
+      }
+
+      .atmosphere,
+      .vignette,
+      .white-arrival,
+      .fallback-graph {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .atmosphere {
+        background:
+          radial-gradient(ellipse at 50% 45%, rgba(141, 212, 240, 0.06), transparent 38%),
+          radial-gradient(ellipse at 20% 80%, rgba(32, 168, 142, 0.025), transparent 38%);
+        mix-blend-mode: screen;
+        opacity: 0.45;
+      }
+
+      .vignette {
+        background: radial-gradient(ellipse at center, transparent 28%, rgba(0, 0, 0, 0.2) 63%, rgba(0, 0, 0, 0.88) 100%);
+      }
+
+      .white-arrival {
+        background: white;
+        opacity: 0;
+        will-change: opacity;
+      }
+
+      .scroll-cue {
+        position: fixed;
+        left: 50%;
+        bottom: 24px;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transform: translateX(-50%);
+        color: rgba(232, 234, 237, 0.58);
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        transition: opacity 300ms ease;
+        pointer-events: none;
+      }
+
+      .scroll-cue::before {
+        content: "";
+        width: 1px;
+        height: 28px;
+        background: linear-gradient(to bottom, rgba(232, 234, 237, 0.08), rgba(232, 234, 237, 0.8));
+        animation: cue 1.9s ease-in-out infinite;
+      }
+
+      .fallback-message {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        z-index: 4;
+        width: min(28rem, calc(100vw - 48px));
+        transform: translate(-50%, -50%);
+        color: var(--foreground);
+        font-size: 16px;
+        line-height: 1.6;
+        text-align: center;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .webgl-unavailable .fallback-message { opacity: 1; }
+      .webgl-unavailable .fallback-graph { opacity: 1; }
+
+      .fallback-graph {
+        opacity: 0;
+        background:
+          radial-gradient(circle at 24% 31%, transparent 0 14px, rgba(141, 212, 240, 0.48) 15px, transparent 17px),
+          radial-gradient(circle at 52% 43%, transparent 0 20px, rgba(232, 234, 237, 0.46) 21px, transparent 23px),
+          radial-gradient(circle at 76% 65%, transparent 0 12px, rgba(141, 212, 240, 0.42) 13px, transparent 15px),
+          linear-gradient(24deg, transparent 42%, rgba(141, 212, 240, 0.13) 43%, transparent 44%);
+      }
+
+      @keyframes cue {
+        0%, 100% { transform: scaleY(0.55); opacity: 0.38; }
+        50% { transform: scaleY(1); opacity: 1; }
+      }
+
+      @media (max-width: 700px) {
+        body { height: 440vh; }
+        .scroll-cue {
+          bottom: 76px;
+          color: rgba(232, 234, 237, 0.84);
+          font-size: 13px;
+          letter-spacing: 0.15em;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        body { height: 100vh; }
+        .scroll-cue { display: none; }
+        .atmosphere { opacity: 0.3; }
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main class="neural-stage" aria-label="Mantra V3 neural narrative background">
+      <div class="fallback-graph" aria-hidden="true"></div>
+      <div class="atmosphere" aria-hidden="true"></div>
+      <div class="vignette" aria-hidden="true"></div>
+      <div class="white-arrival" aria-hidden="true"></div>
+    </main>
+    <div class="scroll-cue" aria-hidden="true">Scroll to accelerate</div>
+    <p class="fallback-message" role="status">This visual requires WebGL. The rest of Mantra remains available.</p>
+    <script type="module" src="./neural-hyperspace.js"></script>
+  </body>
+</html>
