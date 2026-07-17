@@ -155,8 +155,15 @@ const microVertexShader = `
     float visible = 1.0 - smoothstep(threshold, threshold + 0.08, aRank);
     float depthFade = 1.0 - smoothstep(60.0, 98.0, -p.z);
     vPulse = 0.48 + 0.52 * sin(uTime * (0.7 + uProgress * 2.4) + aPhase);
-    vAlpha = visible * depthFade * (0.32 + vPulse * 0.5);
     vec4 viewPosition = modelViewMatrix * vec4(p, 1.0);
+    float screenRadius = length(viewPosition.xy / max(1.0, -viewPosition.z));
+    float convergenceDropout = 1.0;
+    if (uProgress > 0.62) {
+      float centerExclusion = smoothstep(0.16, 0.34, screenRadius);
+      float deterministicKeep = step(0.38 + uProgress * 0.24, fract(sin(aPhase * 91.7 + aRank * 413.1) * 43758.5453));
+      convergenceDropout = mix(1.0, centerExclusion * deterministicKeep, smoothstep(0.62, 0.84, uProgress));
+    }
+    vAlpha = visible * depthFade * convergenceDropout * (0.32 + vPulse * 0.5);
     gl_PointSize = clamp(aSize * (112.0 / max(1.0, -viewPosition.z)) * (0.86 + uProgress * 0.75), 1.0, 6.5);
     gl_Position = projectionMatrix * viewPosition;
   }
@@ -452,10 +459,11 @@ class NeuralWorld {
   createVelocityStreaks() {
     this.streakData = Array.from({ length: CONFIG.streakCount }, () => {
       const angle = random() * Math.PI * 2;
-      const radius = 2.4 + Math.pow(random(), 0.62) * 8.8;
+      const minimumRadius = isMobile ? 4.1 : 2.4;
+      const radius = minimumRadius + Math.pow(random(), 0.62) * (isMobile ? 7.1 : 8.8);
       return {
         x: Math.cos(angle) * radius,
-        y: Math.sin(angle) * radius * 0.62,
+        y: Math.sin(angle) * radius * (isMobile ? 0.78 : 0.62),
         z: -(random() * 94 + 2),
         rank: random(),
         speed: 0.78 + random() * 0.54,
@@ -513,7 +521,7 @@ class NeuralWorld {
       const x = cluster.x + Math.sin(elapsed * 0.19 + cluster.phase) * drift;
       const y = cluster.y + Math.cos(elapsed * 0.16 + cluster.phase * 1.2) * drift * 0.72;
       const position = this.hubPositions[index].set(x, y, z);
-      const mobileVelocityFade = isMobile ? 1 - smoothstep(0.48, 0.88, progress) * 0.88 : 1;
+      const mobileVelocityFade = isMobile ? 1 - smoothstep(0.54, 0.82, progress) * 0.98 : 1;
       const visibility = this.clusterVisibility(cluster, progress) * mobileVelocityFade;
       const nearFactor = smoothstep(-34, 4, z);
       const scale = cluster.size * (0.86 + nearFactor * 0.44) * (isMobile ? 0.68 : 1);
@@ -537,7 +545,8 @@ class NeuralWorld {
       const position = this.satellitePositions[index].set(x, y, z);
       const cluster = this.clusters[satellite.clusterIndex];
       const clusterVisible = this.clusterVisibility(cluster, progress);
-      const satelliteVisible = 1 - smoothstep(0.42 + progress * 0.58, 0.56 + progress * 0.58, satellite.rank);
+      const mobileShellFade = isMobile ? 1 - smoothstep(0.54, 0.82, progress) * 0.98 : 1;
+      const satelliteVisible = (1 - smoothstep(0.42 + progress * 0.58, 0.56 + progress * 0.58, satellite.rank)) * mobileShellFade;
       satelliteMatrix.compose(position, unitQuaternion, new THREE.Vector3(1, 1, 1));
       this.satelliteMesh.setMatrixAt(index, satelliteMatrix);
       this.satelliteScale[index] = satellite.size * (0.9 + smoothstep(-30, 4, z) * 0.32) * (isMobile ? 0.74 : 1);
@@ -618,6 +627,7 @@ class NeuralWorld {
     system.geometry.setDrawRange(0, vertexOffset);
     system.geometry.attributes.position.needsUpdate = true;
     system.geometry.attributes.color.needsUpdate = true;
+    system.material.opacity = isMobile ? 0.54 * (1 - smoothstep(0.62, 0.9, progress) * 0.78) : 0.54;
   }
 
   highwayVisible(highway, progress) {
@@ -644,6 +654,7 @@ class NeuralWorld {
     system.geometry.setDrawRange(0, vertexOffset);
     system.geometry.attributes.position.needsUpdate = true;
     system.geometry.attributes.color.needsUpdate = true;
+    system.material.opacity = isMobile ? 0.94 * (1 - smoothstep(0.58, 0.84, progress) * 0.96) : 0.94;
   }
 
   updatePulses(progress, elapsed) {
@@ -668,7 +679,8 @@ class NeuralWorld {
             position,
           );
         } else position.set(0, 0, -120);
-        const scale = visible ? pulse.scale * (1 - ghost * 0.27) * (0.82 + progress * 0.7) * (isMobile ? 0.42 : 1) : 0;
+        const mobilePulseFade = isMobile ? 1 - smoothstep(0.56, 0.8, progress) : 1;
+      const scale = visible ? pulse.scale * (1 - ghost * 0.27) * (0.82 + progress * 0.7) * (isMobile ? 0.42 : 1) * mobilePulseFade : 0;
         matrix.compose(position, quaternion, new THREE.Vector3(scale, scale, scale));
         this.pulseMesh.setMatrixAt(instanceIndex, matrix);
         instanceIndex += 1;
@@ -680,14 +692,21 @@ class NeuralWorld {
 
   updateStreaks(progress, travel) {
     const active = smoothstep(0.2, 0.9, progress);
-    const length = 0.22 + Math.pow(progress, 2.15) * 9.4;
+    const length = 0.22 + Math.pow(progress, 2.15) * (isMobile ? 6.8 : 9.4);
     this.streakData.forEach((streak, index) => {
       const z = wrapDepth(streak.z + travel * streak.speed);
       const visible = streak.rank < 0.14 + progress * 0.9 ? active : 0;
       const base = index * 6;
-      this.streakPositions[base] = streak.x;
-      this.streakPositions[base + 1] = streak.y;
-      this.streakPositions[base + 2] = z - length * streak.speed;
+      const directional = isMobile ? smoothstep(0.56, 0.84, progress) : 0;
+      const radialStartX = streak.x;
+      const radialStartY = streak.y;
+      const radialStartZ = z - length * streak.speed;
+      const sweptStartX = streak.x + (streak.rank - 0.5) * length * 0.32;
+      const sweptStartY = streak.y + length * (0.42 + streak.rank * 0.16);
+      const sweptStartZ = z;
+      this.streakPositions[base] = lerp(radialStartX, sweptStartX, directional);
+      this.streakPositions[base + 1] = lerp(radialStartY, sweptStartY, directional);
+      this.streakPositions[base + 2] = lerp(radialStartZ, sweptStartZ, directional);
       this.streakPositions[base + 3] = streak.x;
       this.streakPositions[base + 4] = streak.y;
       this.streakPositions[base + 5] = z;
@@ -700,7 +719,7 @@ class NeuralWorld {
     });
     this.streakGeometry.attributes.position.needsUpdate = true;
     this.streakGeometry.attributes.color.needsUpdate = true;
-    this.streakMaterial.opacity = active * (0.48 + progress * 0.42);
+    this.streakMaterial.opacity = active * (isMobile ? 0.32 + progress * 0.28 : 0.48 + progress * 0.42);
   }
 
   updateMaterials(progress, elapsed, travel) {
