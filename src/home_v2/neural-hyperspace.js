@@ -15,8 +15,8 @@ const CONFIG = Object.freeze({
   microCount: isMobile ? 760 : 1500,
   streakCount: isMobile ? 260 : 560,
   pulseCount: isMobile ? 64 : 120,
-  atmosphericDustCount: isMobile ? 120 : 240,
-  atmosphericHazeCount: isMobile ? 7 : 12,
+  atmosphericDustCount: isMobile ? 300 : 560,
+  atmosphericHazeCount: isMobile ? 10 : 18,
   localSegments: 12,
   highwaySegments: 34,
   depthFar: 96,
@@ -75,7 +75,7 @@ const renderer = createRenderer();
 if (!renderer) throw new Error('WebGL unavailable');
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x000000, 0.028);
+scene.fog = new THREE.FogExp2(0x020b14, 0.038);
 
 const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 150);
 camera.position.set(-0.35, 0.15, 7.2);
@@ -133,9 +133,9 @@ const shellFragmentShader = `
     float heartbeat = pow(0.5 + 0.5 * sin(uTime * (1.28 + uProgress * 1.4) + vPhase), 5.0);
     float signal = 0.5 + 0.5 * sin(uTime * 0.42 + vPhase * 1.7);
 
-    vec3 deepGlass = vec3(0.004, 0.028, 0.052);
-    vec3 deepBlue = vec3(0.025, 0.255, 0.4);
-    vec3 ctaBlue = vec3(0.102, 0.608, 0.859);
+    vec3 deepGlass = vec3(0.002, 0.014, 0.028);
+    vec3 deepBlue = vec3(0.008, 0.105, 0.18);
+    vec3 ctaBlue = vec3(0.026, 0.34, 0.52);
     vec3 rimColor = mix(deepBlue, ctaBlue, glassRim * 0.56 + highlight * 0.18);
 
     float frontAlpha = glassRim * 0.68 + innerEdge * 0.07 + broadRim * 0.12 + highlight * 0.2 + heartbeat * 0.01;
@@ -194,7 +194,7 @@ const microFragmentShader = `
     float distanceFromCenter = length(centered);
     float core = 1.0 - smoothstep(0.0, 0.48, distanceFromCenter);
     float halo = 1.0 - smoothstep(0.12, 0.5, distanceFromCenter);
-    vec3 color = mix(vec3(0.018, 0.25, 0.39), vec3(0.102, 0.608, 0.859), vPulse);
+    vec3 color = mix(vec3(0.004, 0.105, 0.18), vec3(0.026, 0.34, 0.52), vPulse);
     gl_FragColor = vec4(color * (core * 1.5 + halo * 0.35), vAlpha * (core + halo * 0.32));
   }
 `;
@@ -246,12 +246,14 @@ class NeuralWorld {
     this.hubPositions = this.clusters.map(() => new THREE.Vector3());
     this.satellitePositions = this.satellites.map(() => new THREE.Vector3());
     this.highways = this.createHighways();
+    this.freeDendrites = this.createFreeDendrites();
 
     this.createHubMeshes();
     this.createSatelliteMeshes();
     this.createMicroField();
     this.createAtmosphere();
     this.createLocalLinks();
+    this.createFreeDendritesSystem();
     this.createHighwayLinks();
     this.createPulses();
     this.createVelocityStreaks();
@@ -335,6 +337,38 @@ class NeuralWorld {
       rank: index / pairs.length,
       phase: index * 1.17,
     }));
+  }
+
+  createFreeDendrites() {
+    const branches = [];
+    this.clusters.forEach((cluster, clusterIndex) => {
+      for (let branchIndex = 0; branchIndex < 2; branchIndex += 1) {
+        const angle = cluster.phase + branchIndex * 2.35 + 0.7;
+        branches.push({
+          sourceType: 'hub',
+          sourceIndex: clusterIndex,
+          direction: new THREE.Vector3(Math.cos(angle), Math.sin(angle) * 0.72, -0.18 - branchIndex * 0.08).normalize(),
+          length: 1.0 + branchIndex * 0.55 + random() * 0.5,
+          arc: 0.34 + random() * 0.34,
+          sign: branchIndex % 2 === 0 ? 1 : -1,
+          phase: cluster.phase + branchIndex,
+        });
+      }
+    });
+    this.satellites.forEach((satellite, satelliteIndex) => {
+      if (satelliteIndex % 4 !== 0) return;
+      const angle = satellite.phase * 1.31;
+      branches.push({
+        sourceType: 'satellite',
+        sourceIndex: satelliteIndex,
+        direction: new THREE.Vector3(Math.cos(angle), Math.sin(angle), -0.12).normalize(),
+        length: 0.48 + random() * 0.52,
+        arc: 0.18 + random() * 0.24,
+        sign: satelliteIndex % 2 === 0 ? 1 : -1,
+        phase: satellite.phase,
+      });
+    });
+    return branches;
   }
 
   createHubMeshes() {
@@ -435,11 +469,11 @@ class NeuralWorld {
     dustGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     this.atmosphericDustMaterial = new THREE.PointsMaterial({
       map: texture,
-      color: 0x0b6f9f,
-      size: isMobile ? 0.2 : 0.24,
+      color: 0x063e60,
+      size: isMobile ? 0.34 : 0.4,
       transparent: true,
-      opacity: 0.24,
-      alphaTest: 0.008,
+      opacity: 0.32,
+      alphaTest: 0.003,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       sizeAttenuation: true,
@@ -452,12 +486,12 @@ class NeuralWorld {
     this.hazeSprites = Array.from({ length: CONFIG.atmosphericHazeCount }, (_, index) => {
       const material = new THREE.SpriteMaterial({
         map: texture,
-        color: index % 3 === 0 ? 0x0a5d87 : 0x063e60,
+        color: index % 3 === 0 ? 0x063e60 : 0x031f34,
         transparent: true,
-        opacity: 0.035 + random() * 0.035,
+        opacity: 0.085 + random() * 0.055,
         depthWrite: false,
-        depthTest: true,
-        blending: THREE.AdditiveBlending,
+        depthTest: false,
+        blending: THREE.NormalBlending,
         fog: true,
       });
       material.userData.baseOpacity = material.opacity;
@@ -468,7 +502,7 @@ class NeuralWorld {
         (random() - 0.5) * (isMobile ? 15 : 9),
         depth,
       );
-      const scale = 9 + random() * 13;
+      const scale = 14 + random() * 18;
       sprite.scale.set(scale, scale * (0.58 + random() * 0.34), 1);
       this.atmosphereGroup.add(sprite);
       return sprite;
@@ -517,10 +551,19 @@ class NeuralWorld {
     );
   }
 
+  createFreeDendritesSystem() {
+    this.freeDendriteSystem = this.createTendrilSystem(
+      this.freeDendrites.length,
+      isMobile ? 8 : 10,
+      isMobile ? 4 : 5,
+      0.5,
+    );
+  }
+
   createPulses() {
     const geometry = new THREE.SphereGeometry(0.026, 7, 7);
     this.pulseMaterial = new THREE.MeshBasicMaterial({
-      color: 0x1a9bdb,
+      color: 0x127fb8,
       transparent: true,
       opacity: 1,
       depthWrite: false,
@@ -753,9 +796,48 @@ class NeuralWorld {
     return vertexOffset;
   }
 
+  freeDendriteCurve(branch) {
+    const isHub = branch.sourceType === 'hub';
+    const center = isHub ? this.hubPositions[branch.sourceIndex] : this.satellitePositions[branch.sourceIndex];
+    const radius = isHub ? this.hubScale[branch.sourceIndex] : this.satelliteScale[branch.sourceIndex];
+    const start = center.clone().addScaledVector(branch.direction, radius + 0.008);
+    const end = start.clone().addScaledVector(branch.direction, branch.length);
+    const control = start.clone().lerp(end, 0.5);
+    control.x += branch.sign * branch.arc * 0.35;
+    control.y += branch.arc;
+    control.z -= branch.arc * 0.28;
+    return { start, control, end };
+  }
+
+  updateFreeDendrites(progress, elapsed) {
+    const system = this.freeDendriteSystem;
+    const color = new THREE.Color(0.006, 0.12, 0.2);
+    let vertexOffset = 0;
+    for (const branch of this.freeDendrites) {
+      const visibility = branch.sourceType === 'hub'
+        ? this.clusterVisibility(this.clusters[branch.sourceIndex], progress)
+        : this.clusterVisibility(this.clusters[this.satellites[branch.sourceIndex].clusterIndex], progress);
+      if (visibility < 0.02) continue;
+      const breathing = 0.72 + Math.sin(elapsed * 0.5 + branch.phase) * 0.12;
+      vertexOffset = this.writeTendril(
+        system,
+        this.freeDendriteCurve(branch),
+        branch.sourceType === 'hub' ? (isMobile ? 0.026 : 0.02) : (isMobile ? 0.014 : 0.011),
+        0.0012,
+        visibility * breathing,
+        color,
+        vertexOffset,
+      );
+    }
+    system.geometry.setDrawRange(0, vertexOffset);
+    system.geometry.attributes.position.needsUpdate = true;
+    system.geometry.attributes.color.needsUpdate = true;
+    system.material.opacity = isMobile ? 0.58 : 0.5;
+  }
+
   updateLocalLinks(progress, elapsed) {
     const system = this.localTendrilSystem;
-    const color = new THREE.Color(0.035, 0.34, 0.5);
+    const color = new THREE.Color(0.006, 0.14, 0.23);
     let vertexOffset = 0;
     this.satellites.forEach((satellite, index) => {
       const cluster = this.clusters[satellite.clusterIndex];
@@ -813,8 +895,7 @@ class NeuralWorld {
     system.geometry.setDrawRange(0, vertexOffset);
     system.geometry.attributes.position.needsUpdate = true;
     system.geometry.attributes.color.needsUpdate = true;
-    const neuronStateFade = 1 - smoothstep(0.16, 0.43, progress);
-    system.material.opacity = (isMobile ? 0.72 : 0.62) * neuronStateFade;
+    system.material.opacity = isMobile ? 0.58 : 0.52;
   }
 
   highwayVisible(highway, progress) {
@@ -842,10 +923,8 @@ class NeuralWorld {
     this.highways.forEach((highway) => {
       if (!this.highwayVisible(highway, progress)) return;
       const fire = smoothstep(0.42, 1, Math.sin(elapsed * (0.55 + progress * 1.6) + highway.phase) * 0.5 + 0.5);
-      const color = new THREE.Color(0.04, 0.36, 0.53).lerp(new THREE.Color(0.102, 0.608, 0.859), fire * 0.52);
-      const mobileHighwayEnergy = isMobile
-        ? lerp(0.68, 0.9, smoothstep(0.1, 0.55, progress)) * (1 - smoothstep(0.72, 0.9, progress))
-        : 1;
+      const color = new THREE.Color(0.006, 0.15, 0.24).lerp(new THREE.Color(0.026, 0.34, 0.52), fire * 0.44);
+      const mobileHighwayEnergy = isMobile ? lerp(0.68, 0.86, smoothstep(0.1, 0.55, progress)) : 1;
       const intensity = (0.62 + progress * 0.68 + fire * 0.3) * mobileHighwayEnergy;
       const curve = this.highwayCurve(highway);
       if (isMobile) {
@@ -854,11 +933,12 @@ class NeuralWorld {
         curve.control.x += midpointAvoidance * direction * 0.48;
         curve.control.y += midpointAvoidance * 0.82;
       }
+      const mobileHighZoomNarrowing = isMobile ? lerp(1, 0.28, smoothstep(0.58, 0.88, progress)) : 1;
       vertexOffset = this.writeTendril(
         system,
         curve,
-        (isMobile ? 0.052 : 0.04) + progress * 0.012,
-        (isMobile ? 0.007 : 0.004) + smoothstep(0.1, 0.5, progress) * (isMobile ? 0.009 : 0.007),
+        ((isMobile ? 0.052 : 0.04) + progress * 0.012) * mobileHighZoomNarrowing,
+        ((isMobile ? 0.007 : 0.004) + smoothstep(0.1, 0.5, progress) * (isMobile ? 0.009 : 0.007)) * mobileHighZoomNarrowing,
         intensity,
         color,
         vertexOffset,
@@ -867,8 +947,7 @@ class NeuralWorld {
     system.geometry.setDrawRange(0, vertexOffset);
     system.geometry.attributes.position.needsUpdate = true;
     system.geometry.attributes.color.needsUpdate = true;
-    const neuronStateFade = 1 - smoothstep(0.18, 0.46, progress);
-    system.material.opacity = (isMobile ? 0.94 : 0.88) * neuronStateFade;
+    system.material.opacity = isMobile ? 0.76 : 0.72;
   }
 
   updatePulses(progress, elapsed) {
@@ -886,15 +965,17 @@ class NeuralWorld {
         if (visible) {
           this.curvePoint(this.highwayCurve(highway), ghostT, position);
         } else position.set(0, 0, -120);
-        const mobilePulseFade = isMobile ? 1 - smoothstep(0.56, 0.8, progress) : 1;
-      const scale = visible ? pulse.scale * (1 - ghost * 0.27) * (0.82 + progress * 0.7) * (isMobile ? 0.42 : 1) * mobilePulseFade : 0;
+        const endpointEnvelope = smoothstep(0, 0.045, ghostT) * (1 - smoothstep(0.955, 1, ghostT));
+        const scale = visible
+          ? pulse.scale * (1 - ghost * 0.3) * (0.72 + progress * 0.48) * (isMobile ? 0.5 : 1) * endpointEnvelope
+          : 0;
         matrix.compose(position, quaternion, new THREE.Vector3(scale, scale, scale));
         this.pulseMesh.setMatrixAt(instanceIndex, matrix);
         instanceIndex += 1;
       }
     }
     this.pulseMesh.instanceMatrix.needsUpdate = true;
-    this.pulseMaterial.opacity = isMobile ? 0.28 + progress * 0.08 : 0.62 + progress * 0.18;
+    this.pulseMaterial.opacity = isMobile ? 0.72 : 0.64;
   }
 
   updateStreaks(progress, travel) {
@@ -919,7 +1000,8 @@ class NeuralWorld {
     });
     this.streakGeometry.attributes.position.needsUpdate = true;
     this.streakGeometry.attributes.color.needsUpdate = true;
-    this.streakMaterial.opacity = active * (isMobile ? 0.32 + progress * 0.28 : 0.48 + progress * 0.42);
+    const mobileGraphPriority = isMobile ? 1 - smoothstep(0.64, 0.82, progress) : 1;
+    this.streakMaterial.opacity = active * (isMobile ? 0.32 + progress * 0.28 : 0.48 + progress * 0.42) * mobileGraphPriority;
   }
 
   updateMaterials(progress, elapsed, travel) {
@@ -930,8 +1012,8 @@ class NeuralWorld {
     this.microMaterial.uniforms.uTime.value = elapsed;
     this.microMaterial.uniforms.uTravel.value = travel;
     this.microMaterial.uniforms.uProgress.value = progress;
-    const atmosphereFade = 1 - smoothstep(0.28, 0.82, progress) * 0.62;
-    this.atmosphericDustMaterial.opacity = 0.24 * atmosphereFade;
+    const atmosphereFade = 1 - smoothstep(0.42, 0.92, progress) * 0.28;
+    this.atmosphericDustMaterial.opacity = 0.32 * atmosphereFade;
     this.atmosphereGroup.rotation.z = Math.sin(elapsed * 0.035) * 0.018;
     this.atmosphereGroup.position.z = wrapDepth(travel * 0.055, 0, 96);
     for (const sprite of this.hazeSprites) {
@@ -949,6 +1031,7 @@ class NeuralWorld {
   update(progress, elapsed, delta, travel) {
     this.updatePositions(progress, elapsed, travel);
     this.updateLocalLinks(progress, elapsed);
+    this.updateFreeDendrites(progress, elapsed);
     this.updateHighways(progress, elapsed);
     this.updatePulses(progress, elapsed);
     this.updateStreaks(progress, travel);
@@ -1012,7 +1095,7 @@ function render(now) {
   world.update(state.progress, state.elapsed, reducedMotion ? 0 : delta, state.travel);
   updateCamera(state.progress, state.elapsed, delta);
 
-  scene.fog.density = lerp(0.028, 0.009, smoothstep(0.18, 0.96, state.progress));
+  scene.fog.density = lerp(0.038, 0.018, smoothstep(0.18, 0.96, state.progress));
   renderer.toneMappingExposure = isMobile
     ? lerp(0.94, 1.06, smoothstep(0.3, 1, state.progress))
     : lerp(1.02, 1.62, smoothstep(0.3, 1, state.progress));

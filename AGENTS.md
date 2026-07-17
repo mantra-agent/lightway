@@ -76,10 +76,10 @@ Canonical palette from Mantra Design Guide (dark mode):
 - Hubs use front/back Fresnel glass-shell passes with broad volume falloff and no internal core particles; connectors use dynamically batched tube surfaces that are thick at sphere membranes and narrow through the middle; nodes and pulses remain instanced
 - The default state is a locked three-hub composition: time may breathe shells, drift anchors subtly, and move pulse packets, but must not materially change camera-relative spacing
 - Connector tendrils terminate outside sphere membranes, widen at both membrane roots, and narrow through the middle; no connector geometry may target or visibly penetrate a sphere center
-- Connector tendrils belong to the low/mid-speed neuron state and fully fade before the high-speed climax, where micro-traffic and velocity streaks own motion
+- Hub-to-hub, local, and free-ended dendrite tendrils remain visible at every scroll level; velocity streaks add motion but never replace the neural connection graph
 - Camera pose is scroll-owned only; pointer and tap input never alter framing, rotation, or parallax
-- Neural shells, satellites, tendrils, pulses, particles, and streaks use the deeper CTA-blue family rather than pearl-white
-- Depth fog is strongest in the neuron state and relaxes with scroll; visible blue atmospheric dust and haze sprites make the depth medium legible; mobile and desktop velocity streaks both project along the depth axis
+- Neural shells, satellites, tendrils, pulses, particles, and streaks use the darkest CTA-blue family rather than pearl-white; traveling pulses follow shell-to-shell surface curves and dissolve at both membranes
+- Dark blue depth fog, dense atmospheric dust, and normally composited haze volumes remain visible across scroll, making the depth medium unmistakable; mobile and desktop velocity streaks both project along the depth axis
 - Scroll releases additional hubs, satellites, micro-nodes, connectors, camera travel, velocity, bloom, and white arrival
 - Caps DPR at 1.5, pauses when hidden, handles WebGL context loss, and honors reduced motion
 
