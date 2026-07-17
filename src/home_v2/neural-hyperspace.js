@@ -24,8 +24,6 @@ const CONFIG = Object.freeze({
 const state = {
   targetProgress: 0,
   progress: reducedMotion ? 0.16 : 0,
-  pointerX: 0,
-  pointerY: 0,
   elapsed: 0,
   travel: 0,
   lastFrame: performance.now(),
@@ -258,26 +256,26 @@ class NeuralWorld {
 
   createClusters() {
     const positions = isMobile ? [
-      [-1.7, -0.55, -7.0, 0.54],
-      [3.75, 5.15, -12.0, 0.44],
-      [-4.15, -5.55, -16.5, 0.46],
-      [1.95, -0.75, -28.0, 0.44],
-      [-1.55, 3.8, -39.0, 0.42],
-      [0.6, -4.6, -51.0, 0.44],
-      [-1.15, 0.75, -66.0, 0.4],
-      [1.35, 4.8, -82.0, 0.42],
+      [-2.35, -0.75, -7.4, 0.38],
+      [5.15, 6.35, -13.0, 0.32],
+      [-5.7, -7.1, -18.0, 0.34],
+      [2.6, -1.1, -30.0, 0.32],
+      [-2.1, 4.7, -42.0, 0.3],
+      [1.0, -5.7, -55.0, 0.32],
+      [-1.6, 1.1, -69.0, 0.29],
+      [1.85, 5.8, -85.0, 0.3],
     ] : [
-      [-4.1, -0.75, -6.6, 0.68],
-      [3.45, 3.75, -11.5, 0.51],
-      [8.1, -3.2, -16.0, 0.55],
-      [-4.85, 2.8, -27.0, 0.5],
-      [0.15, -3.35, -34.0, 0.48],
-      [4.7, 1.1, -43.0, 0.52],
-      [-3.55, -2.2, -53.0, 0.46],
-      [1.8, 3.25, -64.0, 0.48],
-      [-0.9, 0.4, -75.0, 0.44],
-      [4.2, -2.7, -86.0, 0.5],
-      [-4.25, 1.0, -94.0, 0.46],
+      [-5.35, -1.0, -7.0, 0.44],
+      [4.8, 4.9, -12.5, 0.35],
+      [10.5, -4.25, -17.5, 0.37],
+      [-6.2, 3.6, -29.0, 0.34],
+      [0.25, -4.4, -37.0, 0.33],
+      [6.1, 1.5, -46.0, 0.35],
+      [-4.7, -2.9, -56.0, 0.31],
+      [2.5, 4.2, -67.0, 0.33],
+      [-1.25, 0.6, -78.0, 0.3],
+      [5.4, -3.6, -89.0, 0.34],
+      [-5.5, 1.4, -97.0, 0.31],
     ];
     return positions.slice(0, CONFIG.clusterCount).map(([x, y, z, size], index) => ({
       x,
@@ -468,7 +466,7 @@ class NeuralWorld {
   }
 
   createPulses() {
-    const geometry = new THREE.SphereGeometry(0.048, 7, 7);
+    const geometry = new THREE.SphereGeometry(0.026, 7, 7);
     this.pulseMaterial = new THREE.MeshBasicMaterial({
       color: 0xd9f5ff,
       transparent: true,
@@ -484,7 +482,7 @@ class NeuralWorld {
       offset: random(),
       speed: 0.055 + random() * 0.11,
       rank: index / CONFIG.pulseCount,
-      scale: 0.62 + random() * 0.78,
+      scale: 0.45 + random() * 0.5,
     }));
     this.group.add(this.pulseMesh);
   }
@@ -492,8 +490,8 @@ class NeuralWorld {
   createVelocityStreaks() {
     this.streakData = Array.from({ length: CONFIG.streakCount }, () => {
       const angle = random() * Math.PI * 2;
-      const minimumRadius = isMobile ? 4.1 : 2.4;
-      const radius = minimumRadius + Math.pow(random(), 0.62) * (isMobile ? 7.1 : 8.8);
+      const minimumRadius = isMobile ? 4.1 : 3.5;
+      const radius = minimumRadius + Math.pow(random(), 0.62) * (isMobile ? 7.1 : 7.7);
       return {
         x: Math.cos(angle) * radius,
         y: Math.sin(angle) * radius * (isMobile ? 0.78 : 0.62),
@@ -554,8 +552,8 @@ class NeuralWorld {
       const x = cluster.x + Math.sin(elapsed * 0.19 + cluster.phase) * drift;
       const y = cluster.y + Math.cos(elapsed * 0.16 + cluster.phase * 1.2) * drift * 0.72;
       const position = this.hubPositions[index].set(x, y, z);
-      const mobileVelocityFade = isMobile ? 1 - smoothstep(0.68, 0.88, progress) : 1;
-      const visibility = this.clusterVisibility(cluster, progress) * mobileVelocityFade;
+      const shellVelocityFade = 1 - smoothstep(isMobile ? 0.68 : 0.74, isMobile ? 0.88 : 0.91, progress);
+      const visibility = this.clusterVisibility(cluster, progress) * shellVelocityFade;
       const nearFactor = smoothstep(-34, 4, z);
       const mobileMidEmphasis = isMobile ? lerp(0.94, 1.05, smoothstep(0.1, 0.55, progress)) : 1;
       const scale = cluster.size * (0.86 + nearFactor * 0.44) * mobileMidEmphasis;
@@ -580,9 +578,9 @@ class NeuralWorld {
       const position = this.satellitePositions[index].set(x, y, z);
       const cluster = this.clusters[satellite.clusterIndex];
       const clusterVisible = this.clusterVisibility(cluster, progress);
-      const mobileShellFade = isMobile ? 1 - smoothstep(0.68, 0.88, progress) : 1;
+      const shellVelocityFade = 1 - smoothstep(isMobile ? 0.68 : 0.74, isMobile ? 0.88 : 0.91, progress);
       const satelliteReveal = 0.07 + smoothstep(0.0, 0.5, progress) * 0.72 + smoothstep(0.5, 1, progress) * 0.21;
-      const satelliteVisible = (1 - smoothstep(satelliteReveal, satelliteReveal + 0.08, satellite.rank)) * mobileShellFade;
+      const satelliteVisible = (1 - smoothstep(satelliteReveal, satelliteReveal + 0.08, satellite.rank)) * shellVelocityFade;
       satelliteMatrix.compose(position, unitQuaternion, new THREE.Vector3(1, 1, 1));
       this.satelliteMesh.setMatrixAt(index, satelliteMatrix);
       const mobileSatelliteEmphasis = isMobile ? lerp(0.9, 1.06, smoothstep(0.1, 0.55, progress)) : 1;
@@ -619,9 +617,10 @@ class NeuralWorld {
     const centerControl = this.quadraticControl(startCenter, endCenter, arc, sign);
     const startDirection = centerControl.clone().sub(startCenter).normalize();
     const endDirection = endCenter.clone().sub(centerControl).normalize();
-    const endpointPadding = isMobile ? 0.018 : 0.014;
-    const start = startCenter.clone().addScaledVector(startDirection, startRadius + endpointPadding);
-    const end = endCenter.clone().addScaledVector(endDirection, -(endRadius + endpointPadding));
+    const startPadding = Math.max(isMobile ? 0.012 : 0.009, startRadius * 0.025);
+    const endPadding = Math.max(isMobile ? 0.012 : 0.009, endRadius * 0.025);
+    const start = startCenter.clone().addScaledVector(startDirection, startRadius + startPadding);
+    const end = endCenter.clone().addScaledVector(endDirection, -(endRadius + endPadding));
     const control = this.quadraticControl(start, end, arc, sign);
     return { start, control, end };
   }
@@ -672,9 +671,16 @@ class NeuralWorld {
       buildFrame(tangent0, normal0, binormal0);
       buildFrame(tangent1, normal1, binormal1);
 
-      const radius0 = lerp(startWidth, endWidth, Math.pow(t0, 0.78));
-      const radius1 = lerp(startWidth, endWidth, Math.pow(t1, 0.78));
-      const longitudinalGlow = 0.42 + Math.sin((t0 + t1) * 0.5 * Math.PI) * 0.58;
+      const tendrilRadius = (t) => {
+        const conicBody = lerp(startWidth, endWidth, Math.pow(t, 0.72));
+        const sourceContact = smoothstep(0.0, 0.1, t);
+        const targetContact = 1 - smoothstep(0.76, 1.0, t);
+        const membraneFloor = lerp(endWidth * 0.22, endWidth * 0.12, t);
+        return membraneFloor + conicBody * sourceContact * targetContact;
+      };
+      const radius0 = tendrilRadius(t0);
+      const radius1 = tendrilRadius(t1);
+      const longitudinalGlow = 0.34 + Math.sin((t0 + t1) * 0.5 * Math.PI) * 0.66;
       const segmentIntensity = intensity * longitudinalGlow;
 
       for (let radial = 0; radial < system.radialSegments; radial += 1) {
@@ -725,8 +731,8 @@ class NeuralWorld {
         vertexOffset = this.writeTendril(
           system,
           curve,
-          isMobile ? 0.061 : 0.042,
-          isMobile ? 0.017 : 0.009,
+          isMobile ? 0.038 : 0.029,
+          (isMobile ? 0.006 : 0.004) + smoothstep(0.1, 0.5, progress) * (isMobile ? 0.008 : 0.006),
           visibility * (0.38 + fire * 0.22),
           color,
           vertexOffset,
@@ -748,8 +754,8 @@ class NeuralWorld {
           vertexOffset = this.writeTendril(
             system,
             curve,
-            isMobile ? 0.033 : 0.021,
-            isMobile ? 0.01 : 0.006,
+            isMobile ? 0.024 : 0.016,
+            (isMobile ? 0.004 : 0.003) + smoothstep(0.1, 0.5, progress) * (isMobile ? 0.005 : 0.004),
             visibility * (0.28 + fire * 0.12),
             color,
             vertexOffset,
@@ -795,11 +801,17 @@ class NeuralWorld {
         : 1;
       const intensity = (0.62 + progress * 0.68 + fire * 0.3) * mobileHighwayEnergy;
       const curve = this.highwayCurve(highway);
+      if (isMobile) {
+        const midpointAvoidance = smoothstep(0.2, 0.34, progress) * (1 - smoothstep(0.58, 0.68, progress));
+        const direction = highway.sign > 0 ? 1 : -1;
+        curve.control.x += midpointAvoidance * direction * 0.48;
+        curve.control.y += midpointAvoidance * 0.82;
+      }
       vertexOffset = this.writeTendril(
         system,
         curve,
-        (isMobile ? 0.094 : 0.068) + progress * 0.018,
-        (isMobile ? 0.028 : 0.012) + progress * 0.004,
+        (isMobile ? 0.052 : 0.04) + progress * 0.012,
+        (isMobile ? 0.007 : 0.004) + smoothstep(0.1, 0.5, progress) * (isMobile ? 0.009 : 0.007),
         intensity,
         color,
         vertexOffset,
@@ -835,7 +847,7 @@ class NeuralWorld {
       }
     }
     this.pulseMesh.instanceMatrix.needsUpdate = true;
-    this.pulseMaterial.opacity = isMobile ? 0.36 + progress * 0.08 : 0.78 + progress * 0.22;
+    this.pulseMaterial.opacity = isMobile ? 0.28 + progress * 0.08 : 0.62 + progress * 0.18;
   }
 
   updateStreaks(progress, travel) {
@@ -878,9 +890,8 @@ class NeuralWorld {
     this.microMaterial.uniforms.uTime.value = elapsed;
     this.microMaterial.uniforms.uTravel.value = travel;
     this.microMaterial.uniforms.uProgress.value = progress;
-    this.hubCoreMaterial.opacity = isMobile
-      ? (0.025 + progress * 0.025) * (1 - smoothstep(0.62, 0.9, progress))
-      : 0.12 + progress * 0.18;
+    const coreVelocityFade = 1 - smoothstep(isMobile ? 0.62 : 0.7, isMobile ? 0.9 : 0.9, progress);
+    this.hubCoreMaterial.opacity = (isMobile ? 0.025 + progress * 0.025 : 0.12 + progress * 0.18) * coreVelocityFade;
     const destinationProgress = isMobile ? smoothstep(0.955, 1, progress) : smoothstep(0.62, 0.98, progress);
     const destinationStrength = isMobile ? 0.08 : 0.48;
     this.destinationMaterial.opacity = destinationProgress * (0.015 + progress * destinationStrength);
@@ -922,15 +933,10 @@ function updateScrollProgress() {
   state.targetProgress = reducedMotion ? 0.16 : clamp(window.scrollY / range, 0, 1);
 }
 
-function updatePointer(event) {
-  state.pointerX = event.clientX / window.innerWidth * 2 - 1;
-  state.pointerY = event.clientY / window.innerHeight * 2 - 1;
-}
-
 function updateCamera(progress, elapsed, delta) {
   const mobileScale = isMobile ? 0.54 : 1;
-  const targetX = lerp(-0.35, 0.75, smoothstep(0.12, 0.84, progress)) * mobileScale + state.pointerX * (isMobile ? 0.06 : 0.16);
-  const targetY = lerp(0.15, -0.3, smoothstep(0.18, 0.9, progress)) * mobileScale - state.pointerY * (isMobile ? 0.04 : 0.1);
+  const targetX = lerp(-0.35, 0.75, smoothstep(0.12, 0.84, progress)) * mobileScale;
+  const targetY = lerp(0.15, -0.3, smoothstep(0.18, 0.9, progress)) * mobileScale;
   const targetZ = lerp(isMobile ? 8.2 : 7.2, isMobile ? 6.7 : 5.15, smoothstep(0.08, 0.88, progress));
   const ease = 1 - Math.exp(-delta * 2.5);
   camera.position.x += (targetX - camera.position.x) * ease;
@@ -940,9 +946,9 @@ function updateCamera(progress, elapsed, delta) {
     ? lerp(62, 72, smoothstep(0.24, 0.94, progress))
     : lerp(56, 67, smoothstep(0.24, 0.94, progress));
   camera.updateProjectionMatrix();
-  camera.rotation.x = lerp(0, -0.025, progress) + Math.sin(elapsed * 0.11) * 0.003;
-  camera.rotation.y = lerp(0, 0.045, progress) + state.pointerX * 0.004;
-  camera.rotation.z = Math.sin(elapsed * 0.13) * 0.005;
+  camera.rotation.x = lerp(0, -0.025, progress);
+  camera.rotation.y = lerp(0, 0.045, progress);
+  camera.rotation.z = 0;
 }
 
 function render(now) {
@@ -963,9 +969,11 @@ function render(now) {
     : lerp(1.02, 1.62, smoothstep(0.3, 1, state.progress));
   bloomPass.strength = isMobile
     ? lerp(0.1, 0.22, smoothstep(0.1, 0.55, state.progress)) * (1 - smoothstep(0.78, 0.96, state.progress) * 0.45)
-    : lerp(0.32, 1.38, smoothstep(0.14, 1, state.progress));
-  bloomPass.radius = isMobile ? lerp(0.26, 0.42, state.progress) : lerp(0.42, 0.88, state.progress);
-  bloomPass.threshold = isMobile ? lerp(0.95, 0.9, state.progress) : lerp(0.74, 0.48, state.progress);
+    : lerp(0.32, 1.38, smoothstep(0.14, 1, state.progress)) * (1 - smoothstep(0.78, 1, state.progress) * 0.34);
+  bloomPass.radius = isMobile
+    ? lerp(0.26, 0.42, state.progress)
+    : lerp(0.42, 0.88, state.progress) * (1 - smoothstep(0.78, 1, state.progress) * 0.18);
+  bloomPass.threshold = isMobile ? lerp(0.95, 0.9, state.progress) : lerp(0.74, 0.56, state.progress);
 
   const finalWhite = smoothstep(isMobile ? 0.91 : 0.965, isMobile ? 0.985 : 1, state.progress);
   arrival.style.opacity = String(Math.pow(finalWhite, isMobile ? 1.15 : 1.7) * (isMobile ? 1 : 0.93));
@@ -997,7 +1005,6 @@ renderer.domElement.addEventListener('webglcontextrestored', () => {
 });
 window.addEventListener('resize', resize, { passive: true });
 window.addEventListener('scroll', updateScrollProgress, { passive: true });
-window.addEventListener('pointermove', updatePointer, { passive: true });
 document.addEventListener('visibilitychange', () => document.hidden ? pause() : resume());
 
 resize();

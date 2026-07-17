@@ -75,7 +75,9 @@ Canonical palette from Mantra Design Guide (dark mode):
 - `NeuralWorld` owns one coherent scene with distinct primary hubs, secondary shells, GPU micro-nodes, local arcs, cross-cluster highways, pulse packets, velocity streaks, and a radial destination atmosphere
 - Hubs use front/back Fresnel glass-shell passes; connectors use dynamically batched tapered tube surfaces that terminate at sphere surfaces; nodes and pulses remain instanced
 - The default state is a locked three-hub composition: time may breathe shells, drift anchors subtly, and move pulse packets, but must not materially change camera-relative spacing
+- Connector tendrils terminate outside sphere membranes and taper to narrow shell contacts; no connector geometry may target or visibly penetrate a sphere center
 - Connector tendrils belong to the low/mid-speed neuron state and fully fade before the high-speed climax, where micro-traffic and velocity streaks own motion
+- Camera pose is scroll-owned only; pointer and tap input never alter framing, rotation, or parallax
 - Scroll releases additional hubs, satellites, micro-nodes, connectors, camera travel, velocity, bloom, and white arrival
 - Caps DPR at 1.5, pauses when hidden, handles WebGL context loss, and honors reduced motion
 
