@@ -157,6 +157,7 @@ const microVertexShader = `
   uniform float uTime;
   uniform float uTravel;
   uniform float uProgress;
+  uniform float uFieldOpacity;
 
   void main() {
     vec3 p = position;
@@ -175,7 +176,7 @@ const microVertexShader = `
       float deterministicKeep = step(0.38 + uProgress * 0.24, fract(sin(aPhase * 91.7 + aRank * 413.1) * 43758.5453));
       convergenceDropout = mix(1.0, centerExclusion * deterministicKeep, smoothstep(0.62, 0.84, uProgress));
     }
-    vAlpha = visible * depthFade * convergenceDropout * (0.32 + vPulse * 0.5);
+    vAlpha = visible * depthFade * convergenceDropout * (0.32 + vPulse * 0.5) * uFieldOpacity;
     gl_PointSize = clamp(aSize * (112.0 / max(1.0, -viewPosition.z)) * (0.86 + uProgress * 0.75), 1.0, 6.5);
     gl_Position = projectionMatrix * viewPosition;
   }
@@ -413,6 +414,7 @@ class NeuralWorld {
         uTime: { value: 0 },
         uTravel: { value: 0 },
         uProgress: { value: 0 },
+        uFieldOpacity: { value: 1 },
       },
       transparent: true,
       depthWrite: false,
@@ -766,8 +768,8 @@ class NeuralWorld {
     system.geometry.setDrawRange(0, vertexOffset);
     system.geometry.attributes.position.needsUpdate = true;
     system.geometry.attributes.color.needsUpdate = true;
-    const denseFieldFade = 1 - smoothstep(0.3, 0.78, progress);
-    system.material.opacity = (isMobile ? 0.72 : 0.62) * denseFieldFade;
+    const neuronStateFade = 1 - smoothstep(0.16, 0.43, progress);
+    system.material.opacity = (isMobile ? 0.72 : 0.62) * neuronStateFade;
   }
 
   highwayVisible(highway, progress) {
@@ -820,8 +822,8 @@ class NeuralWorld {
     system.geometry.setDrawRange(0, vertexOffset);
     system.geometry.attributes.position.needsUpdate = true;
     system.geometry.attributes.color.needsUpdate = true;
-    const denseFieldFade = 1 - smoothstep(0.34, 0.82, progress);
-    system.material.opacity = (isMobile ? 0.94 : 0.88) * denseFieldFade;
+    const neuronStateFade = 1 - smoothstep(0.18, 0.46, progress);
+    system.material.opacity = (isMobile ? 0.94 : 0.88) * neuronStateFade;
   }
 
   updatePulses(progress, elapsed) {
@@ -851,7 +853,7 @@ class NeuralWorld {
   }
 
   updateStreaks(progress, travel) {
-    const active = smoothstep(0.2, 0.9, progress);
+    const active = smoothstep(0.5, 0.9, progress);
     const length = 0.22 + Math.pow(progress, 2.15) * (isMobile ? 5.2 : 9.4);
     this.streakData.forEach((streak, index) => {
       const z = wrapDepth(streak.z + travel * streak.speed);
@@ -890,6 +892,10 @@ class NeuralWorld {
     this.microMaterial.uniforms.uTime.value = elapsed;
     this.microMaterial.uniforms.uTravel.value = travel;
     this.microMaterial.uniforms.uProgress.value = progress;
+    const desktopMidpointClear = isMobile
+      ? 0
+      : smoothstep(0.4, 0.5, progress) * (1 - smoothstep(0.5, 0.62, progress));
+    this.microMaterial.uniforms.uFieldOpacity.value = 1 - desktopMidpointClear * 0.68;
     const coreVelocityFade = 1 - smoothstep(isMobile ? 0.62 : 0.7, isMobile ? 0.9 : 0.9, progress);
     this.hubCoreMaterial.opacity = (isMobile ? 0.025 + progress * 0.025 : 0.12 + progress * 0.18) * coreVelocityFade;
     const destinationProgress = isMobile ? smoothstep(0.955, 1, progress) : smoothstep(0.62, 0.98, progress);
