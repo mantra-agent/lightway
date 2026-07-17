@@ -463,12 +463,22 @@ class NeuralWorld {
     const positions = new Float32Array(CONFIG.atmosphericDustCount * 3);
     const viewportAspect = window.innerWidth / Math.max(1, window.innerHeight);
     const halfFovTangent = Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5));
+    const neuralDepthBands = this.clusters.map((cluster) => Math.abs(cluster.z));
     for (let index = 0; index < CONFIG.atmosphericDustCount; index += 1) {
-      const depth = 5 + random() * 78;
+      const mixedWithNeurons = index / CONFIG.atmosphericDustCount < 0.78;
+      const bandDepth = neuralDepthBands[index % neuralDepthBands.length];
+      const depth = mixedWithNeurons
+        ? Math.max(4, bandDepth + (random() - 0.5) * 9)
+        : 46 + random() * 36;
       const halfHeight = halfFovTangent * depth;
       const halfWidth = halfHeight * viewportAspect;
-      positions[index * 3] = (random() * 2 - 1) * halfWidth * 0.96;
-      positions[index * 3 + 1] = (random() * 2 - 1) * halfHeight * 0.96;
+      const sourceCluster = this.clusters[index % this.clusters.length];
+      positions[index * 3] = mixedWithNeurons && isMobile
+        ? sourceCluster.x * 0.68 + (random() - 0.5) * halfWidth * 0.34
+        : (random() * 2 - 1) * halfWidth * 0.96;
+      positions[index * 3 + 1] = mixedWithNeurons && isMobile
+        ? sourceCluster.y * 0.68 + 0.55 + (random() - 0.5) * halfHeight * 0.34
+        : (random() * 2 - 1) * halfHeight * 0.96;
       positions[index * 3 + 2] = -depth;
     }
     const dustGeometry = new THREE.BufferGeometry();
@@ -512,13 +522,21 @@ class NeuralWorld {
       });
       material.userData.baseOpacity = material.opacity;
       const sprite = new THREE.Sprite(material);
-      const depthFraction = (index + 0.5) / CONFIG.atmosphericHazeCount;
-      const depthDistance = 5 + depthFraction * 72 + layer * 2.5;
+      const distantLayer = index >= CONFIG.atmosphericHazeCount - 2;
+      const hubDepth = neuralDepthBands[index % neuralDepthBands.length];
+      const depthDistance = distantLayer
+        ? 58 + (index - (CONFIG.atmosphericHazeCount - 2)) * 17
+        : Math.max(5, hubDepth + (random() - 0.5) * 7);
       const halfHeight = halfFovTangent * depthDistance;
       const halfWidth = halfHeight * viewportAspect;
+      const sourceCluster = this.clusters[index % this.clusters.length];
       sprite.position.set(
-        anchor[0] * halfWidth * 0.92 + (random() - 0.5) * halfWidth * 0.08,
-        anchor[1] * halfHeight * 0.92 + (random() - 0.5) * halfHeight * 0.08,
+        !distantLayer && isMobile
+          ? sourceCluster.x * 0.68 + (random() - 0.5) * halfWidth * 0.18
+          : anchor[0] * halfWidth * 0.92 + (random() - 0.5) * halfWidth * 0.08,
+        !distantLayer && isMobile
+          ? sourceCluster.y * 0.68 + 0.55 + (random() - 0.5) * halfHeight * 0.18
+          : anchor[1] * halfHeight * 0.92 + (random() - 0.5) * halfHeight * 0.08,
         -depthDistance,
       );
       const screenScale = halfHeight * (0.28 + random() * 0.18);
