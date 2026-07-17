@@ -71,9 +71,10 @@ Canonical palette from Mantra Design Guide (dark mode):
 
 ### /home_v2 (Neural Hyperspace Visual Prototype)
 - Standalone Three.js-only visual route; does not modify or share state with `/home`
-- Pinned Three.js ES module from jsDelivr; no framework or bundler dependency
-- Instanced Fresnel node shells, batched quadratic links, instanced traveling pulses, and scroll-controlled intensity
-- Time always drives ambient motion; scroll only changes density, firing, velocity, trails, and white arrival
+- Pinned Three.js ES modules from jsDelivr; no framework or bundler dependency
+- `NeuralWorld` owns one coherent scene with distinct primary hubs, secondary shells, GPU micro-nodes, local arcs, cross-cluster highways, pulse packets, velocity streaks, and a radial destination atmosphere
+- Hubs use front/back Fresnel shell passes; links use batched quadratic geometry; nodes and pulses remain instanced
+- Time always drives ambient motion; scroll changes population visibility, firing, camera path, velocity, bloom, and white arrival
 - Caps DPR at 1.5, pauses when hidden, handles WebGL context loss, and honors reduced motion
 
 ### /coaches

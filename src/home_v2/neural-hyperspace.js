@@ -1,17 +1,24 @@
 import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const stage = document.querySelector('.neural-stage');
 const arrival = document.querySelector('.white-arrival');
 const scrollCue = document.querySelector('.scroll-cue');
+const isMobile = window.innerWidth < 700;
 
 const CONFIG = Object.freeze({
-  nodeCount: window.innerWidth < 700 ? 84 : 164,
-  maxLinks: window.innerWidth < 700 ? 138 : 292,
-  linkSegments: 24,
-  pulseCount: window.innerWidth < 700 ? 92 : 190,
-  depthNear: 6,
-  depthFar: 88,
+  clusterCount: isMobile ? 8 : 11,
+  satellitesPerCluster: isMobile ? 7 : 10,
+  microCount: isMobile ? 760 : 1500,
+  streakCount: isMobile ? 260 : 560,
+  pulseCount: isMobile ? 64 : 120,
+  localSegments: 12,
+  highwaySegments: 34,
+  depthFar: 96,
+  depthNear: 4,
 });
 
 const state = {
@@ -20,23 +27,42 @@ const state = {
   pointerX: 0,
   pointerY: 0,
   elapsed: 0,
+  travel: 0,
   lastFrame: performance.now(),
   running: true,
 };
 
+const clamp = THREE.MathUtils.clamp;
+const lerp = THREE.MathUtils.lerp;
+let randomSeed = 0x6d616e74;
+
+function random() {
+  randomSeed = (randomSeed * 1664525 + 1013904223) >>> 0;
+  return randomSeed / 4294967296;
+}
+
 function smoothstep(edge0, edge1, value) {
-  const x = THREE.MathUtils.clamp((value - edge0) / (edge1 - edge0), 0, 1);
+  const x = clamp((value - edge0) / (edge1 - edge0), 0, 1);
   return x * x * (3 - 2 * x);
+}
+
+function wrapDepth(value, near = CONFIG.depthNear, far = CONFIG.depthFar) {
+  const span = far + near;
+  return ((((value - near) % span) + span) % span) - far;
 }
 
 function createRenderer() {
   try {
-    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance' });
+    const renderer = new THREE.WebGLRenderer({
+      antialias: false,
+      alpha: false,
+      powerPreference: 'high-performance',
+    });
     renderer.setClearColor(0x000000, 1);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
+    renderer.toneMappingExposure = 1.05;
     stage.prepend(renderer.domElement);
     return renderer;
   } catch (error) {
@@ -49,12 +75,17 @@ const renderer = createRenderer();
 if (!renderer) throw new Error('WebGL unavailable');
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x000000, 0.021);
+scene.fog = new THREE.FogExp2(0x000000, 0.018);
 
-const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 140);
-camera.position.set(0, 0, 7.2);
+const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 150);
+camera.position.set(-0.35, 0.15, 7.2);
 
-const nodeVertexShader = `
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.48, 0.72, 0.7);
+composer.addPass(bloomPass);
+
+const shellVertexShader = `
   attribute float aScale;
   attribute float aPhase;
   attribute float aVisibility;
@@ -62,342 +93,645 @@ const nodeVertexShader = `
   varying vec3 vViewDirection;
   varying float vPhase;
   varying float vVisibility;
+  varying float vDepthFade;
   uniform float uTime;
   uniform float uProgress;
 
   void main() {
-    float breathing = 1.0 + sin(uTime * 1.7 + aPhase) * (0.035 + uProgress * 0.025);
+    float breathing = 1.0 + sin(uTime * (1.35 + uProgress) + aPhase) * (0.025 + uProgress * 0.018);
     vec4 worldPosition = modelMatrix * instanceMatrix * vec4(position * aScale * breathing, 1.0);
     vNormal = normalize(mat3(modelMatrix * instanceMatrix) * normal);
     vViewDirection = normalize(cameraPosition - worldPosition.xyz);
     vPhase = aPhase;
     vVisibility = aVisibility;
+    vDepthFade = 1.0 - smoothstep(56.0, 106.0, distance(cameraPosition, worldPosition.xyz));
     gl_Position = projectionMatrix * viewMatrix * worldPosition;
   }
 `;
 
-const nodeFragmentShader = `
+const shellFragmentShader = `
   varying vec3 vNormal;
   varying vec3 vViewDirection;
   varying float vPhase;
   varying float vVisibility;
+  varying float vDepthFade;
   uniform float uTime;
   uniform float uProgress;
+  uniform float uBackface;
+  uniform float uIntensity;
 
   void main() {
-    float facing = max(dot(normalize(vNormal), normalize(vViewDirection)), 0.0);
-    float fresnel = pow(1.0 - facing, 2.0);
-    float rim = smoothstep(0.18, 0.92, fresnel);
-    float pulse = 0.5 + 0.5 * sin(uTime * (1.9 + uProgress * 2.2) + vPhase);
-    vec3 pearl = vec3(0.78, 0.88, 0.94);
-    vec3 cyan = vec3(0.22, 0.68, 0.9);
+    float facing = abs(dot(normalize(vNormal), normalize(vViewDirection)));
+    float fresnel = pow(1.0 - facing, 1.7);
+    float rim = smoothstep(0.12, 0.92, fresnel);
+    float pulse = 0.5 + 0.5 * sin(uTime * (1.75 + uProgress * 2.1) + vPhase);
+    vec3 pearl = vec3(0.74, 0.88, 0.96);
+    vec3 cyan = vec3(0.12, 0.58, 0.92);
     vec3 color = mix(pearl, cyan, 0.18 + pulse * 0.16 + uProgress * 0.12);
-    float interior = 0.006 + pulse * 0.008;
-    float alpha = (interior + rim * (0.5 + pulse * 0.28)) * vVisibility;
-    gl_FragColor = vec4(color * (0.18 + rim * 1.9 + pulse * 0.1), alpha);
+    float shell = mix(rim, 0.18 + rim * 0.54, uBackface);
+    float interior = mix(0.008 + pulse * 0.008, 0.018 + pulse * 0.016, uBackface);
+    float alpha = (interior + shell * mix(0.82, 0.24, uBackface)) * vVisibility * vDepthFade;
+    vec3 radiance = color * (0.12 + shell * uIntensity + pulse * 0.13);
+    gl_FragColor = vec4(radiance, alpha);
   }
 `;
 
-class NeuralField {
+const microVertexShader = `
+  attribute float aPhase;
+  attribute float aRank;
+  attribute float aSize;
+  varying float vAlpha;
+  varying float vPulse;
+  uniform float uTime;
+  uniform float uTravel;
+  uniform float uProgress;
+
+  void main() {
+    vec3 p = position;
+    p.z = mod(p.z + uTravel + 96.0, 100.0) - 96.0;
+    p.x += sin(uTime * 0.16 + aPhase) * 0.08;
+    p.y += cos(uTime * 0.13 + aPhase * 1.3) * 0.06;
+    float threshold = 0.22 + uProgress * 0.84;
+    float visible = 1.0 - smoothstep(threshold, threshold + 0.08, aRank);
+    float depthFade = 1.0 - smoothstep(60.0, 98.0, -p.z);
+    vPulse = 0.48 + 0.52 * sin(uTime * (0.7 + uProgress * 2.4) + aPhase);
+    vAlpha = visible * depthFade * (0.32 + vPulse * 0.5);
+    vec4 viewPosition = modelViewMatrix * vec4(p, 1.0);
+    gl_PointSize = clamp(aSize * (112.0 / max(1.0, -viewPosition.z)) * (0.86 + uProgress * 0.75), 1.0, 6.5);
+    gl_Position = projectionMatrix * viewPosition;
+  }
+`;
+
+const microFragmentShader = `
+  varying float vAlpha;
+  varying float vPulse;
+
+  void main() {
+    vec2 centered = gl_PointCoord - 0.5;
+    float distanceFromCenter = length(centered);
+    float core = 1.0 - smoothstep(0.0, 0.48, distanceFromCenter);
+    float halo = 1.0 - smoothstep(0.12, 0.5, distanceFromCenter);
+    vec3 color = mix(vec3(0.24, 0.62, 0.82), vec3(0.84, 0.96, 1.0), vPulse);
+    gl_FragColor = vec4(color * (core * 1.5 + halo * 0.35), vAlpha * (core + halo * 0.32));
+  }
+`;
+
+function createShellMaterial(side, intensity) {
+  return new THREE.ShaderMaterial({
+    vertexShader: shellVertexShader,
+    fragmentShader: shellFragmentShader,
+    uniforms: {
+      uTime: { value: 0 },
+      uProgress: { value: 0 },
+      uBackface: { value: side === THREE.BackSide ? 1 : 0 },
+      uIntensity: { value: intensity },
+    },
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    side,
+  });
+}
+
+function createRadialTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const context = canvas.getContext('2d');
+  const gradient = context.createRadialGradient(128, 128, 0, 128, 128, 128);
+  gradient.addColorStop(0, 'rgba(255,255,255,1)');
+  gradient.addColorStop(0.16, 'rgba(230,248,255,0.92)');
+  gradient.addColorStop(0.42, 'rgba(111,204,244,0.38)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0)');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 256, 256);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+class NeuralWorld {
   constructor() {
     this.group = new THREE.Group();
+    this.group.scale.set(isMobile ? 0.46 : 1, isMobile ? 0.94 : 1, 1);
+    this.group.position.y = isMobile ? -0.9 : 0;
     scene.add(this.group);
 
-    this.nodes = Array.from({ length: CONFIG.nodeCount }, (_, index) => this.createNode(index));
-    this.nodeMatrices = new Float32Array(CONFIG.nodeCount * 16);
-    this.nodeScales = new Float32Array(CONFIG.nodeCount);
-    this.nodePhases = new Float32Array(CONFIG.nodeCount);
-    this.nodeVisibility = new Float32Array(CONFIG.nodeCount);
-    this.nodePositions = this.nodes.map(() => new THREE.Vector3());
-    this.previousPositions = this.nodes.map(() => new THREE.Vector3());
+    this.clusters = this.createClusters();
+    this.satellites = this.createSatellites();
+    this.hubPositions = this.clusters.map(() => new THREE.Vector3());
+    this.satellitePositions = this.satellites.map(() => new THREE.Vector3());
+    this.highways = this.createHighways();
 
-    this.createNodeMeshes();
-    this.links = this.createLinks();
-    this.createLinkMesh();
-    this.createTrailMesh();
+    this.createHubMeshes();
+    this.createSatelliteMeshes();
+    this.createMicroField();
+    this.createLocalLinks();
+    this.createHighwayLinks();
     this.createPulses();
-    this.update(0, 0, 0.016);
+    this.createVelocityStreaks();
+    this.createDestination();
+    this.update(0, 0, 0.016, 0);
   }
 
-  createNode(index) {
-    const cluster = index % 11;
-    const ring = Math.floor(index / 11);
-    const angle = cluster * (Math.PI * 2 / 11) + ring * 0.37 + Math.random() * 0.26;
-    const radius = 1.3 + (ring % 4) * 1.15 + Math.random() * 1.8;
-    return {
-      baseX: Math.cos(angle) * radius + (Math.random() - 0.5) * 1.2,
-      baseY: Math.sin(angle) * radius * 0.68 + (Math.random() - 0.5) * 1.1,
-      z: -(Math.random() * (CONFIG.depthFar - CONFIG.depthNear) + CONFIG.depthNear),
-      speed: 0.72 + Math.random() * 0.72,
-      size: 0.1 + Math.pow(Math.random(), 2) * 0.28,
-      phase: Math.random() * Math.PI * 2,
-      drift: 0.14 + Math.random() * 0.34,
-      visibilityRank: index / CONFIG.nodeCount,
-    };
+  createClusters() {
+    const positions = isMobile ? [
+      [-1.7, 4.4, -2.4, 0.62],
+      [1.55, 3.0, -8.5, 0.6],
+      [-0.75, 1.55, -16.5, 0.56],
+      [1.35, 0.15, -25.0, 0.6],
+      [-1.45, -1.25, -35.0, 0.56],
+      [0.85, -2.65, -47.0, 0.58],
+      [-1.0, -4.0, -61.0, 0.54],
+      [1.25, -5.1, -77.0, 0.58],
+    ] : [
+      [-4.0, 1.15, -1.8, 0.82],
+      [2.9, -1.45, -6.5, 0.88],
+      [-0.4, 2.3, -14.0, 0.72],
+      [4.4, 0.8, -22.5, 0.98],
+      [-3.0, -2.0, -31.0, 0.76],
+      [0.7, 0.25, -39.5, 0.66],
+      [-4.6, 1.8, -48.0, 0.92],
+      [3.5, -1.3, -57.0, 0.78],
+      [-0.8, 2.5, -66.0, 0.7],
+      [4.7, 1.5, -76.0, 0.96],
+      [-3.5, -1.5, -87.0, 0.82],
+    ];
+    return positions.slice(0, CONFIG.clusterCount).map(([x, y, z, size], index) => ({
+      x,
+      y,
+      z,
+      size,
+      phase: index * 0.83 + random() * 0.4,
+      rank: index / CONFIG.clusterCount,
+      speed: 0.9 + (index % 3) * 0.055,
+    }));
   }
 
-  createNodeMeshes() {
+  createSatellites() {
+    const satellites = [];
+    this.clusters.forEach((cluster, clusterIndex) => {
+      for (let index = 0; index < CONFIG.satellitesPerCluster; index += 1) {
+        const angle = index / CONFIG.satellitesPerCluster * Math.PI * 2 + clusterIndex * 0.49;
+        const radius = 0.78 + (index % 4) * 0.29 + random() * 0.35;
+        satellites.push({
+          clusterIndex,
+          offsetX: Math.cos(angle) * radius,
+          offsetY: Math.sin(angle) * radius * 0.7,
+          offsetZ: (index % 3 - 1) * 0.52 + (random() - 0.5) * 0.34,
+          size: 0.105 + random() * 0.13,
+          phase: cluster.phase + index * 0.62,
+          rank: random(),
+        });
+      }
+    });
+    return satellites;
+  }
+
+  createHighways() {
+    const pairs = [];
+    for (let index = 0; index < CONFIG.clusterCount; index += 1) {
+      pairs.push([index, (index + 1) % CONFIG.clusterCount]);
+      if (index % 2 === 0) pairs.push([index, (index + 2) % CONFIG.clusterCount]);
+      if (index % 3 === 0) pairs.push([index, (index + 4) % CONFIG.clusterCount]);
+    }
+    return pairs.map(([from, to], index) => ({
+      from,
+      to,
+      arc: 1.7 + (index % 5) * 0.58,
+      sign: index % 2 === 0 ? 1 : -1,
+      rank: index / pairs.length,
+      phase: index * 1.17,
+    }));
+  }
+
+  createHubMeshes() {
+    const count = this.clusters.length;
+    const geometry = new THREE.IcosahedronGeometry(1, 4);
+    this.hubScale = new Float32Array(count);
+    this.hubPhase = new Float32Array(count);
+    this.hubVisibility = new Float32Array(count);
+    geometry.setAttribute('aScale', new THREE.InstancedBufferAttribute(this.hubScale, 1));
+    geometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(this.hubPhase, 1));
+    geometry.setAttribute('aVisibility', new THREE.InstancedBufferAttribute(this.hubVisibility, 1));
+
+    this.hubFrontMaterial = createShellMaterial(THREE.FrontSide, isMobile ? 1.32 : 2.45);
+    this.hubBackMaterial = createShellMaterial(THREE.BackSide, isMobile ? 0.5 : 1.1);
+    this.hubBackMesh = new THREE.InstancedMesh(geometry, this.hubBackMaterial, count);
+    this.hubFrontMesh = new THREE.InstancedMesh(geometry, this.hubFrontMaterial, count);
+    for (const mesh of [this.hubBackMesh, this.hubFrontMesh]) {
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      mesh.frustumCulled = false;
+      this.group.add(mesh);
+    }
+
+    const coreGeometry = new THREE.SphereGeometry(1, 12, 12);
+    this.hubCoreMaterial = new THREE.MeshBasicMaterial({
+      color: 0xa7e5ff,
+      transparent: true,
+      opacity: 0.18,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    this.hubCoreMesh = new THREE.InstancedMesh(coreGeometry, this.hubCoreMaterial, count);
+    this.hubCoreMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.hubCoreMesh.frustumCulled = false;
+    this.group.add(this.hubCoreMesh);
+  }
+
+  createSatelliteMeshes() {
+    const count = this.satellites.length;
     const geometry = new THREE.IcosahedronGeometry(1, 2);
-    geometry.setAttribute('aScale', new THREE.InstancedBufferAttribute(this.nodeScales, 1));
-    geometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(this.nodePhases, 1));
-    geometry.setAttribute('aVisibility', new THREE.InstancedBufferAttribute(this.nodeVisibility, 1));
+    this.satelliteScale = new Float32Array(count);
+    this.satellitePhase = new Float32Array(count);
+    this.satelliteVisibility = new Float32Array(count);
+    geometry.setAttribute('aScale', new THREE.InstancedBufferAttribute(this.satelliteScale, 1));
+    geometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(this.satellitePhase, 1));
+    geometry.setAttribute('aVisibility', new THREE.InstancedBufferAttribute(this.satelliteVisibility, 1));
+    this.satelliteMaterial = createShellMaterial(THREE.DoubleSide, isMobile ? 0.92 : 1.65);
+    this.satelliteMesh = new THREE.InstancedMesh(geometry, this.satelliteMaterial, count);
+    this.satelliteMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.satelliteMesh.frustumCulled = false;
+    this.group.add(this.satelliteMesh);
+  }
 
-    this.nodeMaterial = new THREE.ShaderMaterial({
-      vertexShader: nodeVertexShader,
-      fragmentShader: nodeFragmentShader,
+  createMicroField() {
+    const positions = new Float32Array(CONFIG.microCount * 3);
+    const phases = new Float32Array(CONFIG.microCount);
+    const ranks = new Float32Array(CONFIG.microCount);
+    const sizes = new Float32Array(CONFIG.microCount);
+    for (let index = 0; index < CONFIG.microCount; index += 1) {
+      const clustered = index / CONFIG.microCount < 0.72;
+      const cluster = this.clusters[index % this.clusters.length];
+      const angle = random() * Math.PI * 2;
+      const radius = clustered ? Math.pow(random(), 0.72) * 2.8 : Math.pow(random(), 0.58) * 9.4;
+      positions[index * 3] = clustered ? cluster.x + Math.cos(angle) * radius : Math.cos(angle) * radius;
+      positions[index * 3 + 1] = clustered ? cluster.y + Math.sin(angle) * radius * 0.68 : Math.sin(angle) * radius * 0.62;
+      positions[index * 3 + 2] = clustered
+        ? wrapDepth(cluster.z + (random() - 0.5) * 7.5)
+        : -(random() * 94 + 2);
+      phases[index] = random() * Math.PI * 2;
+      ranks[index] = random();
+      sizes[index] = 0.55 + Math.pow(random(), 2) * 2.5;
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1));
+    geometry.setAttribute('aRank', new THREE.BufferAttribute(ranks, 1));
+    geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+    this.microMaterial = new THREE.ShaderMaterial({
+      vertexShader: microVertexShader,
+      fragmentShader: microFragmentShader,
       uniforms: {
         uTime: { value: 0 },
+        uTravel: { value: 0 },
         uProgress: { value: 0 },
       },
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
     });
-
-    this.nodeMesh = new THREE.InstancedMesh(geometry, this.nodeMaterial, CONFIG.nodeCount);
-    this.nodeMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    this.nodeMesh.frustumCulled = false;
-    this.group.add(this.nodeMesh);
+    this.microField = new THREE.Points(geometry, this.microMaterial);
+    this.microField.frustumCulled = false;
+    this.group.add(this.microField);
   }
 
-  createLinks() {
-    const links = [];
-    const used = new Set();
-    const addLink = (from, to, bridge) => {
-      const key = from < to ? `${from}:${to}` : `${to}:${from}`;
-      if (from === to || used.has(key) || links.length >= CONFIG.maxLinks) return;
-      used.add(key);
-      links.push({
-        from,
-        to,
-        bridge,
-        phase: Math.random() * Math.PI * 2,
-        rank: Math.random(),
-        arcSign: Math.random() < 0.5 ? -1 : 1,
-        arc: 0.42 + Math.random() * 1.18,
-        speed: 0.22 + Math.random() * 0.48,
-      });
-    };
-
-    for (let index = 0; index < CONFIG.nodeCount; index += 1) {
-      addLink(index, (index + 1 + Math.floor(Math.random() * 3)) % CONFIG.nodeCount, false);
-      if (index % 2 === 0) addLink(index, (index + 9 + Math.floor(Math.random() * 7)) % CONFIG.nodeCount, false);
-      if (index % 3 === 0) addLink(index, (index + 28 + Math.floor(Math.random() * 19)) % CONFIG.nodeCount, true);
-    }
-
-    while (links.length < CONFIG.maxLinks) {
-      const from = Math.floor(Math.random() * CONFIG.nodeCount);
-      const distance = Math.random() < 0.54 ? 1 + Math.floor(Math.random() * 14) : 18 + Math.floor(Math.random() * 42);
-      addLink(from, (from + distance) % CONFIG.nodeCount, distance > 17);
-    }
-    return links;
-  }
-
-  createLinkMesh() {
-    const vertexCount = CONFIG.maxLinks * CONFIG.linkSegments * 2;
-    this.linkPositions = new Float32Array(vertexCount * 3);
-    this.linkColors = new Float32Array(vertexCount * 3);
+  createLineSystem(maxLinks, segments, opacity) {
+    const vertexCount = maxLinks * segments * 2;
+    const positions = new Float32Array(vertexCount * 3);
+    const colors = new Float32Array(vertexCount * 3);
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(this.linkPositions, 3).setUsage(THREE.DynamicDrawUsage));
-    geometry.setAttribute('color', new THREE.BufferAttribute(this.linkColors, 3).setUsage(THREE.DynamicDrawUsage));
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3).setUsage(THREE.DynamicDrawUsage));
     geometry.setDrawRange(0, 0);
-    this.linkGeometry = geometry;
-    this.linkMesh = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({
+    const material = new THREE.LineBasicMaterial({
       vertexColors: true,
       transparent: true,
-      opacity: 0.5,
+      opacity,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
-    }));
-    this.linkMesh.frustumCulled = false;
-    this.group.add(this.linkMesh);
+      fog: true,
+    });
+    const mesh = new THREE.LineSegments(geometry, material);
+    mesh.frustumCulled = false;
+    this.group.add(mesh);
+    return { positions, colors, geometry, material, mesh, segments };
   }
 
-  createTrailMesh() {
-    this.trailPositions = new Float32Array(CONFIG.nodeCount * 2 * 3);
-    this.trailColors = new Float32Array(CONFIG.nodeCount * 2 * 3);
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(this.trailPositions, 3).setUsage(THREE.DynamicDrawUsage));
-    geometry.setAttribute('color', new THREE.BufferAttribute(this.trailColors, 3).setUsage(THREE.DynamicDrawUsage));
-    this.trailGeometry = geometry;
-    this.trailMesh = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.65,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    }));
-    this.trailMesh.frustumCulled = false;
-    this.group.add(this.trailMesh);
+  createLocalLinks() {
+    const linkCount = this.satellites.length * 2;
+    this.localLineSystem = this.createLineSystem(linkCount, CONFIG.localSegments, 0.54);
+  }
+
+  createHighwayLinks() {
+    this.highwayLineSystem = this.createLineSystem(this.highways.length, CONFIG.highwaySegments, 0.94);
   }
 
   createPulses() {
-    const geometry = new THREE.SphereGeometry(0.055, 8, 8);
-    const material = new THREE.MeshBasicMaterial({
-      color: 0xcdefff,
+    const geometry = new THREE.SphereGeometry(0.082, 8, 8);
+    this.pulseMaterial = new THREE.MeshBasicMaterial({
+      color: 0xd9f5ff,
       transparent: true,
-      opacity: 0.92,
+      opacity: 1,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     });
-    this.pulseMesh = new THREE.InstancedMesh(geometry, material, CONFIG.pulseCount);
+    this.pulseMesh = new THREE.InstancedMesh(geometry, this.pulseMaterial, CONFIG.pulseCount * 3);
     this.pulseMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.pulseMesh.frustumCulled = false;
-    this.pulseData = Array.from({ length: CONFIG.pulseCount }, (_, index) => ({
-      linkIndex: index % this.links.length,
-      offset: Math.random(),
-      speed: 0.11 + Math.random() * 0.22,
+    this.pulses = Array.from({ length: CONFIG.pulseCount }, (_, index) => ({
+      highwayIndex: index % this.highways.length,
+      offset: random(),
+      speed: 0.055 + random() * 0.11,
       rank: index / CONFIG.pulseCount,
-      scale: 0.55 + Math.random() * 1.3,
+      scale: 0.72 + random() * 1.25,
     }));
     this.group.add(this.pulseMesh);
   }
 
-  updateNodePositions(progress, elapsed, delta) {
-    const visibleThreshold = 0.25 + progress * 0.86;
-    const velocity = 0.42 + Math.pow(progress, 2.25) * 15.5;
-    const breathingRate = 0.62 + progress * 0.95;
-    const matrix = new THREE.Matrix4();
-
-    this.nodes.forEach((node, index) => {
-      const previous = this.nodePositions[index];
-      this.previousPositions[index].copy(previous);
-      node.z += velocity * node.speed * delta;
-      if (node.z > 7) node.z -= CONFIG.depthFar + 10;
-
-      const depthFactor = THREE.MathUtils.clamp((node.z + CONFIG.depthFar) / CONFIG.depthFar, 0, 1);
-      const drift = node.drift * (0.32 + depthFactor * 0.68);
-      const x = node.baseX + Math.sin(elapsed * breathingRate + node.phase) * drift;
-      const y = node.baseY + Math.cos(elapsed * breathingRate * 0.78 + node.phase * 1.3) * drift * 0.62;
-      previous.set(x, y, node.z);
-
-      const visibility = smoothstep(node.visibilityRank - 0.08, node.visibilityRank + 0.12, visibleThreshold);
-      const nearScale = 0.75 + depthFactor * 0.85;
-      matrix.makeTranslation(x, y, node.z);
-      this.nodeMesh.setMatrixAt(index, matrix);
-      this.nodeScales[index] = node.size * nearScale;
-      this.nodePhases[index] = node.phase;
-      this.nodeVisibility[index] = visibility;
+  createVelocityStreaks() {
+    this.streakData = Array.from({ length: CONFIG.streakCount }, () => {
+      const angle = random() * Math.PI * 2;
+      const radius = 2.4 + Math.pow(random(), 0.62) * 8.8;
+      return {
+        x: Math.cos(angle) * radius,
+        y: Math.sin(angle) * radius * 0.62,
+        z: -(random() * 94 + 2),
+        rank: random(),
+        speed: 0.78 + random() * 0.54,
+      };
     });
-
-    this.nodeMesh.instanceMatrix.needsUpdate = true;
-    this.nodeMesh.geometry.attributes.aScale.needsUpdate = true;
-    this.nodeMesh.geometry.attributes.aPhase.needsUpdate = true;
-    this.nodeMesh.geometry.attributes.aVisibility.needsUpdate = true;
-    this.nodeMaterial.uniforms.uTime.value = elapsed;
-    this.nodeMaterial.uniforms.uProgress.value = progress;
+    this.streakPositions = new Float32Array(CONFIG.streakCount * 6);
+    this.streakColors = new Float32Array(CONFIG.streakCount * 6);
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(this.streakPositions, 3).setUsage(THREE.DynamicDrawUsage));
+    geometry.setAttribute('color', new THREE.BufferAttribute(this.streakColors, 3).setUsage(THREE.DynamicDrawUsage));
+    this.streakGeometry = geometry;
+    this.streakMaterial = new THREE.LineBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      fog: true,
+    });
+    this.streakMesh = new THREE.LineSegments(geometry, this.streakMaterial);
+    this.streakMesh.frustumCulled = false;
+    this.group.add(this.streakMesh);
   }
 
-  curvePoint(link, t, target = new THREE.Vector3()) {
-    const start = this.nodePositions[link.from];
-    const end = this.nodePositions[link.to];
+  createDestination() {
+    this.destinationMaterial = new THREE.SpriteMaterial({
+      map: createRadialTexture(),
+      color: 0xe4f7ff,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      depthTest: false,
+      blending: THREE.AdditiveBlending,
+    });
+    this.destination = new THREE.Sprite(this.destinationMaterial);
+    this.destination.position.set(0.2, 0.6, -62);
+    this.destination.scale.set(158, 108, 1);
+    scene.add(this.destination);
+  }
+
+  clusterVisibility(cluster, progress) {
+    const threshold = 0.28 + progress * 0.84;
+    return 1 - smoothstep(threshold, threshold + 0.12, cluster.rank);
+  }
+
+  updatePositions(progress, elapsed, travel) {
+    const hubMatrix = new THREE.Matrix4();
+    const coreMatrix = new THREE.Matrix4();
+    const satelliteMatrix = new THREE.Matrix4();
+    const unitQuaternion = new THREE.Quaternion();
+
+    this.clusters.forEach((cluster, index) => {
+      const z = wrapDepth(cluster.z + travel * cluster.speed);
+      const drift = 0.12 + progress * 0.06;
+      const x = cluster.x + Math.sin(elapsed * 0.19 + cluster.phase) * drift;
+      const y = cluster.y + Math.cos(elapsed * 0.16 + cluster.phase * 1.2) * drift * 0.72;
+      const position = this.hubPositions[index].set(x, y, z);
+      const mobileVelocityFade = isMobile ? 1 - smoothstep(0.48, 0.88, progress) * 0.88 : 1;
+      const visibility = this.clusterVisibility(cluster, progress) * mobileVelocityFade;
+      const nearFactor = smoothstep(-34, 4, z);
+      const scale = cluster.size * (0.86 + nearFactor * 0.44) * (isMobile ? 0.68 : 1);
+      hubMatrix.compose(position, unitQuaternion, new THREE.Vector3(1, 1, 1));
+      this.hubFrontMesh.setMatrixAt(index, hubMatrix);
+      this.hubBackMesh.setMatrixAt(index, hubMatrix);
+      this.hubScale[index] = scale;
+      this.hubPhase[index] = cluster.phase;
+      this.hubVisibility[index] = visibility;
+      const coreScale = scale * (0.12 + Math.sin(elapsed * 2.2 + cluster.phase) * 0.025 + progress * 0.05) * visibility;
+      coreMatrix.compose(position, unitQuaternion, new THREE.Vector3(coreScale, coreScale, coreScale));
+      this.hubCoreMesh.setMatrixAt(index, coreMatrix);
+    });
+
+    this.satellites.forEach((satellite, index) => {
+      const hub = this.hubPositions[satellite.clusterIndex];
+      const orbit = elapsed * 0.055 + satellite.phase;
+      const x = hub.x + satellite.offsetX + Math.sin(orbit) * 0.07;
+      const y = hub.y + satellite.offsetY + Math.cos(orbit * 0.87) * 0.06;
+      const z = hub.z + satellite.offsetZ;
+      const position = this.satellitePositions[index].set(x, y, z);
+      const cluster = this.clusters[satellite.clusterIndex];
+      const clusterVisible = this.clusterVisibility(cluster, progress);
+      const satelliteVisible = 1 - smoothstep(0.42 + progress * 0.58, 0.56 + progress * 0.58, satellite.rank);
+      satelliteMatrix.compose(position, unitQuaternion, new THREE.Vector3(1, 1, 1));
+      this.satelliteMesh.setMatrixAt(index, satelliteMatrix);
+      this.satelliteScale[index] = satellite.size * (0.9 + smoothstep(-30, 4, z) * 0.32) * (isMobile ? 0.74 : 1);
+      this.satellitePhase[index] = satellite.phase;
+      this.satelliteVisibility[index] = clusterVisible * satelliteVisible;
+    });
+
+    for (const mesh of [this.hubFrontMesh, this.hubBackMesh, this.hubCoreMesh, this.satelliteMesh]) {
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+    for (const attribute of [
+      this.hubFrontMesh.geometry.attributes.aScale,
+      this.hubFrontMesh.geometry.attributes.aPhase,
+      this.hubFrontMesh.geometry.attributes.aVisibility,
+      this.satelliteMesh.geometry.attributes.aScale,
+      this.satelliteMesh.geometry.attributes.aPhase,
+      this.satelliteMesh.geometry.attributes.aVisibility,
+    ]) attribute.needsUpdate = true;
+  }
+
+  quadraticPoint(start, end, arc, sign, t, target) {
     const control = new THREE.Vector3().lerpVectors(start, end, 0.5);
     const dx = end.x - start.x;
     const dy = end.y - start.y;
-    const horizontalLength = Math.max(0.1, Math.hypot(dx, dy));
-    control.x += (-dy / horizontalLength) * link.arc * link.arcSign;
-    control.y += (dx / horizontalLength) * link.arc * link.arcSign;
-    control.z -= link.bridge ? 0.7 : 0.22;
+    const length = Math.max(0.1, Math.hypot(dx, dy));
+    control.x += (-dy / length) * arc * sign;
+    control.y += (dx / length) * arc * sign + arc * 0.28;
+    control.z -= arc * 0.34;
     const inverse = 1 - t;
-    target.set(
+    return target.set(
       inverse * inverse * start.x + 2 * inverse * t * control.x + t * t * end.x,
       inverse * inverse * start.y + 2 * inverse * t * control.y + t * t * end.y,
       inverse * inverse * start.z + 2 * inverse * t * control.z + t * t * end.z,
     );
-    return target;
   }
 
-  updateLinks(progress, elapsed) {
-    const localThreshold = 0.23 + progress * 0.58;
-    const bridgeThreshold = Math.max(0, (progress - 0.24) / 0.76);
-    const warm = new THREE.Color(0.34, 0.66, 0.78);
-    const bright = new THREE.Color(0.82, 0.95, 1);
-    let vertexOffset = 0;
+  writeCurve(system, start, end, arc, sign, intensity, color, vertexOffset) {
     const pointA = new THREE.Vector3();
     const pointB = new THREE.Vector3();
-
-    this.links.forEach((link) => {
-      const threshold = link.bridge ? bridgeThreshold : localThreshold;
-      if (link.rank > threshold) return;
-      const fire = 0.3 + 0.7 * smoothstep(0.52, 1, Math.sin(elapsed * (0.8 + progress * 2.6) + link.phase) * 0.5 + 0.5);
-      const color = warm.clone().lerp(bright, fire * (0.35 + progress * 0.45));
-      for (let segment = 0; segment < CONFIG.linkSegments; segment += 1) {
-        const t0 = segment / CONFIG.linkSegments;
-        const t1 = (segment + 1) / CONFIG.linkSegments;
-        this.curvePoint(link, t0, pointA);
-        this.curvePoint(link, t1, pointB);
-        const edgeFade = Math.sin(t0 * Math.PI) * 0.64 + 0.18;
-        const intensity = edgeFade * (link.bridge ? 0.52 + progress * 0.36 : 0.74);
-        for (const point of [pointA, pointB]) {
-          this.linkPositions[vertexOffset * 3] = point.x;
-          this.linkPositions[vertexOffset * 3 + 1] = point.y;
-          this.linkPositions[vertexOffset * 3 + 2] = point.z;
-          this.linkColors[vertexOffset * 3] = color.r * intensity;
-          this.linkColors[vertexOffset * 3 + 1] = color.g * intensity;
-          this.linkColors[vertexOffset * 3 + 2] = color.b * intensity;
-          vertexOffset += 1;
-        }
+    for (let segment = 0; segment < system.segments; segment += 1) {
+      const t0 = segment / system.segments;
+      const t1 = (segment + 1) / system.segments;
+      this.quadraticPoint(start, end, arc, sign, t0, pointA);
+      this.quadraticPoint(start, end, arc, sign, t1, pointB);
+      const fade = (0.18 + Math.sin((t0 + t1) * 0.5 * Math.PI) * 0.82) * intensity;
+      for (const point of [pointA, pointB]) {
+        system.positions[vertexOffset * 3] = point.x;
+        system.positions[vertexOffset * 3 + 1] = point.y;
+        system.positions[vertexOffset * 3 + 2] = point.z;
+        system.colors[vertexOffset * 3] = color.r * fade;
+        system.colors[vertexOffset * 3 + 1] = color.g * fade;
+        system.colors[vertexOffset * 3 + 2] = color.b * fade;
+        vertexOffset += 1;
       }
-    });
-
-    this.linkGeometry.setDrawRange(0, vertexOffset);
-    this.linkGeometry.attributes.position.needsUpdate = true;
-    this.linkGeometry.attributes.color.needsUpdate = true;
+    }
+    return vertexOffset;
   }
 
-  updateTrails(progress) {
-    const trailLength = smoothstep(0.24, 0.94, progress) * (0.25 + progress * 3.9);
-    const visibleThreshold = 0.25 + progress * 0.86;
-    this.nodes.forEach((node, index) => {
-      const position = this.nodePositions[index];
-      const base = index * 6;
-      const visibility = smoothstep(node.visibilityRank - 0.08, node.visibilityRank + 0.12, visibleThreshold);
-      this.trailPositions[base] = position.x;
-      this.trailPositions[base + 1] = position.y;
-      this.trailPositions[base + 2] = position.z - trailLength * node.speed;
-      this.trailPositions[base + 3] = position.x;
-      this.trailPositions[base + 4] = position.y;
-      this.trailPositions[base + 5] = position.z;
-      this.trailColors[base] = 0.04 * visibility;
-      this.trailColors[base + 1] = 0.14 * visibility;
-      this.trailColors[base + 2] = 0.2 * visibility;
-      this.trailColors[base + 3] = (0.36 + progress * 0.38) * visibility;
-      this.trailColors[base + 4] = (0.7 + progress * 0.24) * visibility;
-      this.trailColors[base + 5] = 1 * visibility;
+  updateLocalLinks(progress, elapsed) {
+    const system = this.localLineSystem;
+    const color = new THREE.Color(0.22, 0.55, 0.75);
+    let vertexOffset = 0;
+    this.satellites.forEach((satellite, index) => {
+      const cluster = this.clusters[satellite.clusterIndex];
+      const visibility = this.clusterVisibility(cluster, progress);
+      if (visibility < 0.02 || satellite.rank > 0.38 + progress * 0.58) return;
+      const start = this.hubPositions[satellite.clusterIndex];
+      const end = this.satellitePositions[index];
+      const fire = 0.62 + 0.38 * Math.sin(elapsed * 0.9 + satellite.phase);
+      if (index % 3 === 0) {
+        vertexOffset = this.writeCurve(system, start, end, 0.34, index % 2 ? 1 : -1, visibility * (0.3 + fire * 0.24), color, vertexOffset);
+      }
+      const localIndex = index % CONFIG.satellitesPerCluster;
+      const siblingIndex = satellite.clusterIndex * CONFIG.satellitesPerCluster + (localIndex + 1) % CONFIG.satellitesPerCluster;
+      const sibling = this.satellitePositions[siblingIndex];
+      if (sibling) vertexOffset = this.writeCurve(system, end, sibling, 0.3, index % 2 ? -1 : 1, visibility * (0.38 + fire * 0.16), color, vertexOffset);
     });
-    this.trailGeometry.attributes.position.needsUpdate = true;
-    this.trailGeometry.attributes.color.needsUpdate = true;
-    this.trailMesh.material.opacity = smoothstep(0.2, 0.8, progress) * 0.74;
+    system.geometry.setDrawRange(0, vertexOffset);
+    system.geometry.attributes.position.needsUpdate = true;
+    system.geometry.attributes.color.needsUpdate = true;
+  }
+
+  highwayVisible(highway, progress) {
+    const start = this.hubPositions[highway.from];
+    const end = this.hubPositions[highway.to];
+    const separation = Math.abs(start.z - end.z);
+    const threshold = 0.18 + progress * 0.98;
+    return separation < 33 && highway.rank <= threshold;
+  }
+
+  updateHighways(progress, elapsed) {
+    const system = this.highwayLineSystem;
+    let vertexOffset = 0;
+    this.highways.forEach((highway) => {
+      if (!this.highwayVisible(highway, progress)) return;
+      const start = this.hubPositions[highway.from];
+      const end = this.hubPositions[highway.to];
+      const fire = smoothstep(0.42, 1, Math.sin(elapsed * (0.55 + progress * 1.6) + highway.phase) * 0.5 + 0.5);
+      const color = new THREE.Color(0.42, 0.74, 0.94).lerp(new THREE.Color(0.9, 0.98, 1), fire * 0.72);
+      const mobileHighwayEnergy = isMobile ? 0.68 * (1 - smoothstep(0.62, 0.92, progress) * 0.64) : 1;
+      const intensity = (0.82 + progress * 0.68 + fire * 0.3) * mobileHighwayEnergy;
+      vertexOffset = this.writeCurve(system, start, end, highway.arc, highway.sign, intensity, color, vertexOffset);
+    });
+    system.geometry.setDrawRange(0, vertexOffset);
+    system.geometry.attributes.position.needsUpdate = true;
+    system.geometry.attributes.color.needsUpdate = true;
   }
 
   updatePulses(progress, elapsed) {
-    const visibleCount = Math.floor(CONFIG.pulseCount * (0.16 + progress * 0.84));
     const matrix = new THREE.Matrix4();
+    const quaternion = new THREE.Quaternion();
     const position = new THREE.Vector3();
-    this.pulseData.forEach((pulse, index) => {
-      const link = this.links[pulse.linkIndex];
-      const pulseProgress = (elapsed * pulse.speed * (1 + progress * 2.8) + pulse.offset) % 1;
-      this.curvePoint(link, pulseProgress, position);
-      const visibility = index < visibleCount ? 1 : 0;
-      const scale = pulse.scale * visibility * (0.65 + progress * 0.55);
-      matrix.compose(position, new THREE.Quaternion(), new THREE.Vector3(scale, scale, scale));
-      this.pulseMesh.setMatrixAt(index, matrix);
-    });
+    let instanceIndex = 0;
+    for (const pulse of this.pulses) {
+      const highway = this.highways[pulse.highwayIndex];
+      const visible = this.highwayVisible(highway, progress) && pulse.rank <= 0.2 + progress * 0.88;
+      const speed = pulse.speed * (1 + progress * 4.2);
+      const t = (elapsed * speed + pulse.offset) % 1;
+      for (let ghost = 0; ghost < 3; ghost += 1) {
+        const ghostT = Math.max(0, t - ghost * (0.018 + progress * 0.012));
+        if (visible) {
+          this.quadraticPoint(
+            this.hubPositions[highway.from],
+            this.hubPositions[highway.to],
+            highway.arc,
+            highway.sign,
+            ghostT,
+            position,
+          );
+        } else position.set(0, 0, -120);
+        const scale = visible ? pulse.scale * (1 - ghost * 0.27) * (0.82 + progress * 0.7) * (isMobile ? 0.42 : 1) : 0;
+        matrix.compose(position, quaternion, new THREE.Vector3(scale, scale, scale));
+        this.pulseMesh.setMatrixAt(instanceIndex, matrix);
+        instanceIndex += 1;
+      }
+    }
     this.pulseMesh.instanceMatrix.needsUpdate = true;
+    this.pulseMaterial.opacity = isMobile ? 0.36 + progress * 0.08 : 0.78 + progress * 0.22;
   }
 
-  update(progress, elapsed, delta) {
-    this.updateNodePositions(progress, elapsed, delta);
-    this.updateLinks(progress, elapsed);
-    this.updateTrails(progress);
+  updateStreaks(progress, travel) {
+    const active = smoothstep(0.2, 0.9, progress);
+    const length = 0.22 + Math.pow(progress, 2.15) * 9.4;
+    this.streakData.forEach((streak, index) => {
+      const z = wrapDepth(streak.z + travel * streak.speed);
+      const visible = streak.rank < 0.14 + progress * 0.9 ? active : 0;
+      const base = index * 6;
+      this.streakPositions[base] = streak.x;
+      this.streakPositions[base + 1] = streak.y;
+      this.streakPositions[base + 2] = z - length * streak.speed;
+      this.streakPositions[base + 3] = streak.x;
+      this.streakPositions[base + 4] = streak.y;
+      this.streakPositions[base + 5] = z;
+      this.streakColors[base] = 0.04 * visible;
+      this.streakColors[base + 1] = 0.13 * visible;
+      this.streakColors[base + 2] = 0.22 * visible;
+      this.streakColors[base + 3] = (0.48 + progress * 0.34) * visible;
+      this.streakColors[base + 4] = (0.74 + progress * 0.24) * visible;
+      this.streakColors[base + 5] = visible;
+    });
+    this.streakGeometry.attributes.position.needsUpdate = true;
+    this.streakGeometry.attributes.color.needsUpdate = true;
+    this.streakMaterial.opacity = active * (0.48 + progress * 0.42);
+  }
+
+  updateMaterials(progress, elapsed, travel) {
+    for (const material of [this.hubFrontMaterial, this.hubBackMaterial, this.satelliteMaterial]) {
+      material.uniforms.uTime.value = elapsed;
+      material.uniforms.uProgress.value = progress;
+    }
+    this.microMaterial.uniforms.uTime.value = elapsed;
+    this.microMaterial.uniforms.uTravel.value = travel;
+    this.microMaterial.uniforms.uProgress.value = progress;
+    this.hubCoreMaterial.opacity = isMobile
+      ? (0.025 + progress * 0.025) * (1 - smoothstep(0.62, 0.9, progress))
+      : 0.12 + progress * 0.18;
+    const destinationProgress = isMobile ? smoothstep(0.955, 1, progress) : smoothstep(0.62, 0.98, progress);
+    const destinationStrength = isMobile ? 0.08 : 0.48;
+    this.destinationMaterial.opacity = destinationProgress * (0.015 + progress * destinationStrength);
+  }
+
+  update(progress, elapsed, delta, travel) {
+    this.updatePositions(progress, elapsed, travel);
+    this.updateLocalLinks(progress, elapsed);
+    this.updateHighways(progress, elapsed);
     this.updatePulses(progress, elapsed);
-    this.group.rotation.z = Math.sin(elapsed * 0.08) * 0.018;
-    this.group.scale.setScalar(1.12);
+    this.updateStreaks(progress, travel);
+    this.updateMaterials(progress, elapsed, travel);
+    this.group.rotation.z = Math.sin(elapsed * 0.07) * 0.012;
+    if (isMobile) this.group.position.y = lerp(-0.9, 0.75, smoothstep(0.08, 0.82, progress));
   }
 }
 
-const field = new NeuralField();
+const world = new NeuralWorld();
 
 function resize() {
   const width = window.innerWidth;
@@ -406,11 +740,14 @@ function resize() {
   camera.updateProjectionMatrix();
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.setSize(width, height, false);
+  composer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+  composer.setSize(width, height);
+  bloomPass.setSize(width, height);
 }
 
 function updateScrollProgress() {
   const range = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-  state.targetProgress = reducedMotion ? 0.16 : THREE.MathUtils.clamp(window.scrollY / range, 0, 1);
+  state.targetProgress = reducedMotion ? 0.16 : clamp(window.scrollY / range, 0, 1);
 }
 
 function updatePointer(event) {
@@ -418,26 +755,51 @@ function updatePointer(event) {
   state.pointerY = event.clientY / window.innerHeight * 2 - 1;
 }
 
+function updateCamera(progress, elapsed, delta) {
+  const mobileScale = isMobile ? 0.54 : 1;
+  const targetX = lerp(-0.35, 0.75, smoothstep(0.12, 0.84, progress)) * mobileScale + state.pointerX * (isMobile ? 0.06 : 0.16);
+  const targetY = lerp(0.15, -0.3, smoothstep(0.18, 0.9, progress)) * mobileScale - state.pointerY * (isMobile ? 0.04 : 0.1);
+  const targetZ = lerp(isMobile ? 8.2 : 7.2, isMobile ? 6.7 : 5.15, smoothstep(0.08, 0.88, progress));
+  const ease = 1 - Math.exp(-delta * 2.5);
+  camera.position.x += (targetX - camera.position.x) * ease;
+  camera.position.y += (targetY - camera.position.y) * ease;
+  camera.position.z += (targetZ - camera.position.z) * ease;
+  camera.fov = isMobile
+    ? lerp(62, 72, smoothstep(0.24, 0.94, progress))
+    : lerp(56, 67, smoothstep(0.24, 0.94, progress));
+  camera.updateProjectionMatrix();
+  camera.rotation.x = lerp(0, -0.025, progress) + Math.sin(elapsed * 0.11) * 0.003;
+  camera.rotation.y = lerp(0, 0.045, progress) + state.pointerX * 0.004;
+  camera.rotation.z = Math.sin(elapsed * 0.13) * 0.005;
+}
+
 function render(now) {
   if (!state.running) return;
   const delta = Math.min(0.05, (now - state.lastFrame) / 1000);
   state.lastFrame = now;
   state.elapsed += delta;
-  state.progress += (state.targetProgress - state.progress) * (1 - Math.exp(-delta * 6.8));
+  state.progress += (state.targetProgress - state.progress) * (1 - Math.exp(-delta * 6.6));
+  const velocity = reducedMotion ? 0 : 0.34 + Math.pow(state.progress, 2.25) * 17.8;
+  state.travel += velocity * delta;
 
-  field.update(state.progress, state.elapsed, reducedMotion ? 0 : delta);
+  world.update(state.progress, state.elapsed, reducedMotion ? 0 : delta, state.travel);
+  updateCamera(state.progress, state.elapsed, delta);
 
-  camera.position.x += ((state.pointerX * 0.22) - camera.position.x) * (1 - Math.exp(-delta * 2.3));
-  camera.position.y += ((-state.pointerY * 0.14) - camera.position.y) * (1 - Math.exp(-delta * 2.3));
-  camera.rotation.z = Math.sin(state.elapsed * 0.13) * 0.006;
-  scene.fog.density = 0.021 - state.progress * 0.009;
-  renderer.toneMappingExposure = 1.04 + state.progress * 0.72;
+  scene.fog.density = lerp(0.018, 0.0075, smoothstep(0.25, 0.96, state.progress));
+  renderer.toneMappingExposure = isMobile
+    ? lerp(0.94, 1.06, smoothstep(0.3, 1, state.progress))
+    : lerp(1.02, 1.62, smoothstep(0.3, 1, state.progress));
+  bloomPass.strength = isMobile
+    ? lerp(0.1, 0.16, smoothstep(0.2, 1, state.progress))
+    : lerp(0.45, 1.38, smoothstep(0.2, 1, state.progress));
+  bloomPass.radius = isMobile ? lerp(0.3, 0.42, state.progress) : lerp(0.62, 0.88, state.progress);
+  bloomPass.threshold = isMobile ? lerp(0.95, 0.9, state.progress) : lerp(0.74, 0.48, state.progress);
 
-  const whiteProgress = smoothstep(0.74, 1, state.progress);
-  arrival.style.opacity = String(Math.pow(whiteProgress, 1.38) * 0.96);
+  const finalWhite = smoothstep(isMobile ? 0.91 : 0.965, isMobile ? 0.985 : 1, state.progress);
+  arrival.style.opacity = String(Math.pow(finalWhite, isMobile ? 1.15 : 1.7) * (isMobile ? 1 : 0.93));
   scrollCue.style.opacity = String(1 - smoothstep(0.02, 0.14, state.progress));
 
-  renderer.render(scene, camera);
+  composer.render();
   requestAnimationFrame(render);
 }
 
