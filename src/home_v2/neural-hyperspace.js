@@ -75,7 +75,7 @@ const renderer = createRenderer();
 if (!renderer) throw new Error('WebGL unavailable');
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x020b14, 0.038);
+scene.fog = new THREE.FogExp2(0x062d46, 0.026);
 
 const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 150);
 camera.position.set(-0.35, 0.15, 7.2);
@@ -486,9 +486,9 @@ class NeuralWorld {
     this.hazeSprites = Array.from({ length: CONFIG.atmosphericHazeCount }, (_, index) => {
       const material = new THREE.SpriteMaterial({
         map: texture,
-        color: index % 3 === 0 ? 0x063e60 : 0x031f34,
+        color: index % 3 === 0 ? 0x0a5278 : 0x062d46,
         transparent: true,
-        opacity: 0.085 + random() * 0.055,
+        opacity: 0.055 + random() * 0.035,
         depthWrite: false,
         depthTest: false,
         blending: THREE.NormalBlending,
@@ -1015,7 +1015,7 @@ class NeuralWorld {
     const atmosphereFade = 1 - smoothstep(0.42, 0.92, progress) * 0.28;
     this.atmosphericDustMaterial.opacity = 0.32 * atmosphereFade;
     this.atmosphereGroup.rotation.z = Math.sin(elapsed * 0.035) * 0.018;
-    this.atmosphereGroup.position.z = wrapDepth(travel * 0.055, 0, 96);
+    this.atmosphereGroup.position.z = Math.sin(travel * 0.008) * 1.8;
     for (const sprite of this.hazeSprites) {
       sprite.material.opacity = sprite.material.userData.baseOpacity * atmosphereFade;
     }
@@ -1095,7 +1095,7 @@ function render(now) {
   world.update(state.progress, state.elapsed, reducedMotion ? 0 : delta, state.travel);
   updateCamera(state.progress, state.elapsed, delta);
 
-  scene.fog.density = lerp(0.038, 0.018, smoothstep(0.18, 0.96, state.progress));
+  scene.fog.density = lerp(0.026, 0.012, smoothstep(0.18, 0.96, state.progress));
   renderer.toneMappingExposure = isMobile
     ? lerp(0.94, 1.06, smoothstep(0.3, 1, state.progress))
     : lerp(1.02, 1.62, smoothstep(0.3, 1, state.progress));

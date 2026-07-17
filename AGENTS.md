@@ -79,7 +79,7 @@ Canonical palette from Mantra Design Guide (dark mode):
 - Hub-to-hub, local, and free-ended dendrite tendrils remain visible at every scroll level; velocity streaks add motion but never replace the neural connection graph
 - Camera pose is scroll-owned only; pointer and tap input never alter framing, rotation, or parallax
 - Neural shells, satellites, tendrils, pulses, particles, and streaks use the darkest CTA-blue family rather than pearl-white; traveling pulses follow shell-to-shell surface curves and dissolve at both membranes
-- Dark blue depth fog, dense atmospheric dust, and normally composited haze volumes remain visible across scroll, making the depth medium unmistakable; mobile and desktop velocity streaks both project along the depth axis
+- Dark low-contrast CTA-blue depth fog, dense atmospheric dust, and normally composited haze volumes remain inside the camera frustum across scroll, making the depth medium unmistakable; mobile and desktop velocity streaks both project along the depth axis
 - Scroll releases additional hubs, satellites, micro-nodes, connectors, camera travel, velocity, bloom, and white arrival
 - Caps DPR at 1.5, pauses when hidden, handles WebGL context loss, and honors reduced motion
 
