@@ -242,6 +242,9 @@ class NeuralWorld {
     scene.add(this.group);
 
     this.clusters = this.createClusters();
+    this.worldMinDepth = Math.min(...this.clusters.map((cluster) => cluster.z));
+    this.worldExitPadding = isMobile ? 4.2 : 5.2;
+    this.worldCycleDistance = camera.position.z - this.worldMinDepth + this.worldExitPadding;
     this.satellites = this.createSatellites();
     this.hubPositions = this.clusters.map(() => new THREE.Vector3());
     this.satellitePositions = this.satellites.map(() => new THREE.Vector3());
@@ -454,16 +457,19 @@ class NeuralWorld {
 
   createAtmosphere() {
     this.atmosphereGroup = new THREE.Group();
-    this.group.add(this.atmosphereGroup);
+    scene.add(this.atmosphereGroup);
 
     const texture = createRadialTexture();
     const positions = new Float32Array(CONFIG.atmosphericDustCount * 3);
+    const viewportAspect = window.innerWidth / Math.max(1, window.innerHeight);
+    const halfFovTangent = Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5));
     for (let index = 0; index < CONFIG.atmosphericDustCount; index += 1) {
-      const angle = random() * Math.PI * 2;
-      const radius = 1.8 + Math.pow(random(), 0.7) * 11.5;
-      positions[index * 3] = Math.cos(angle) * radius;
-      positions[index * 3 + 1] = Math.sin(angle) * radius * (isMobile ? 0.95 : 0.62);
-      positions[index * 3 + 2] = -(5 + random() * 78);
+      const depth = 5 + random() * 78;
+      const halfHeight = halfFovTangent * depth;
+      const halfWidth = halfHeight * viewportAspect;
+      positions[index * 3] = (random() * 2 - 1) * halfWidth * 0.96;
+      positions[index * 3 + 1] = (random() * 2 - 1) * halfHeight * 0.96;
+      positions[index * 3 + 2] = -depth;
     }
     const dustGeometry = new THREE.BufferGeometry();
     dustGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -483,12 +489,22 @@ class NeuralWorld {
     this.atmosphericDust.frustumCulled = false;
     this.atmosphereGroup.add(this.atmosphericDust);
 
+    const nebulaAnchors = isMobile ? [
+      [-0.72, -0.7], [0.68, -0.62], [-0.56, -0.18], [0.62, -0.04],
+      [-0.76, 0.42], [0.7, 0.5], [-0.18, 0.78], [0.16, -0.86],
+    ] : [
+      [-0.82, -0.62], [-0.32, -0.72], [0.28, -0.68], [0.8, -0.56],
+      [-0.72, -0.08], [-0.18, -0.16], [0.38, -0.04], [0.84, 0.02],
+      [-0.78, 0.5], [-0.3, 0.62], [0.24, 0.52], [0.76, 0.64],
+    ];
     this.hazeSprites = Array.from({ length: CONFIG.atmosphericHazeCount }, (_, index) => {
+      const anchor = nebulaAnchors[index % nebulaAnchors.length];
+      const layer = Math.floor(index / nebulaAnchors.length);
       const material = new THREE.SpriteMaterial({
         map: texture,
-        color: index % 3 === 0 ? 0x0a5278 : 0x062d46,
+        color: index % 4 === 0 ? 0x0a5278 : index % 2 === 0 ? 0x073a59 : 0x062d46,
         transparent: true,
-        opacity: 0.055 + random() * 0.035,
+        opacity: 0.038 + random() * 0.026,
         depthWrite: false,
         depthTest: false,
         blending: THREE.NormalBlending,
@@ -496,14 +512,17 @@ class NeuralWorld {
       });
       material.userData.baseOpacity = material.opacity;
       const sprite = new THREE.Sprite(material);
-      const depth = -(9 + index * (64 / CONFIG.atmosphericHazeCount) + random() * 5);
+      const depthFraction = (index + 0.5) / CONFIG.atmosphericHazeCount;
+      const depthDistance = 5 + depthFraction * 72 + layer * 2.5;
+      const halfHeight = halfFovTangent * depthDistance;
+      const halfWidth = halfHeight * viewportAspect;
       sprite.position.set(
-        (random() - 0.5) * (isMobile ? 8 : 15),
-        (random() - 0.5) * (isMobile ? 15 : 9),
-        depth,
+        anchor[0] * halfWidth * 0.92 + (random() - 0.5) * halfWidth * 0.08,
+        anchor[1] * halfHeight * 0.92 + (random() - 0.5) * halfHeight * 0.08,
+        -depthDistance,
       );
-      const scale = 14 + random() * 18;
-      sprite.scale.set(scale, scale * (0.58 + random() * 0.34), 1);
+      const screenScale = halfHeight * (0.28 + random() * 0.18);
+      sprite.scale.set(screenScale * (1.3 + random() * 0.55), screenScale * (0.58 + random() * 0.3), 1);
       this.atmosphereGroup.add(sprite);
       return sprite;
     });
@@ -640,8 +659,9 @@ class NeuralWorld {
     const satelliteMatrix = new THREE.Matrix4();
     const unitQuaternion = new THREE.Quaternion();
 
+    const connectedWorldTravel = reducedMotion ? 0 : travel % this.worldCycleDistance;
     this.clusters.forEach((cluster, index) => {
-      const z = wrapDepth(cluster.z + travel * cluster.speed);
+      const z = cluster.z + connectedWorldTravel;
       const drift = 0.028 + smoothstep(0.08, 0.5, progress) * 0.11;
       const x = cluster.x + Math.sin(elapsed * 0.19 + cluster.phase) * drift;
       const y = cluster.y + Math.cos(elapsed * 0.16 + cluster.phase * 1.2) * drift * 0.72;
@@ -1014,8 +1034,10 @@ class NeuralWorld {
     this.microMaterial.uniforms.uProgress.value = progress;
     const atmosphereFade = 1 - smoothstep(0.42, 0.92, progress) * 0.28;
     this.atmosphericDustMaterial.opacity = 0.32 * atmosphereFade;
-    this.atmosphereGroup.rotation.z = Math.sin(elapsed * 0.035) * 0.018;
-    this.atmosphereGroup.position.z = Math.sin(travel * 0.008) * 1.8;
+    this.atmosphereGroup.rotation.z = Math.sin(elapsed * 0.022) * 0.008;
+    this.atmosphereGroup.position.x = Math.sin(elapsed * 0.031) * (isMobile ? 0.28 : 0.5);
+    this.atmosphereGroup.position.y = Math.cos(elapsed * 0.026) * (isMobile ? 0.4 : 0.24);
+    this.atmosphereGroup.position.z = Math.sin(travel * 0.006) * 0.9;
     for (const sprite of this.hazeSprites) {
       sprite.material.opacity = sprite.material.userData.baseOpacity * atmosphereFade;
     }
