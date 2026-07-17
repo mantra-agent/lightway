@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { Pass, FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const stage = document.querySelector('.neural-stage');
@@ -15,8 +16,8 @@ const CONFIG = Object.freeze({
   microCount: isMobile ? 760 : 1500,
   streakCount: isMobile ? 260 : 560,
   pulseCount: isMobile ? 64 : 120,
-  atmosphericDustCount: isMobile ? 300 : 560,
-  atmosphericHazeCount: isMobile ? 10 : 18,
+  hubFogParticleCount: isMobile ? 1700 : 3600,
+  interstitialFogParticleCount: isMobile ? 380 : 900,
   localSegments: 12,
   highwaySegments: 34,
   depthFar: 96,
@@ -75,13 +76,145 @@ const renderer = createRenderer();
 if (!renderer) throw new Error('WebGL unavailable');
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x1a9bdb, 0.045);
+scene.fog = null;
 
 const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 150);
 camera.position.set(-0.35, 0.15, 7.2);
 
-const composer = new EffectComposer(renderer);
+const composerTarget = new THREE.WebGLRenderTarget(1, 1, {
+  type: THREE.HalfFloatType,
+  depthBuffer: true,
+});
+composerTarget.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedIntType);
+const composer = new EffectComposer(renderer, composerTarget);
+composer.renderTarget1.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedIntType);
+composer.renderTarget2.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedIntType);
 composer.addPass(new RenderPass(scene, camera));
+
+
+const depthFogVertexShader = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const depthFogFragmentShader = `
+  uniform sampler2D tDiffuse;
+  uniform sampler2D tDepth;
+  uniform mat4 uInverseProjection;
+  uniform mat4 uCameraWorld;
+  uniform float uCameraNear;
+  uniform float uCameraFar;
+  uniform float uTime;
+  uniform float uProgress;
+  uniform float uAspect;
+  varying vec2 vUv;
+
+  float hash31(vec3 p) {
+    p = fract(p * 0.1031);
+    p += dot(p, p.yzx + 33.33);
+    return fract((p.x + p.y) * p.z);
+  }
+
+  float noise3(vec3 p) {
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(
+      mix(mix(hash31(i), hash31(i + vec3(1,0,0)), f.x),
+          mix(hash31(i + vec3(0,1,0)), hash31(i + vec3(1,1,0)), f.x), f.y),
+      mix(mix(hash31(i + vec3(0,0,1)), hash31(i + vec3(1,0,1)), f.x),
+          mix(hash31(i + vec3(0,1,1)), hash31(i + vec3(1,1,1)), f.x), f.y),
+      f.z
+    );
+  }
+
+  float fbm(vec3 p) {
+    float value = 0.0;
+    float amplitude = 0.55;
+    for (int octave = 0; octave < 4; octave++) {
+      value += noise3(p) * amplitude;
+      p = p * 2.03 + vec3(7.1, 3.7, 5.4);
+      amplitude *= 0.48;
+    }
+    return value;
+  }
+
+  float perspectiveDepthToViewZ(float depth) {
+    return (uCameraNear * uCameraFar) /
+      ((uCameraFar - uCameraNear) * depth - uCameraFar);
+  }
+
+  vec3 reconstructWorldPosition(float depth) {
+    vec4 clip = vec4(vUv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+    vec4 view = uInverseProjection * clip;
+    view /= max(0.0001, view.w);
+    return (uCameraWorld * view).xyz;
+  }
+
+  void main() {
+    vec4 sceneColor = texture2D(tDiffuse, vUv);
+    float depth = texture2D(tDepth, vUv).x;
+    float viewDistance = depth < 0.99999
+      ? -perspectiveDepthToViewZ(depth)
+      : mix(30.0, 72.0, length(vUv - 0.5));
+    vec3 worldPosition = depth < 0.99999
+      ? reconstructWorldPosition(depth)
+      : cameraPosition + normalize(vec3((vUv.x * 2.0 - 1.0) * uAspect, vUv.y * 2.0 - 1.0, -1.45)) * viewDistance;
+
+    vec3 drift = vec3(uTime * 0.018, -uTime * 0.011, uTime * 0.008);
+    float broad = fbm(worldPosition * 0.055 + drift);
+    float detail = fbm(worldPosition * 0.13 - drift * 0.7);
+    float pockets = smoothstep(0.38, 0.78, broad * 0.72 + detail * 0.38);
+    float distanceFog = 1.0 - exp(-viewDistance * mix(0.009, 0.014, 1.0 - uProgress));
+    float atmosphereFade = 1.0 - smoothstep(0.72, 0.98, uProgress) * 0.72;
+    float fogAmount = clamp(distanceFog * (0.18 + pockets * 0.72) * atmosphereFade, 0.0, 0.62);
+    vec3 fogColor = mix(vec3(0.008, 0.055, 0.09), vec3(0.018, 0.22, 0.34), broad);
+    gl_FragColor = vec4(mix(sceneColor.rgb, fogColor, fogAmount), sceneColor.a);
+  }
+`;
+
+class DepthNoiseFogPass extends Pass {
+  constructor() {
+    super();
+    this.material = new THREE.ShaderMaterial({
+      vertexShader: depthFogVertexShader,
+      fragmentShader: depthFogFragmentShader,
+      uniforms: {
+        tDiffuse: { value: null },
+        tDepth: { value: null },
+        uInverseProjection: { value: new THREE.Matrix4() },
+        uCameraWorld: { value: new THREE.Matrix4() },
+        uCameraNear: { value: camera.near },
+        uCameraFar: { value: camera.far },
+        uTime: { value: 0 },
+        uProgress: { value: 0 },
+        uAspect: { value: 1 },
+      },
+      depthWrite: false,
+      depthTest: false,
+    });
+    this.fsQuad = new FullScreenQuad(this.material);
+  }
+
+  render(rendererInstance, writeBuffer, readBuffer) {
+    this.material.uniforms.tDiffuse.value = readBuffer.texture;
+    this.material.uniforms.tDepth.value = readBuffer.depthTexture;
+    rendererInstance.setRenderTarget(this.renderToScreen ? null : writeBuffer);
+    if (this.clear) rendererInstance.clear();
+    this.fsQuad.render(rendererInstance);
+  }
+
+  dispose() {
+    this.material.dispose();
+    this.fsQuad.dispose();
+  }
+}
+
+const depthFogPass = new DepthNoiseFogPass();
+composer.addPass(depthFogPass);
 const bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.48, 0.72, 0.7);
 composer.addPass(bloomPass);
 
@@ -196,6 +329,48 @@ const microFragmentShader = `
     float halo = 1.0 - smoothstep(0.12, 0.5, distanceFromCenter);
     vec3 color = mix(vec3(0.004, 0.105, 0.18), vec3(0.026, 0.34, 0.52), vPulse);
     gl_FragColor = vec4(color * (core * 1.5 + halo * 0.35), vAlpha * (core + halo * 0.32));
+  }
+`;
+
+
+const fogParticleVertexShader = `
+  attribute float aSize;
+  attribute float aPhase;
+  attribute float aDensity;
+  varying float vAlpha;
+  varying float vDensity;
+  uniform float uTime;
+  uniform float uWorldTravel;
+  uniform float uCycleDistance;
+  uniform float uProgress;
+
+  void main() {
+    vec3 p = position;
+    p.z += mod(uWorldTravel, uCycleDistance);
+    p.x += sin(uTime * 0.075 + aPhase) * 0.16;
+    p.y += cos(uTime * 0.061 + aPhase * 1.27) * 0.13;
+    p.z += sin(uTime * 0.043 + aPhase * 0.73) * 0.18;
+    vec4 viewPosition = modelViewMatrix * vec4(p, 1.0);
+    float distanceFade = 1.0 - smoothstep(46.0, 98.0, -viewPosition.z);
+    float scrollFade = 1.0 - smoothstep(0.72, 0.98, uProgress) * 0.72;
+    vDensity = aDensity;
+    vAlpha = distanceFade * scrollFade * (0.2 + aDensity * 0.72);
+    gl_PointSize = clamp(aSize * (150.0 / max(1.0, -viewPosition.z)), 1.0, 14.0);
+    gl_Position = projectionMatrix * viewPosition;
+  }
+`;
+
+const fogParticleFragmentShader = `
+  varying float vAlpha;
+  varying float vDensity;
+  void main() {
+    vec2 centered = gl_PointCoord - 0.5;
+    float radius = length(centered);
+    float softVolume = 1.0 - smoothstep(0.04, 0.5, radius);
+    float coreVoid = smoothstep(0.0, 0.22, radius);
+    float alpha = softVolume * mix(0.16, 0.5, vDensity) * vAlpha;
+    vec3 color = mix(vec3(0.006, 0.075, 0.12), vec3(0.02, 0.28, 0.43), vDensity);
+    gl_FragColor = vec4(color, alpha * (0.72 + coreVoid * 0.28));
   }
 `;
 
@@ -456,94 +631,65 @@ class NeuralWorld {
   }
 
   createAtmosphere() {
-    this.atmosphereGroup = new THREE.Group();
-    scene.add(this.atmosphereGroup);
+    const hubParticleCount = CONFIG.hubFogParticleCount;
+    const interstitialCount = CONFIG.interstitialFogParticleCount;
+    const totalCount = hubParticleCount + interstitialCount;
+    const positions = new Float32Array(totalCount * 3);
+    const sizes = new Float32Array(totalCount);
+    const phases = new Float32Array(totalCount);
+    const densities = new Float32Array(totalCount);
 
-    const texture = createRadialTexture();
-    const positions = new Float32Array(CONFIG.atmosphericDustCount * 3);
-    const viewportAspect = window.innerWidth / Math.max(1, window.innerHeight);
-    const halfFovTangent = Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5));
-    const neuralDepthBands = this.clusters.map((cluster) => Math.abs(cluster.z));
-    for (let index = 0; index < CONFIG.atmosphericDustCount; index += 1) {
-      const mixedWithNeurons = index / CONFIG.atmosphericDustCount < 0.78;
-      const bandDepth = neuralDepthBands[index % neuralDepthBands.length];
-      const depth = mixedWithNeurons
-        ? Math.max(4, bandDepth + (random() - 0.5) * 9)
-        : 46 + random() * 36;
-      const halfHeight = halfFovTangent * depth;
-      const halfWidth = halfHeight * viewportAspect;
-      const sourceCluster = this.clusters[index % this.clusters.length];
-      positions[index * 3] = mixedWithNeurons && isMobile
-        ? sourceCluster.x * 0.68 + (random() - 0.5) * halfWidth * 0.34
-        : (random() * 2 - 1) * halfWidth * 0.96;
-      positions[index * 3 + 1] = mixedWithNeurons && isMobile
-        ? sourceCluster.y * 0.68 + 0.55 + (random() - 0.5) * halfHeight * 0.34
-        : (random() * 2 - 1) * halfHeight * 0.96;
-      positions[index * 3 + 2] = -depth;
+    for (let index = 0; index < hubParticleCount; index += 1) {
+      const cluster = this.clusters[index % this.clusters.length];
+      const theta = random() * Math.PI * 2;
+      const phi = Math.acos(2 * random() - 1);
+      const radius = Math.pow(random(), 0.58);
+      const horizontalRadius = isMobile ? 2.6 : 3.4;
+      const verticalRadius = isMobile ? 3.5 : 2.5;
+      const depthRadius = 4.2;
+      positions[index * 3] = cluster.x + Math.sin(phi) * Math.cos(theta) * horizontalRadius * radius;
+      positions[index * 3 + 1] = cluster.y + Math.cos(phi) * verticalRadius * radius;
+      positions[index * 3 + 2] = cluster.z + Math.sin(phi) * Math.sin(theta) * depthRadius * radius;
+      sizes[index] = 0.55 + Math.pow(random(), 1.8) * 2.3;
+      phases[index] = random() * Math.PI * 2;
+      densities[index] = 0.42 + random() * 0.58;
     }
-    const dustGeometry = new THREE.BufferGeometry();
-    dustGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    this.atmosphericDustMaterial = new THREE.PointsMaterial({
-      map: texture,
-      color: 0x063e60,
-      size: isMobile ? 0.34 : 0.4,
-      transparent: true,
-      opacity: 0.32,
-      alphaTest: 0.003,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      sizeAttenuation: true,
-      fog: true,
-    });
-    this.atmosphericDust = new THREE.Points(dustGeometry, this.atmosphericDustMaterial);
-    this.atmosphericDust.frustumCulled = false;
-    this.atmosphereGroup.add(this.atmosphericDust);
 
-    const nebulaAnchors = isMobile ? [
-      [-0.72, -0.7], [0.68, -0.62], [-0.56, -0.18], [0.62, -0.04],
-      [-0.76, 0.42], [0.7, 0.5], [-0.18, 0.78], [0.16, -0.86],
-    ] : [
-      [-0.82, -0.62], [-0.32, -0.72], [0.28, -0.68], [0.8, -0.56],
-      [-0.72, -0.08], [-0.18, -0.16], [0.38, -0.04], [0.84, 0.02],
-      [-0.78, 0.5], [-0.3, 0.62], [0.24, 0.52], [0.76, 0.64],
-    ];
-    this.hazeSprites = Array.from({ length: CONFIG.atmosphericHazeCount }, (_, index) => {
-      const anchor = nebulaAnchors[index % nebulaAnchors.length];
-      const layer = Math.floor(index / nebulaAnchors.length);
-      const material = new THREE.SpriteMaterial({
-        map: texture,
-        color: index % 4 === 0 ? 0x1a9bdb : index % 2 === 0 ? 0x1590cc : 0x0d6f9f,
-        transparent: true,
-        opacity: 0.2 + random() * 0.1,
-        depthWrite: false,
-        depthTest: false,
-        blending: THREE.NormalBlending,
-        fog: true,
-      });
-      material.userData.baseOpacity = material.opacity;
-      const sprite = new THREE.Sprite(material);
-      const distantLayer = index >= CONFIG.atmosphericHazeCount - 2;
-      const hubDepth = neuralDepthBands[index % neuralDepthBands.length];
-      const depthDistance = distantLayer
-        ? 58 + (index - (CONFIG.atmosphericHazeCount - 2)) * 17
-        : Math.max(5, hubDepth + (random() - 0.5) * 7);
-      const halfHeight = halfFovTangent * depthDistance;
-      const halfWidth = halfHeight * viewportAspect;
-      const sourceCluster = this.clusters[index % this.clusters.length];
-      sprite.position.set(
-        !distantLayer && isMobile
-          ? sourceCluster.x * 0.68 + (random() - 0.5) * halfWidth * 0.18
-          : anchor[0] * halfWidth * 0.92 + (random() - 0.5) * halfWidth * 0.08,
-        !distantLayer && isMobile
-          ? sourceCluster.y * 0.68 + 0.55 + (random() - 0.5) * halfHeight * 0.18
-          : anchor[1] * halfHeight * 0.92 + (random() - 0.5) * halfHeight * 0.08,
-        -depthDistance,
-      );
-      const screenScale = halfHeight * (0.28 + random() * 0.18);
-      sprite.scale.set(screenScale * (1.3 + random() * 0.55), screenScale * (0.58 + random() * 0.3), 1);
-      this.atmosphereGroup.add(sprite);
-      return sprite;
+    for (let index = 0; index < interstitialCount; index += 1) {
+      const writeIndex = hubParticleCount + index;
+      const from = this.clusters[index % this.clusters.length];
+      const to = this.clusters[(index + 1 + (index % 3)) % this.clusters.length];
+      const t = random();
+      positions[writeIndex * 3] = lerp(from.x, to.x, t) + (random() - 0.5) * (isMobile ? 2.2 : 3.2);
+      positions[writeIndex * 3 + 1] = lerp(from.y, to.y, t) + (random() - 0.5) * (isMobile ? 3.0 : 2.4);
+      positions[writeIndex * 3 + 2] = lerp(from.z, to.z, t) + (random() - 0.5) * 4.8;
+      sizes[writeIndex] = 0.38 + random() * 1.2;
+      phases[writeIndex] = random() * Math.PI * 2;
+      densities[writeIndex] = 0.18 + random() * 0.38;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+    geometry.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1));
+    geometry.setAttribute('aDensity', new THREE.BufferAttribute(densities, 1));
+    this.fogParticleMaterial = new THREE.ShaderMaterial({
+      vertexShader: fogParticleVertexShader,
+      fragmentShader: fogParticleFragmentShader,
+      uniforms: {
+        uTime: { value: 0 },
+        uWorldTravel: { value: 0 },
+        uCycleDistance: { value: this.worldCycleDistance },
+        uProgress: { value: 0 },
+      },
+      transparent: true,
+      depthWrite: false,
+      depthTest: true,
+      blending: THREE.NormalBlending,
     });
+    this.fogParticles = new THREE.Points(geometry, this.fogParticleMaterial);
+    this.fogParticles.frustumCulled = false;
+    this.group.add(this.fogParticles);
   }
 
   createTendrilSystem(maxTendrils, segments, radialSegments, opacity) {
@@ -1050,15 +1196,9 @@ class NeuralWorld {
     this.microMaterial.uniforms.uTime.value = elapsed;
     this.microMaterial.uniforms.uTravel.value = travel;
     this.microMaterial.uniforms.uProgress.value = progress;
-    const atmosphereFade = 1 - smoothstep(0.42, 0.92, progress) * 0.28;
-    this.atmosphericDustMaterial.opacity = 0.72 * atmosphereFade;
-    this.atmosphereGroup.rotation.z = Math.sin(elapsed * 0.022) * 0.008;
-    this.atmosphereGroup.position.x = Math.sin(elapsed * 0.031) * (isMobile ? 0.28 : 0.5);
-    this.atmosphereGroup.position.y = Math.cos(elapsed * 0.026) * (isMobile ? 0.4 : 0.24);
-    this.atmosphereGroup.position.z = Math.sin(travel * 0.006) * 0.9;
-    for (const sprite of this.hazeSprites) {
-      sprite.material.opacity = sprite.material.userData.baseOpacity * atmosphereFade;
-    }
+    this.fogParticleMaterial.uniforms.uTime.value = elapsed;
+    this.fogParticleMaterial.uniforms.uWorldTravel.value = travel;
+    this.fogParticleMaterial.uniforms.uProgress.value = progress;
     const desktopMidpointClear = isMobile
       ? 0
       : smoothstep(0.4, 0.5, progress) * (1 - smoothstep(0.5, 0.62, progress));
@@ -1135,7 +1275,11 @@ function render(now) {
   world.update(state.progress, state.elapsed, reducedMotion ? 0 : delta, state.travel);
   updateCamera(state.progress, state.elapsed, delta);
 
-  scene.fog.density = lerp(0.045, 0.025, smoothstep(0.18, 0.96, state.progress));
+  depthFogPass.material.uniforms.uTime.value = state.elapsed;
+  depthFogPass.material.uniforms.uProgress.value = state.progress;
+  depthFogPass.material.uniforms.uInverseProjection.value.copy(camera.projectionMatrixInverse);
+  depthFogPass.material.uniforms.uCameraWorld.value.copy(camera.matrixWorld);
+  depthFogPass.material.uniforms.uAspect.value = camera.aspect;
   renderer.toneMappingExposure = isMobile
     ? lerp(0.94, 1.06, smoothstep(0.3, 1, state.progress))
     : lerp(1.02, 1.62, smoothstep(0.3, 1, state.progress));
