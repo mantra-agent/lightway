@@ -73,7 +73,7 @@ const renderer = createRenderer();
 if (!renderer) throw new Error('WebGL unavailable');
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x000000, 0.018);
+scene.fog = new THREE.FogExp2(0x000000, 0.028);
 
 const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 150);
 camera.position.set(-0.35, 0.15, 7.2);
@@ -102,7 +102,7 @@ const shellVertexShader = `
     vViewDirection = normalize(cameraPosition - worldPosition.xyz);
     vPhase = aPhase;
     vVisibility = aVisibility;
-    vDepthFade = 1.0 - smoothstep(56.0, 106.0, distance(cameraPosition, worldPosition.xyz));
+    vDepthFade = 1.0 - smoothstep(8.0, 68.0, distance(cameraPosition, worldPosition.xyz)) * 0.84;
     gl_Position = projectionMatrix * viewMatrix * worldPosition;
   }
 `;
@@ -123,9 +123,10 @@ const shellFragmentShader = `
     vec3 viewDirection = normalize(vViewDirection);
     float facing = abs(dot(normal, viewDirection));
     float fresnel = clamp(1.0 - facing, 0.0, 1.0);
-    float broadRim = smoothstep(0.16, 0.78, pow(fresnel, 1.45));
-    float glassRim = smoothstep(0.66, 0.97, pow(fresnel, 1.05));
-    float innerEdge = smoothstep(0.28, 0.54, fresnel) * (1.0 - smoothstep(0.62, 0.84, fresnel));
+    float volumeFalloff = pow(fresnel, 0.82);
+    float broadRim = smoothstep(0.02, 0.9, volumeFalloff);
+    float glassRim = smoothstep(0.42, 0.98, volumeFalloff);
+    float innerEdge = smoothstep(0.06, 0.5, volumeFalloff) * (1.0 - smoothstep(0.7, 0.96, volumeFalloff));
     float highlight = pow(max(dot(normal, normalize(vec3(-0.42, 0.66, 0.61))), 0.0), 18.0);
     float heartbeat = pow(0.5 + 0.5 * sin(uTime * (1.28 + uProgress * 1.4) + vPhase), 5.0);
     float signal = 0.5 + 0.5 * sin(uTime * 0.42 + vPhase * 1.7);
@@ -135,11 +136,11 @@ const shellFragmentShader = `
     vec3 pearl = vec3(0.82, 0.96, 1.0);
     vec3 rimColor = mix(cyan, pearl, glassRim * 0.72 + highlight * 0.28);
 
-    float frontAlpha = glassRim * 0.86 + innerEdge * 0.055 + broadRim * 0.026 + highlight * 0.24 + heartbeat * 0.012;
-    float backAlpha = 0.032 + broadRim * 0.09 + signal * 0.014;
-    vec3 frontRadiance = rimColor * (glassRim * uIntensity + innerEdge * 0.11 + broadRim * 0.08 + highlight * 0.9)
+    float frontAlpha = glassRim * 0.68 + innerEdge * 0.07 + broadRim * 0.12 + highlight * 0.2 + heartbeat * 0.01;
+    float backAlpha = 0.022 + broadRim * 0.12 + signal * 0.012;
+    vec3 frontRadiance = rimColor * (glassRim * uIntensity + innerEdge * 0.14 + broadRim * 0.22 + highlight * 0.82)
       + pearl * heartbeat * 0.035;
-    vec3 backRadiance = deepGlass + cyan * (broadRim * 0.08 + signal * 0.018);
+    vec3 backRadiance = deepGlass + cyan * (broadRim * 0.12 + signal * 0.014);
 
     float midShellAttenuation = 1.0 - smoothstep(0.24, 0.55, uProgress) * 0.34;
     float alpha = mix(frontAlpha, backAlpha, uBackface) * vVisibility * vDepthFade * midShellAttenuation;
@@ -166,7 +167,7 @@ const microVertexShader = `
     p.y += cos(uTime * 0.13 + aPhase * 1.3) * 0.06;
     float threshold = 0.012 + smoothstep(0.0, 0.48, uProgress) * 0.75 + smoothstep(0.48, 1.0, uProgress) * 0.238;
     float visible = 1.0 - smoothstep(threshold, threshold + 0.08, aRank);
-    float depthFade = 1.0 - smoothstep(60.0, 98.0, -p.z);
+    float depthFade = 1.0 - smoothstep(10.0, 74.0, -p.z) * 0.88;
     vPulse = 0.48 + 0.52 * sin(uTime * (0.7 + uProgress * 2.4) + aPhase);
     vec4 viewPosition = modelViewMatrix * vec4(p, 1.0);
     float screenRadius = length(viewPosition.xy / max(1.0, -viewPosition.z));
@@ -353,18 +354,7 @@ class NeuralWorld {
       this.group.add(mesh);
     }
 
-    const coreGeometry = new THREE.SphereGeometry(1, 12, 12);
-    this.hubCoreMaterial = new THREE.MeshBasicMaterial({
-      color: 0xa7e5ff,
-      transparent: true,
-      opacity: 0.24,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    });
-    this.hubCoreMesh = new THREE.InstancedMesh(coreGeometry, this.hubCoreMaterial, count);
-    this.hubCoreMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    this.hubCoreMesh.frustumCulled = false;
-    this.group.add(this.hubCoreMesh);
+
   }
 
   createSatelliteMeshes() {
@@ -544,7 +534,6 @@ class NeuralWorld {
 
   updatePositions(progress, elapsed, travel) {
     const hubMatrix = new THREE.Matrix4();
-    const coreMatrix = new THREE.Matrix4();
     const satelliteMatrix = new THREE.Matrix4();
     const unitQuaternion = new THREE.Quaternion();
 
@@ -565,10 +554,6 @@ class NeuralWorld {
       this.hubScale[index] = scale;
       this.hubPhase[index] = cluster.phase;
       this.hubVisibility[index] = visibility;
-      const heartbeat = Math.pow(0.5 + 0.5 * Math.sin(elapsed * 1.55 + cluster.phase), 4);
-      const coreScale = scale * (0.055 + heartbeat * 0.028 + progress * 0.035) * visibility;
-      coreMatrix.compose(position, unitQuaternion, new THREE.Vector3(coreScale, coreScale, coreScale));
-      this.hubCoreMesh.setMatrixAt(index, coreMatrix);
     });
 
     this.satellites.forEach((satellite, index) => {
@@ -591,7 +576,7 @@ class NeuralWorld {
       this.satelliteVisibility[index] = clusterVisible * satelliteVisible;
     });
 
-    for (const mesh of [this.hubFrontMesh, this.hubBackMesh, this.hubCoreMesh, this.satelliteMesh]) {
+    for (const mesh of [this.hubFrontMesh, this.hubBackMesh, this.satelliteMesh]) {
       mesh.instanceMatrix.needsUpdate = true;
     }
     for (const attribute of [
@@ -674,15 +659,15 @@ class NeuralWorld {
       buildFrame(tangent1, normal1, binormal1);
 
       const tendrilRadius = (t) => {
-        const conicBody = lerp(startWidth, endWidth, Math.pow(t, 0.72));
-        const sourceContact = smoothstep(0.0, 0.1, t);
-        const targetContact = 1 - smoothstep(0.76, 1.0, t);
-        const membraneFloor = lerp(endWidth * 0.22, endWidth * 0.12, t);
-        return membraneFloor + conicBody * sourceContact * targetContact;
+        const membraneRadius = lerp(startWidth, endWidth, t);
+        const distanceFromMiddle = Math.abs(t * 2 - 1);
+        const membraneWeight = smoothstep(0, 1, Math.pow(distanceFromMiddle, 1.35));
+        const middleRadius = Math.min(startWidth, endWidth) * 0.2;
+        return lerp(middleRadius, membraneRadius, membraneWeight);
       };
       const radius0 = tendrilRadius(t0);
       const radius1 = tendrilRadius(t1);
-      const longitudinalGlow = 0.34 + Math.sin((t0 + t1) * 0.5 * Math.PI) * 0.66;
+      const longitudinalGlow = 0.5 + Math.pow(Math.abs((t0 + t1) - 1), 0.7) * 0.5;
       const segmentIntensity = intensity * longitudinalGlow;
 
       for (let radial = 0; radial < system.radialSegments; radial += 1) {
@@ -859,16 +844,9 @@ class NeuralWorld {
       const z = wrapDepth(streak.z + travel * streak.speed);
       const visible = streak.rank < 0.14 + progress * 0.9 ? active : 0;
       const base = index * 6;
-      const directional = isMobile ? smoothstep(0.56, 0.84, progress) : 0;
-      const radialStartX = streak.x;
-      const radialStartY = streak.y;
-      const radialStartZ = z - length * streak.speed;
-      const sweptStartX = streak.x + length * (0.34 + streak.rank * 0.1);
-      const sweptStartY = streak.y + length * (0.22 + streak.rank * 0.08);
-      const sweptStartZ = z;
-      this.streakPositions[base] = lerp(radialStartX, sweptStartX, directional);
-      this.streakPositions[base + 1] = lerp(radialStartY, sweptStartY, directional);
-      this.streakPositions[base + 2] = lerp(radialStartZ, sweptStartZ, directional);
+      this.streakPositions[base] = streak.x;
+      this.streakPositions[base + 1] = streak.y;
+      this.streakPositions[base + 2] = z - length * streak.speed;
       this.streakPositions[base + 3] = streak.x;
       this.streakPositions[base + 4] = streak.y;
       this.streakPositions[base + 5] = z;
@@ -896,8 +874,6 @@ class NeuralWorld {
       ? 0
       : smoothstep(0.4, 0.5, progress) * (1 - smoothstep(0.5, 0.62, progress));
     this.microMaterial.uniforms.uFieldOpacity.value = 1 - desktopMidpointClear * 0.68;
-    const coreVelocityFade = 1 - smoothstep(isMobile ? 0.62 : 0.7, isMobile ? 0.9 : 0.9, progress);
-    this.hubCoreMaterial.opacity = (isMobile ? 0.025 + progress * 0.025 : 0.12 + progress * 0.18) * coreVelocityFade;
     const destinationProgress = isMobile ? smoothstep(0.955, 1, progress) : smoothstep(0.62, 0.98, progress);
     const destinationStrength = isMobile ? 0.08 : 0.48;
     this.destinationMaterial.opacity = destinationProgress * (0.015 + progress * destinationStrength);
@@ -969,7 +945,7 @@ function render(now) {
   world.update(state.progress, state.elapsed, reducedMotion ? 0 : delta, state.travel);
   updateCamera(state.progress, state.elapsed, delta);
 
-  scene.fog.density = lerp(0.018, 0.0075, smoothstep(0.25, 0.96, state.progress));
+  scene.fog.density = lerp(0.028, 0.009, smoothstep(0.18, 0.96, state.progress));
   renderer.toneMappingExposure = isMobile
     ? lerp(0.94, 1.06, smoothstep(0.3, 1, state.progress))
     : lerp(1.02, 1.62, smoothstep(0.3, 1, state.progress));
