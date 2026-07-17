@@ -15,6 +15,8 @@ const CONFIG = Object.freeze({
   microCount: isMobile ? 760 : 1500,
   streakCount: isMobile ? 260 : 560,
   pulseCount: isMobile ? 64 : 120,
+  atmosphericDustCount: isMobile ? 120 : 240,
+  atmosphericHazeCount: isMobile ? 7 : 12,
   localSegments: 12,
   highwaySegments: 34,
   depthFar: 96,
@@ -131,16 +133,16 @@ const shellFragmentShader = `
     float heartbeat = pow(0.5 + 0.5 * sin(uTime * (1.28 + uProgress * 1.4) + vPhase), 5.0);
     float signal = 0.5 + 0.5 * sin(uTime * 0.42 + vPhase * 1.7);
 
-    vec3 deepGlass = vec3(0.018, 0.055, 0.09);
-    vec3 cyan = vec3(0.16, 0.64, 0.92);
-    vec3 pearl = vec3(0.82, 0.96, 1.0);
-    vec3 rimColor = mix(cyan, pearl, glassRim * 0.72 + highlight * 0.28);
+    vec3 deepGlass = vec3(0.004, 0.028, 0.052);
+    vec3 deepBlue = vec3(0.025, 0.255, 0.4);
+    vec3 ctaBlue = vec3(0.102, 0.608, 0.859);
+    vec3 rimColor = mix(deepBlue, ctaBlue, glassRim * 0.56 + highlight * 0.18);
 
     float frontAlpha = glassRim * 0.68 + innerEdge * 0.07 + broadRim * 0.12 + highlight * 0.2 + heartbeat * 0.01;
     float backAlpha = 0.022 + broadRim * 0.12 + signal * 0.012;
     vec3 frontRadiance = rimColor * (glassRim * uIntensity + innerEdge * 0.14 + broadRim * 0.22 + highlight * 0.82)
-      + pearl * heartbeat * 0.035;
-    vec3 backRadiance = deepGlass + cyan * (broadRim * 0.12 + signal * 0.014);
+      + ctaBlue * heartbeat * 0.028;
+    vec3 backRadiance = deepGlass + deepBlue * (broadRim * 0.16 + signal * 0.018);
 
     float midShellAttenuation = 1.0 - smoothstep(0.24, 0.55, uProgress) * 0.34;
     float alpha = mix(frontAlpha, backAlpha, uBackface) * vVisibility * vDepthFade * midShellAttenuation;
@@ -192,7 +194,7 @@ const microFragmentShader = `
     float distanceFromCenter = length(centered);
     float core = 1.0 - smoothstep(0.0, 0.48, distanceFromCenter);
     float halo = 1.0 - smoothstep(0.12, 0.5, distanceFromCenter);
-    vec3 color = mix(vec3(0.24, 0.62, 0.82), vec3(0.84, 0.96, 1.0), vPulse);
+    vec3 color = mix(vec3(0.018, 0.25, 0.39), vec3(0.102, 0.608, 0.859), vPulse);
     gl_FragColor = vec4(color * (core * 1.5 + halo * 0.35), vAlpha * (core + halo * 0.32));
   }
 `;
@@ -248,6 +250,7 @@ class NeuralWorld {
     this.createHubMeshes();
     this.createSatelliteMeshes();
     this.createMicroField();
+    this.createAtmosphere();
     this.createLocalLinks();
     this.createHighwayLinks();
     this.createPulses();
@@ -415,6 +418,63 @@ class NeuralWorld {
     this.group.add(this.microField);
   }
 
+  createAtmosphere() {
+    this.atmosphereGroup = new THREE.Group();
+    this.group.add(this.atmosphereGroup);
+
+    const texture = createRadialTexture();
+    const positions = new Float32Array(CONFIG.atmosphericDustCount * 3);
+    for (let index = 0; index < CONFIG.atmosphericDustCount; index += 1) {
+      const angle = random() * Math.PI * 2;
+      const radius = 1.8 + Math.pow(random(), 0.7) * 11.5;
+      positions[index * 3] = Math.cos(angle) * radius;
+      positions[index * 3 + 1] = Math.sin(angle) * radius * (isMobile ? 0.95 : 0.62);
+      positions[index * 3 + 2] = -(5 + random() * 78);
+    }
+    const dustGeometry = new THREE.BufferGeometry();
+    dustGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    this.atmosphericDustMaterial = new THREE.PointsMaterial({
+      map: texture,
+      color: 0x0b6f9f,
+      size: isMobile ? 0.2 : 0.24,
+      transparent: true,
+      opacity: 0.24,
+      alphaTest: 0.008,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true,
+      fog: true,
+    });
+    this.atmosphericDust = new THREE.Points(dustGeometry, this.atmosphericDustMaterial);
+    this.atmosphericDust.frustumCulled = false;
+    this.atmosphereGroup.add(this.atmosphericDust);
+
+    this.hazeSprites = Array.from({ length: CONFIG.atmosphericHazeCount }, (_, index) => {
+      const material = new THREE.SpriteMaterial({
+        map: texture,
+        color: index % 3 === 0 ? 0x0a5d87 : 0x063e60,
+        transparent: true,
+        opacity: 0.035 + random() * 0.035,
+        depthWrite: false,
+        depthTest: true,
+        blending: THREE.AdditiveBlending,
+        fog: true,
+      });
+      material.userData.baseOpacity = material.opacity;
+      const sprite = new THREE.Sprite(material);
+      const depth = -(9 + index * (64 / CONFIG.atmosphericHazeCount) + random() * 5);
+      sprite.position.set(
+        (random() - 0.5) * (isMobile ? 8 : 15),
+        (random() - 0.5) * (isMobile ? 15 : 9),
+        depth,
+      );
+      const scale = 9 + random() * 13;
+      sprite.scale.set(scale, scale * (0.58 + random() * 0.34), 1);
+      this.atmosphereGroup.add(sprite);
+      return sprite;
+    });
+  }
+
   createTendrilSystem(maxTendrils, segments, radialSegments, opacity) {
     const vertexCount = maxTendrils * segments * radialSegments * 6;
     const positions = new Float32Array(vertexCount * 3);
@@ -460,7 +520,7 @@ class NeuralWorld {
   createPulses() {
     const geometry = new THREE.SphereGeometry(0.026, 7, 7);
     this.pulseMaterial = new THREE.MeshBasicMaterial({
-      color: 0xd9f5ff,
+      color: 0x1a9bdb,
       transparent: true,
       opacity: 1,
       depthWrite: false,
@@ -695,7 +755,7 @@ class NeuralWorld {
 
   updateLocalLinks(progress, elapsed) {
     const system = this.localTendrilSystem;
-    const color = new THREE.Color(0.2, 0.58, 0.82);
+    const color = new THREE.Color(0.035, 0.34, 0.5);
     let vertexOffset = 0;
     this.satellites.forEach((satellite, index) => {
       const cluster = this.clusters[satellite.clusterIndex];
@@ -782,7 +842,7 @@ class NeuralWorld {
     this.highways.forEach((highway) => {
       if (!this.highwayVisible(highway, progress)) return;
       const fire = smoothstep(0.42, 1, Math.sin(elapsed * (0.55 + progress * 1.6) + highway.phase) * 0.5 + 0.5);
-      const color = new THREE.Color(0.28, 0.66, 0.9).lerp(new THREE.Color(0.88, 0.98, 1), fire * 0.64);
+      const color = new THREE.Color(0.04, 0.36, 0.53).lerp(new THREE.Color(0.102, 0.608, 0.859), fire * 0.52);
       const mobileHighwayEnergy = isMobile
         ? lerp(0.68, 0.9, smoothstep(0.1, 0.55, progress)) * (1 - smoothstep(0.72, 0.9, progress))
         : 1;
@@ -850,12 +910,12 @@ class NeuralWorld {
       this.streakPositions[base + 3] = streak.x;
       this.streakPositions[base + 4] = streak.y;
       this.streakPositions[base + 5] = z;
-      this.streakColors[base] = 0.04 * visible;
-      this.streakColors[base + 1] = 0.13 * visible;
-      this.streakColors[base + 2] = 0.22 * visible;
-      this.streakColors[base + 3] = (0.48 + progress * 0.34) * visible;
-      this.streakColors[base + 4] = (0.74 + progress * 0.24) * visible;
-      this.streakColors[base + 5] = visible;
+      this.streakColors[base] = 0.008 * visible;
+      this.streakColors[base + 1] = 0.12 * visible;
+      this.streakColors[base + 2] = 0.2 * visible;
+      this.streakColors[base + 3] = 0.102 * visible;
+      this.streakColors[base + 4] = (0.5 + progress * 0.108) * visible;
+      this.streakColors[base + 5] = (0.72 + progress * 0.139) * visible;
     });
     this.streakGeometry.attributes.position.needsUpdate = true;
     this.streakGeometry.attributes.color.needsUpdate = true;
@@ -870,6 +930,13 @@ class NeuralWorld {
     this.microMaterial.uniforms.uTime.value = elapsed;
     this.microMaterial.uniforms.uTravel.value = travel;
     this.microMaterial.uniforms.uProgress.value = progress;
+    const atmosphereFade = 1 - smoothstep(0.28, 0.82, progress) * 0.62;
+    this.atmosphericDustMaterial.opacity = 0.24 * atmosphereFade;
+    this.atmosphereGroup.rotation.z = Math.sin(elapsed * 0.035) * 0.018;
+    this.atmosphereGroup.position.z = wrapDepth(travel * 0.055, 0, 96);
+    for (const sprite of this.hazeSprites) {
+      sprite.material.opacity = sprite.material.userData.baseOpacity * atmosphereFade;
+    }
     const desktopMidpointClear = isMobile
       ? 0
       : smoothstep(0.4, 0.5, progress) * (1 - smoothstep(0.5, 0.62, progress));
