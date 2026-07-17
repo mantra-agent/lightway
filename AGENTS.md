@@ -69,6 +69,13 @@ Canonical palette from Mantra Design Guide (dark mode):
 - Mobile: reduced particle/line density, headline scales via clamp
 - CTA constant: `https://mono-prod-8d22.up.railway.app/start?source=lightway`
 
+### /home_v2 (Neural Hyperspace Visual Prototype)
+- Standalone Three.js-only visual route; does not modify or share state with `/home`
+- Pinned Three.js ES module from jsDelivr; no framework or bundler dependency
+- Instanced Fresnel node shells, batched quadratic links, instanced traveling pulses, and scroll-controlled intensity
+- Time always drives ambient motion; scroll only changes density, firing, velocity, trails, and white arrival
+- Caps DPR at 1.5, pauses when hidden, handles WebGL context loss, and honors reduced motion
+
 ### /coaches
 - Uses GSAP + ScrollTrigger + SplitType (CDN)
 - Uses shared styles.css reveal system
