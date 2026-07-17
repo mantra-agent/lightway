@@ -84,10 +84,12 @@ Canonical palette from Mantra Design Guide (dark mode):
 - Scroll releases additional hubs, satellites, micro-nodes, connectors, camera travel, velocity, bloom, and white arrival
 - Caps DPR at 1.5, pauses when hidden, handles WebGL context loss, and honors reduced motion
 
-### /home_v3 (Narrative Landing Foundation)
-- Independent copy of the corrected `/home_v2` Three.js scene; v2 remains live and must not be aliased or modified through v3 work
-- Owns separate `index.html` and `neural-hyperspace.js` files so section states, copy, and foreground layout can evolve without regressing v2
-- Initial foundation intentionally contains only the copied visual and scroll affordance; Kodamai-style narrative sections are added in a subsequent pass
+### /home_v3 (Narrative Landing Experience)
+- Independent evolution of the corrected `/home_v2` Three.js scene; v2 remains live and byte-frozen during v3 work
+- Owns separate `index.html` and `neural-hyperspace.js` files so section states, copy, foreground layout, and pulse choreography evolve without regressing v2
+- Full-height narrative sections carry explicit `data-scene-progress` anchors; the background interpolates between section-owned states rather than deriving meaning from undifferentiated document percentage
+- Foreground story uses restrained alternating glass cards over the fixed WebGL world; HTML owns copy/accessibility and Three.js owns atmosphere
+- V3 pulse packets use five closely spaced beads; V2 retains its original three-bead packet
 
 ### /coaches
 - Uses GSAP + ScrollTrigger + SplitType (CDN)
