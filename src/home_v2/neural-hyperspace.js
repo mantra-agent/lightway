@@ -202,43 +202,104 @@ const microFragmentShader = `
 
 
 const fogParticleVertexShader = `
-  attribute float aSize;
+  attribute vec3 aOffset;
+  attribute float aScale;
+  attribute float aRotation;
   attribute float aPhase;
   attribute float aDensity;
+  attribute float aOpacity;
+  attribute float aShape;
+  varying vec2 vUv;
   varying float vAlpha;
   varying float vDensity;
+  varying float vOpacity;
+  varying float vShape;
   uniform float uTime;
   uniform float uWorldTravel;
   uniform float uCycleDistance;
   uniform float uProgress;
 
   void main() {
-    vec3 p = position;
-    p.z += mod(uWorldTravel, uCycleDistance);
-    p.x += sin(uTime * 0.075 + aPhase) * 0.16;
-    p.y += cos(uTime * 0.061 + aPhase * 1.27) * 0.13;
-    p.z += sin(uTime * 0.043 + aPhase * 0.73) * 0.18;
-    vec4 viewPosition = modelViewMatrix * vec4(p, 1.0);
-    float distanceFade = 1.0 - smoothstep(46.0, 98.0, -viewPosition.z);
+    vec3 center = aOffset;
+    center.z += mod(uWorldTravel, uCycleDistance);
+    center.x += sin(uTime * 0.075 + aPhase) * 0.16;
+    center.y += cos(uTime * 0.061 + aPhase * 1.27) * 0.13;
+    center.z += sin(uTime * 0.043 + aPhase * 0.73) * 0.18;
+
+    vec4 viewCenter = modelViewMatrix * vec4(center, 1.0);
+    float rotation = aRotation + sin(uTime * 0.018 + aPhase) * 0.12;
+    float cosine = cos(rotation);
+    float sine = sin(rotation);
+    vec2 billboard = vec2(
+      position.x * cosine - position.y * sine,
+      position.x * sine + position.y * cosine
+    ) * aScale;
+    viewCenter.xy += billboard;
+
+    float distanceFade = 1.0 - smoothstep(46.0, 98.0, -viewCenter.z);
     float scrollFade = 1.0 - smoothstep(0.72, 0.98, uProgress) * 0.72;
+    vUv = uv;
     vDensity = aDensity;
-    vAlpha = distanceFade * scrollFade * (0.2 + aDensity * 0.72);
-    gl_PointSize = clamp(aSize * (150.0 / max(1.0, -viewPosition.z)), 1.0, 140.0);
-    gl_Position = projectionMatrix * viewPosition;
+    vOpacity = aOpacity;
+    vShape = aShape;
+    vAlpha = distanceFade * scrollFade;
+    gl_Position = projectionMatrix * viewCenter;
   }
 `;
 
 const fogParticleFragmentShader = `
+  varying vec2 vUv;
   varying float vAlpha;
   varying float vDensity;
+  varying float vOpacity;
+  varying float vShape;
+
+  float hash21(vec2 p) {
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
+  }
+
+  float noise2(vec2 p) {
+    vec2 cell = floor(p);
+    vec2 local = fract(p);
+    local = local * local * (3.0 - 2.0 * local);
+    return mix(
+      mix(hash21(cell), hash21(cell + vec2(1.0, 0.0)), local.x),
+      mix(hash21(cell + vec2(0.0, 1.0)), hash21(cell + vec2(1.0, 1.0)), local.x),
+      local.y
+    );
+  }
+
+  float fbm2(vec2 p) {
+    float value = 0.0;
+    float amplitude = 0.58;
+    for (int octave = 0; octave < 4; octave++) {
+      value += noise2(p) * amplitude;
+      p = p * 2.07 + vec2(4.3, 7.1);
+      amplitude *= 0.46;
+    }
+    return value;
+  }
+
   void main() {
-    vec2 centered = gl_PointCoord - 0.5;
-    float radius = length(centered);
-    float softVolume = 1.0 - smoothstep(0.04, 0.5, radius);
-    float coreVoid = smoothstep(0.0, 0.22, radius);
-    float alpha = softVolume * mix(0.16, 0.5, vDensity) * vAlpha;
-    vec3 color = mix(vec3(0.006, 0.075, 0.12), vec3(0.02, 0.28, 0.43), vDensity);
-    gl_FragColor = vec4(color, alpha * (0.72 + coreVoid * 0.28));
+    vec2 centered = vUv - 0.5;
+    float angle = atan(centered.y, centered.x);
+    float lobes = sin(angle * 3.0 + vShape * 6.283) * 0.055
+      + sin(angle * 5.0 - vShape * 4.7) * 0.035
+      + sin(angle * 7.0 + vShape * 9.1) * 0.018;
+    float fieldNoise = fbm2(centered * mix(5.0, 8.5, vShape) + vec2(vShape * 11.7, vShape * 5.3));
+    float boundary = 0.43 + lobes + (fieldNoise - 0.5) * 0.115;
+    float distanceFromCenter = length(centered);
+    float silhouette = 1.0 - smoothstep(boundary - 0.16, boundary, distanceFromCenter);
+    float internalNoise = smoothstep(0.24, 0.82, fieldNoise);
+    float wisps = mix(0.28, 1.0, internalNoise);
+    float alpha = silhouette * wisps * vOpacity * vAlpha;
+    vec3 darkBlue = vec3(0.003, 0.038, 0.065);
+    vec3 ctaBlue = vec3(0.012, 0.16, 0.25);
+    vec3 color = mix(darkBlue, ctaBlue, vDensity * 0.72 + internalNoise * 0.16);
+    if (alpha < 0.002) discard;
+    gl_FragColor = vec4(color, alpha);
   }
 `;
 
@@ -502,10 +563,13 @@ class NeuralWorld {
     const hubParticleCount = CONFIG.hubFogParticleCount;
     const interstitialCount = CONFIG.interstitialFogParticleCount;
     const totalCount = hubParticleCount + interstitialCount;
-    const positions = new Float32Array(totalCount * 3);
-    const sizes = new Float32Array(totalCount);
+    const offsets = new Float32Array(totalCount * 3);
+    const scales = new Float32Array(totalCount);
+    const rotations = new Float32Array(totalCount);
     const phases = new Float32Array(totalCount);
     const densities = new Float32Array(totalCount);
+    const opacities = new Float32Array(totalCount);
+    const shapes = new Float32Array(totalCount);
 
     for (let index = 0; index < hubParticleCount; index += 1) {
       const cluster = this.clusters[index % this.clusters.length];
@@ -515,12 +579,15 @@ class NeuralWorld {
       const horizontalRadius = isMobile ? 2.6 : 3.4;
       const verticalRadius = isMobile ? 3.5 : 2.5;
       const depthRadius = 4.2;
-      positions[index * 3] = cluster.x + Math.sin(phi) * Math.cos(theta) * horizontalRadius * radius;
-      positions[index * 3 + 1] = cluster.y + Math.cos(phi) * verticalRadius * radius;
-      positions[index * 3 + 2] = cluster.z + Math.sin(phi) * Math.sin(theta) * depthRadius * radius;
-      sizes[index] = (0.55 + Math.pow(random(), 1.8) * 2.3) * 30;
+      offsets[index * 3] = cluster.x + Math.sin(phi) * Math.cos(theta) * horizontalRadius * radius;
+      offsets[index * 3 + 1] = cluster.y + Math.cos(phi) * verticalRadius * radius;
+      offsets[index * 3 + 2] = cluster.z + Math.sin(phi) * Math.sin(theta) * depthRadius * radius;
+      scales[index] = 1.4 + Math.pow(random(), 1.85) * 8.8;
+      rotations[index] = random() * Math.PI * 2;
       phases[index] = random() * Math.PI * 2;
-      densities[index] = 0.42 + random() * 0.58;
+      densities[index] = 0.3 + random() * 0.62;
+      opacities[index] = 0.018 + Math.pow(random(), 2.4) * 0.17;
+      shapes[index] = random();
     }
 
     for (let index = 0; index < interstitialCount; index += 1) {
@@ -528,19 +595,32 @@ class NeuralWorld {
       const from = this.clusters[index % this.clusters.length];
       const to = this.clusters[(index + 1 + (index % 3)) % this.clusters.length];
       const t = random();
-      positions[writeIndex * 3] = lerp(from.x, to.x, t) + (random() - 0.5) * (isMobile ? 2.2 : 3.2);
-      positions[writeIndex * 3 + 1] = lerp(from.y, to.y, t) + (random() - 0.5) * (isMobile ? 3.0 : 2.4);
-      positions[writeIndex * 3 + 2] = lerp(from.z, to.z, t) + (random() - 0.5) * 4.8;
-      sizes[writeIndex] = (0.38 + random() * 1.2) * 30;
+      offsets[writeIndex * 3] = lerp(from.x, to.x, t) + (random() - 0.5) * (isMobile ? 2.2 : 3.2);
+      offsets[writeIndex * 3 + 1] = lerp(from.y, to.y, t) + (random() - 0.5) * (isMobile ? 3.0 : 2.4);
+      offsets[writeIndex * 3 + 2] = lerp(from.z, to.z, t) + (random() - 0.5) * 4.8;
+      scales[writeIndex] = 0.9 + Math.pow(random(), 1.9) * 5.6;
+      rotations[writeIndex] = random() * Math.PI * 2;
       phases[writeIndex] = random() * Math.PI * 2;
-      densities[writeIndex] = 0.18 + random() * 0.38;
+      densities[writeIndex] = 0.12 + random() * 0.38;
+      opacities[writeIndex] = 0.012 + Math.pow(random(), 2.6) * 0.11;
+      shapes[writeIndex] = random();
     }
 
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
-    geometry.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1));
-    geometry.setAttribute('aDensity', new THREE.BufferAttribute(densities, 1));
+    const baseGeometry = new THREE.PlaneGeometry(1, 1, 1, 1);
+    const geometry = new THREE.InstancedBufferGeometry();
+    geometry.index = baseGeometry.index;
+    geometry.setAttribute('position', baseGeometry.attributes.position);
+    geometry.setAttribute('uv', baseGeometry.attributes.uv);
+    geometry.instanceCount = totalCount;
+    geometry.setAttribute('aOffset', new THREE.InstancedBufferAttribute(offsets, 3));
+    geometry.setAttribute('aScale', new THREE.InstancedBufferAttribute(scales, 1));
+    geometry.setAttribute('aRotation', new THREE.InstancedBufferAttribute(rotations, 1));
+    geometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(phases, 1));
+    geometry.setAttribute('aDensity', new THREE.InstancedBufferAttribute(densities, 1));
+    geometry.setAttribute('aOpacity', new THREE.InstancedBufferAttribute(opacities, 1));
+    geometry.setAttribute('aShape', new THREE.InstancedBufferAttribute(shapes, 1));
+    baseGeometry.dispose();
+
     this.fogParticleMaterial = new THREE.ShaderMaterial({
       vertexShader: fogParticleVertexShader,
       fragmentShader: fogParticleFragmentShader,
@@ -554,8 +634,9 @@ class NeuralWorld {
       depthWrite: false,
       depthTest: true,
       blending: THREE.NormalBlending,
+      side: THREE.DoubleSide,
     });
-    this.fogParticles = new THREE.Points(geometry, this.fogParticleMaterial);
+    this.fogParticles = new THREE.Mesh(geometry, this.fogParticleMaterial);
     this.fogParticles.frustumCulled = false;
     this.group.add(this.fogParticles);
   }
