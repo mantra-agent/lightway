@@ -138,7 +138,12 @@
 
       @media (max-width: 700px) {
         body { height: 440vh; }
-        .scroll-cue { bottom: 18px; }
+        .scroll-cue {
+          bottom: 76px;
+          color: rgba(232, 234, 237, 0.84);
+          font-size: 13px;
+          letter-spacing: 0.15em;
+        }
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -150,7 +155,8 @@
     <script type="importmap">
       {
         "imports": {
-          "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js"
+          "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
         }
       }
     </script>
