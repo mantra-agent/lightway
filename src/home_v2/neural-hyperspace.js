@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { Pass, FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const stage = document.querySelector('.neural-stage');
@@ -81,140 +80,9 @@ scene.fog = null;
 const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 150);
 camera.position.set(-0.35, 0.15, 7.2);
 
-const composerTarget = new THREE.WebGLRenderTarget(1, 1, {
-  type: THREE.HalfFloatType,
-  depthBuffer: true,
-});
-composerTarget.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedIntType);
-const composer = new EffectComposer(renderer, composerTarget);
-composer.renderTarget1.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedIntType);
-composer.renderTarget2.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedIntType);
+const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 
-
-const depthFogVertexShader = `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const depthFogFragmentShader = `
-  uniform sampler2D tDiffuse;
-  uniform sampler2D tDepth;
-  uniform mat4 uInverseProjection;
-  uniform mat4 uCameraWorld;
-  uniform float uCameraNear;
-  uniform float uCameraFar;
-  uniform float uTime;
-  uniform float uProgress;
-  uniform float uAspect;
-  varying vec2 vUv;
-
-  float hash31(vec3 p) {
-    p = fract(p * 0.1031);
-    p += dot(p, p.yzx + 33.33);
-    return fract((p.x + p.y) * p.z);
-  }
-
-  float noise3(vec3 p) {
-    vec3 i = floor(p);
-    vec3 f = fract(p);
-    f = f * f * (3.0 - 2.0 * f);
-    return mix(
-      mix(mix(hash31(i), hash31(i + vec3(1,0,0)), f.x),
-          mix(hash31(i + vec3(0,1,0)), hash31(i + vec3(1,1,0)), f.x), f.y),
-      mix(mix(hash31(i + vec3(0,0,1)), hash31(i + vec3(1,0,1)), f.x),
-          mix(hash31(i + vec3(0,1,1)), hash31(i + vec3(1,1,1)), f.x), f.y),
-      f.z
-    );
-  }
-
-  float fbm(vec3 p) {
-    float value = 0.0;
-    float amplitude = 0.55;
-    for (int octave = 0; octave < 4; octave++) {
-      value += noise3(p) * amplitude;
-      p = p * 2.03 + vec3(7.1, 3.7, 5.4);
-      amplitude *= 0.48;
-    }
-    return value;
-  }
-
-  float perspectiveDepthToViewZ(float depth) {
-    return (uCameraNear * uCameraFar) /
-      ((uCameraFar - uCameraNear) * depth - uCameraFar);
-  }
-
-  vec3 reconstructWorldPosition(float depth) {
-    vec4 clip = vec4(vUv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
-    vec4 view = uInverseProjection * clip;
-    view /= max(0.0001, view.w);
-    return (uCameraWorld * view).xyz;
-  }
-
-  void main() {
-    vec4 sceneColor = texture2D(tDiffuse, vUv);
-    float depth = texture2D(tDepth, vUv).x;
-    float viewDistance = depth < 0.99999
-      ? -perspectiveDepthToViewZ(depth)
-      : mix(30.0, 72.0, length(vUv - 0.5));
-    vec3 worldPosition = depth < 0.99999
-      ? reconstructWorldPosition(depth)
-      : cameraPosition + normalize(vec3((vUv.x * 2.0 - 1.0) * uAspect, vUv.y * 2.0 - 1.0, -1.45)) * viewDistance;
-
-    vec3 drift = vec3(uTime * 0.018, -uTime * 0.011, uTime * 0.008);
-    float broad = fbm(worldPosition * 0.055 + drift);
-    float detail = fbm(worldPosition * 0.13 - drift * 0.7);
-    float pockets = smoothstep(0.38, 0.78, broad * 0.72 + detail * 0.38);
-    float distanceFog = 1.0 - exp(-viewDistance * mix(0.009, 0.014, 1.0 - uProgress));
-    float atmosphereFade = 1.0 - smoothstep(0.72, 0.98, uProgress) * 0.72;
-    float fogAmount = clamp(distanceFog * (0.18 + pockets * 0.72) * atmosphereFade, 0.0, 0.62);
-    vec3 fogColor = mix(vec3(0.008, 0.055, 0.09), vec3(0.018, 0.22, 0.34), broad);
-    gl_FragColor = vec4(mix(sceneColor.rgb, fogColor, fogAmount), sceneColor.a);
-  }
-`;
-
-class DepthNoiseFogPass extends Pass {
-  constructor() {
-    super();
-    this.material = new THREE.ShaderMaterial({
-      vertexShader: depthFogVertexShader,
-      fragmentShader: depthFogFragmentShader,
-      uniforms: {
-        tDiffuse: { value: null },
-        tDepth: { value: null },
-        uInverseProjection: { value: new THREE.Matrix4() },
-        uCameraWorld: { value: new THREE.Matrix4() },
-        uCameraNear: { value: camera.near },
-        uCameraFar: { value: camera.far },
-        uTime: { value: 0 },
-        uProgress: { value: 0 },
-        uAspect: { value: 1 },
-      },
-      depthWrite: false,
-      depthTest: false,
-    });
-    this.fsQuad = new FullScreenQuad(this.material);
-  }
-
-  render(rendererInstance, writeBuffer, readBuffer) {
-    this.material.uniforms.tDiffuse.value = readBuffer.texture;
-    this.material.uniforms.tDepth.value = readBuffer.depthTexture;
-    rendererInstance.setRenderTarget(this.renderToScreen ? null : writeBuffer);
-    if (this.clear) rendererInstance.clear();
-    this.fsQuad.render(rendererInstance);
-  }
-
-  dispose() {
-    this.material.dispose();
-    this.fsQuad.dispose();
-  }
-}
-
-const depthFogPass = new DepthNoiseFogPass();
-composer.addPass(depthFogPass);
 const bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.48, 0.72, 0.7);
 composer.addPass(bloomPass);
 
@@ -1275,11 +1143,6 @@ function render(now) {
   world.update(state.progress, state.elapsed, reducedMotion ? 0 : delta, state.travel);
   updateCamera(state.progress, state.elapsed, delta);
 
-  depthFogPass.material.uniforms.uTime.value = state.elapsed;
-  depthFogPass.material.uniforms.uProgress.value = state.progress;
-  depthFogPass.material.uniforms.uInverseProjection.value.copy(camera.projectionMatrixInverse);
-  depthFogPass.material.uniforms.uCameraWorld.value.copy(camera.matrixWorld);
-  depthFogPass.material.uniforms.uAspect.value = camera.aspect;
   renderer.toneMappingExposure = isMobile
     ? lerp(0.94, 1.06, smoothstep(0.3, 1, state.progress))
     : lerp(1.02, 1.62, smoothstep(0.3, 1, state.progress));
