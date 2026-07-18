@@ -750,6 +750,7 @@ class NeuralWorld {
       phase: 0,
       speed: 0,
       scale: 0,
+      curve: null,
     }));
     this.group.add(this.cascadeMesh);
   }
@@ -812,7 +813,7 @@ class NeuralWorld {
     const satelliteMatrix = new THREE.Matrix4();
     const unitQuaternion = new THREE.Quaternion();
 
-    const velocityScale = 1 + smoothstep(0.1, 0.75, progress) * 5.5;
+    const velocityScale = 1 + smoothstep(0.1, 0.75, progress) * 1.5;
     const effectiveCycleDistance = this.worldCycleDistance * velocityScale;
     const connectedWorldTravel = reducedMotion ? 0 : travel % effectiveCycleDistance;
     this.clusters.forEach((cluster, index) => {
@@ -1179,7 +1180,7 @@ class NeuralWorld {
           if (cascadeIndex >= CONFIG.cascadeCount * 3) break;
           const ghostT = Math.max(0, (cascade.active ? cascade.phase : 1) - ghost * 0.04);
           if (cascade.active || ghost === 0) {
-            cascadePosition.lerpVectors(hub, sat, ghostT);
+            this.curvePoint(cascade.curve, ghostT, cascadePosition);
           } else {
             cascadePosition.set(0, 0, -120);
           }
@@ -1209,13 +1210,25 @@ class NeuralWorld {
   spawnCascades(hubIndex, progress) {
     const baseIndex = hubIndex * CONFIG.satellitesPerCluster;
     const maxCascades = Math.min(CONFIG.satellitesPerCluster, 3 + Math.floor(progress * 4));
+    const offsets = Array.from({ length: CONFIG.satellitesPerCluster }, (_, i) => i);
+    for (let i = offsets.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [offsets[i], offsets[j]] = [offsets[j], offsets[i]];
+    }
     let spawned = 0;
-    for (let offset = 0; offset < CONFIG.satellitesPerCluster && spawned < maxCascades; offset += 1) {
+    for (const offset of offsets) {
+      if (spawned >= maxCascades) break;
       const satIndex = baseIndex + offset;
       if (satIndex >= this.satellites.length) break;
       if (this.satelliteVisibility[satIndex] < 0.05) continue;
       const pool = this.cascadePool.find((c) => !c.active);
       if (!pool) break;
+      const sign = offset % 2 ? 1 : -1;
+      pool.curve = this.surfaceCurve(
+        this.hubPositions[hubIndex], this.satellitePositions[satIndex],
+        this.hubScale[hubIndex], this.satelliteScale[satIndex],
+        0.44, sign,
+      );
       pool.active = true;
       pool.hubIndex = hubIndex;
       pool.satelliteIndex = satIndex;
