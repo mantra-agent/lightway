@@ -992,30 +992,10 @@ class NeuralWorld {
   }
 
   updateFreeDendrites(progress, elapsed) {
+    // Disabled: free dendrites extend into empty space without terminating at a sphere.
+    // All visible connections should link two nodes.
     const system = this.freeDendriteSystem;
-    const color = new THREE.Color(0.006, 0.12, 0.2);
-    let vertexOffset = 0;
-    for (const branch of this.freeDendrites) {
-      const clusterIdx = branch.sourceType === 'hub'
-        ? branch.sourceIndex
-        : this.satellites[branch.sourceIndex].clusterIndex;
-      const visibility = this.clusterVisibility(this.clusters[clusterIdx], progress) * this.hubDepthFade[clusterIdx];
-      if (visibility < 0.02) continue;
-      const breathing = 0.72 + Math.sin(elapsed * 0.5 + branch.phase) * 0.12;
-      vertexOffset = this.writeTendril(
-        system,
-        this.freeDendriteCurve(branch),
-        branch.sourceType === 'hub' ? 0.026 : 0.014,
-        0.0012,
-        visibility * breathing,
-        color,
-        vertexOffset,
-      );
-    }
-    system.geometry.setDrawRange(0, vertexOffset);
-    system.geometry.attributes.position.needsUpdate = true;
-    system.geometry.attributes.color.needsUpdate = true;
-    system.material.opacity = isMobile ? 0.58 : 0.5;
+    system.geometry.setDrawRange(0, 0);
   }
 
   updateLocalLinks(progress, elapsed) {
@@ -1037,14 +1017,14 @@ class NeuralWorld {
           end,
           this.hubScale[satellite.clusterIndex],
           this.satelliteScale[index],
-          0.44,
+          0.72,
           sign,
         );
         vertexOffset = this.writeTendril(
           system,
           curve,
-          0.057,
-          0.009 + smoothstep(0.1, 0.5, progress) * 0.012,
+          0.114,
+          0.018 + smoothstep(0.1, 0.5, progress) * 0.024,
           visibility * (0.38 + fire * 0.22),
           color,
           vertexOffset,
@@ -1060,14 +1040,14 @@ class NeuralWorld {
             sibling,
             this.satelliteScale[index],
             this.satelliteScale[siblingIndex],
-            0.5,
+            0.8,
             sign,
           );
           vertexOffset = this.writeTendril(
             system,
             curve,
-            0.036,
-            0.006 + smoothstep(0.1, 0.5, progress) * 0.0075,
+            0.072,
+            0.012 + smoothstep(0.1, 0.5, progress) * 0.015,
             visibility * (0.28 + fire * 0.12),
             color,
             vertexOffset,
@@ -1112,8 +1092,8 @@ class NeuralWorld {
       vertexOffset = this.writeTendril(
         system,
         curve,
-        (0.052 + progress * 0.012) * 1.5,
-        (0.007 + smoothstep(0.1, 0.5, progress) * 0.009) * 1.5,
+        (0.052 + progress * 0.012) * 3.0,
+        (0.007 + smoothstep(0.1, 0.5, progress) * 0.009) * 3.0,
         intensity,
         color,
         vertexOffset,
