@@ -982,7 +982,8 @@ class NeuralWorld {
     const isHub = branch.sourceType === 'hub';
     const center = isHub ? this.hubPositions[branch.sourceIndex] : this.satellitePositions[branch.sourceIndex];
     const radius = isHub ? this.hubScale[branch.sourceIndex] : this.satelliteScale[branch.sourceIndex];
-    const start = center.clone().addScaledVector(branch.direction, radius + 0.008);
+    const overlap = Math.max(isMobile ? 0.018 : 0.014, radius * 0.08);
+    const start = center.clone().addScaledVector(branch.direction, Math.max(0, radius - overlap));
     const end = start.clone().addScaledVector(branch.direction, branch.length);
     const control = start.clone().lerp(end, 0.5);
     control.x += branch.sign * branch.arc * 0.35;
@@ -992,10 +993,30 @@ class NeuralWorld {
   }
 
   updateFreeDendrites(progress, elapsed) {
-    // Disabled: free dendrites extend into empty space without terminating at a sphere.
-    // All visible connections should link two nodes.
     const system = this.freeDendriteSystem;
-    system.geometry.setDrawRange(0, 0);
+    const color = new THREE.Color(0.006, 0.12, 0.2);
+    let vertexOffset = 0;
+    for (const branch of this.freeDendrites) {
+      const clusterIdx = branch.sourceType === 'hub'
+        ? branch.sourceIndex
+        : this.satellites[branch.sourceIndex].clusterIndex;
+      const visibility = this.clusterVisibility(this.clusters[clusterIdx], progress) * this.hubDepthFade[clusterIdx];
+      if (visibility < 0.02) continue;
+      const breathing = 0.72 + Math.sin(elapsed * 0.5 + branch.phase) * 0.12;
+      vertexOffset = this.writeTendril(
+        system,
+        this.freeDendriteCurve(branch),
+        branch.sourceType === 'hub' ? 0.052 : 0.028,
+        0,
+        visibility * breathing,
+        color,
+        vertexOffset,
+      );
+    }
+    system.geometry.setDrawRange(0, vertexOffset);
+    system.geometry.attributes.position.needsUpdate = true;
+    system.geometry.attributes.color.needsUpdate = true;
+    system.material.opacity = isMobile ? 0.65 : 0.6;
   }
 
   updateLocalLinks(progress, elapsed) {
