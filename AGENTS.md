@@ -89,7 +89,9 @@ Canonical palette from Mantra Design Guide (dark mode):
 - Owns separate `index.html` and `neural-hyperspace.js` files so section states, copy, foreground layout, and pulse choreography evolve without regressing v2
 - Full-height narrative sections carry explicit `data-scene-progress` anchors; the background interpolates between section-owned states rather than deriving meaning from undifferentiated document percentage
 - Foreground story uses restrained alternating glass cards over the fixed WebGL world; HTML owns copy/accessibility and Three.js owns atmosphere
-- V3 pulse packets use five closely spaced beads; V2 retains its original three-bead packet
+- V3 pulse packets use five closely spaced beads; destination hubs flash white on membrane arrival; V2 retains its original three-bead packet
+- V3 uses one mobile-derived population budget on every viewport while retaining the complete feature set: hub shells, satellites, fog clouds, connected tendrils, free dendrites, pulse packets, and hyperspace streaks
+- Responsive branches may change camera framing and foreground layout only; neural population counts and feature lifecycle remain unified
 
 ### /coaches
 - Uses GSAP + ScrollTrigger + SplitType (CDN)
