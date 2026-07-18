@@ -821,7 +821,9 @@ class NeuralWorld {
       const y = cluster.y + Math.cos(elapsed * 0.16 + cluster.phase * 1.2) * drift * 0.72;
       const position = this.hubPositions[index].set(x, y, z);
       const shellVelocityFade = 1 - smoothstep(0.92, 0.98, progress);
-      const visibility = this.clusterVisibility(cluster, progress) * shellVelocityFade;
+      const nearClipFade = 1 - smoothstep(-4, CONFIG.depthNear, z);
+      const farClipFade = smoothstep(-CONFIG.depthFar, -CONFIG.depthFar + 8, z);
+      const visibility = this.clusterVisibility(cluster, progress) * shellVelocityFade * nearClipFade * farClipFade;
       const nearFactor = smoothstep(-34, 4, z);
       const mobileMidEmphasis = isMobile ? lerp(0.94, 1.05, smoothstep(0.1, 0.55, progress)) : 1;
       const scale = cluster.size * (0.86 + nearFactor * 0.44) * mobileMidEmphasis;
@@ -844,7 +846,9 @@ class NeuralWorld {
       const clusterVisible = this.clusterVisibility(cluster, progress);
       const shellVelocityFade = 1 - smoothstep(0.92, 0.98, progress);
       const satelliteReveal = 0.07 + smoothstep(0.0, 0.5, progress) * 0.72 + smoothstep(0.5, 1, progress) * 0.21;
-      const satelliteVisible = (1 - smoothstep(satelliteReveal, satelliteReveal + 0.08, satellite.rank)) * shellVelocityFade;
+      const satNearClipFade = 1 - smoothstep(-4, CONFIG.depthNear, z);
+      const satFarClipFade = smoothstep(-CONFIG.depthFar, -CONFIG.depthFar + 8, z);
+      const satelliteVisible = (1 - smoothstep(satelliteReveal, satelliteReveal + 0.08, satellite.rank)) * shellVelocityFade * satNearClipFade * satFarClipFade;
       satelliteMatrix.compose(position, unitQuaternion, new THREE.Vector3(1, 1, 1));
       this.satelliteMesh.setMatrixAt(index, satelliteMatrix);
       const mobileSatelliteEmphasis = isMobile ? lerp(0.9, 1.06, smoothstep(0.1, 0.55, progress)) : 1;
