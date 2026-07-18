@@ -822,7 +822,7 @@ class NeuralWorld {
       const x = cluster.x + Math.sin(elapsed * 0.19 + cluster.phase) * drift;
       const y = cluster.y + Math.cos(elapsed * 0.16 + cluster.phase * 1.2) * drift * 0.72;
       const position = this.hubPositions[index].set(x, y, z);
-      const shellVelocityFade = 1 - smoothstep(isMobile ? 0.68 : 0.74, isMobile ? 0.88 : 0.91, progress);
+      const shellVelocityFade = 1 - smoothstep(0.92, 0.98, progress);
       const visibility = this.clusterVisibility(cluster, progress) * shellVelocityFade;
       const nearFactor = smoothstep(-34, 4, z);
       const mobileMidEmphasis = isMobile ? lerp(0.94, 1.05, smoothstep(0.1, 0.55, progress)) : 1;
@@ -844,7 +844,7 @@ class NeuralWorld {
       const position = this.satellitePositions[index].set(x, y, z);
       const cluster = this.clusters[satellite.clusterIndex];
       const clusterVisible = this.clusterVisibility(cluster, progress);
-      const shellVelocityFade = 1 - smoothstep(isMobile ? 0.68 : 0.74, isMobile ? 0.88 : 0.91, progress);
+      const shellVelocityFade = 1 - smoothstep(0.92, 0.98, progress);
       const satelliteReveal = 0.07 + smoothstep(0.0, 0.5, progress) * 0.72 + smoothstep(0.5, 1, progress) * 0.21;
       const satelliteVisible = (1 - smoothstep(satelliteReveal, satelliteReveal + 0.08, satellite.rank)) * shellVelocityFade;
       satelliteMatrix.compose(position, unitQuaternion, new THREE.Vector3(1, 1, 1));
