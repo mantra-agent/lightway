@@ -93,7 +93,9 @@ Canonical palette from Mantra Design Guide (dark mode):
 - Foreground story uses restrained alternating glass cards over the fixed WebGL world; HTML owns copy/accessibility and Three.js owns atmosphere
 - V3 pulse packets use five closely spaced beads; destination hubs flash white only when the pulse head completes the shell-to-shell curve and crosses the destination membrane; V2 retains its original three-bead packet
 - Cascade pulses: highway collision spawns child pulses from hub to visible satellites; satellite shells flash on cascade arrival via `satelliteImpact` attribute
-- V3 hub impacts emit 1–3 child signals total; bounded terminal-growth signals fire every 2–4 eligible visible hub impacts, reserve a unique free dendrite, travel its live curve, and grow a persistent child shell at the tip while the dendrite morphs from pointed to membrane-connected
+- V3 hub impacts emit 1–3 child signals total; bounded terminal-growth signals fire every 2–4 eligible visible hub impacts, reserve a unique free dendrite, travel its live curve, and grow a persistent child hub at the tip
+- Each terminal branch owns one canonical child-hub geometry contract (center, grown radius, incoming tangent, and membrane contact); shell and connector rendering must derive from it so a visible gap is structurally impossible
+- Spawned child hubs emit 2–3 stable one-sided tapered dendrites from their own membrane; child topology is generated once and rendered from the parent branch state, never regenerated per frame
 - V3 dynamic connector tubes use 8 radial segments; free dendrites stay pointed until terminal growth creates a child membrane
 - Velocity-aware spawn distance: `effectiveCycleDistance` scales the static `worldCycleDistance` by `1 + smoothstep(0.1, 0.75, progress) * 1.5` so neural structures recycle farther from camera at high scroll speeds
 - V3 uses one mobile-derived population budget on every viewport while retaining the complete feature set: hub shells, satellites, fog clouds, connected tendrils, free dendrites, pulse packets, and hyperspace streaks
