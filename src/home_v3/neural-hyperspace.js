@@ -376,6 +376,7 @@ class NeuralWorld {
     this.createAtmosphere();
     this.createLocalLinks();
     this.createFreeDendritesSystem();
+    this.createChildHubDendritesSystem();
     this.createHighwayLinks();
     this.createPulses();
     this.createVelocityStreaks();
@@ -462,6 +463,29 @@ class NeuralWorld {
     }));
   }
 
+  createChildHubBranches(parentDirection, parentPhase) {
+    const branchCount = 2 + Math.floor(random() * 2);
+    const reference = Math.abs(parentDirection.y) > 0.82
+      ? new THREE.Vector3(1, 0, 0)
+      : new THREE.Vector3(0, 1, 0);
+    const side = new THREE.Vector3().crossVectors(parentDirection, reference).normalize();
+    const vertical = new THREE.Vector3().crossVectors(side, parentDirection).normalize();
+    return Array.from({ length: branchCount }, (_, index) => {
+      const angle = index / branchCount * Math.PI * 2 + parentPhase * 0.37 + random() * 0.48;
+      const direction = parentDirection.clone().multiplyScalar(0.38)
+        .addScaledVector(side, Math.cos(angle) * 0.9)
+        .addScaledVector(vertical, Math.sin(angle) * 0.72)
+        .normalize();
+      return {
+        direction,
+        length: 1.25 + random() * 1.35,
+        arc: 0.18 + random() * 0.28,
+        sign: index % 2 === 0 ? 1 : -1,
+        phase: parentPhase + index * 0.83,
+      };
+    });
+  }
+
   createFreeDendrites() {
     const branches = [];
     this.clusters.forEach((cluster, clusterIndex) => {
@@ -479,6 +503,10 @@ class NeuralWorld {
           childReserved: false,
           childGrowth: 0,
           childSize: 0.11 + random() * 0.08,
+          childBranches: this.createChildHubBranches(
+            new THREE.Vector3(Math.cos(angle), Math.sin(angle) * 0.72, -0.18 - branchIndex * 0.08).normalize(),
+            cluster.phase + branchIndex,
+          ),
         });
       }
     });
@@ -497,6 +525,10 @@ class NeuralWorld {
         childReserved: false,
         childGrowth: 0,
         childSize: 0.075 + random() * 0.055,
+        childBranches: this.createChildHubBranches(
+          new THREE.Vector3(Math.cos(angle), Math.sin(angle), -0.12).normalize(),
+          satellite.phase,
+        ),
       });
     });
     return branches;
@@ -515,6 +547,9 @@ class NeuralWorld {
       const terminalZ = sourceZ + branch.direction.z * branch.length;
       const controlZ = lerp(sourceZ, terminalZ, 0.5) - branch.arc * 0.28;
       minimum = Math.min(minimum, terminalZ - branch.childSize, controlZ);
+      for (const childBranch of branch.childBranches) {
+        minimum = Math.min(minimum, terminalZ + childBranch.direction.z * childBranch.length);
+      }
     }
     for (const highway of this.highways) {
       const start = this.clusters[highway.from];
@@ -814,6 +849,16 @@ class NeuralWorld {
     );
   }
 
+  createChildHubDendritesSystem() {
+    const branchCount = this.freeDendrites.reduce((count, branch) => count + branch.childBranches.length, 0);
+    this.childHubDendriteSystem = this.createTendrilSystem(
+      branchCount,
+      CONFIG.dendriteSegments,
+      CONFIG.dendriteRadialSegments,
+      0.52,
+    );
+  }
+
   createPulses() {
     const geometry = new THREE.SphereGeometry(0.082, 10, 10);
     this.pulseMaterial = new THREE.MeshBasicMaterial({
@@ -905,6 +950,7 @@ class NeuralWorld {
       this.terminalChildMesh,
       this.localTendrilSystem.mesh,
       this.freeDendriteSystem.mesh,
+      this.childHubDendriteSystem.mesh,
       this.highwayTendrilSystem.mesh,
       this.pulseMesh,
       this.cascadeMesh,
@@ -1018,15 +1064,15 @@ class NeuralWorld {
         ? this.clusterConnectionVisibility(this.clusters[branch.sourceIndex], state.progress)
         : this.satelliteConnectionVisibility(this.satellites[branch.sourceIndex], state.progress);
       if (branch.childSpawned) branch.childGrowth = Math.min(1, branch.childGrowth + delta * 2.8);
-      const growth = smoothstep(0, 1, branch.childGrowth);
-      const curve = this.freeDendriteCurve(branch);
-      const position = branch.childSpawned ? curve.terminalCenter : hiddenPosition;
+      const child = this.terminalChildGeometry(branch);
+      const growth = child.growth;
+      const position = branch.childSpawned ? child.center : hiddenPosition;
       const depthVisibility = branch.childSpawned
         ? smoothstep(-CONFIG.depthFar, -CONFIG.depthFar + 6, position.z)
         : 0;
       matrix.compose(position, quaternion, new THREE.Vector3(1, 1, 1));
       this.terminalChildMesh.setMatrixAt(index, matrix);
-      this.terminalChildScale[index] = branch.childSize * growth;
+      this.terminalChildScale[index] = child.radius;
       this.terminalChildPhase[index] = branch.phase + 1.7;
       this.terminalChildVisibility[index] = branch.childSpawned ? sourceVisibility * growth * depthVisibility : 0;
     });
@@ -1154,23 +1200,53 @@ class NeuralWorld {
     return vertexOffset;
   }
 
-  freeDendriteCurve(branch, childGrowth = 0) {
+  terminalChildGeometry(branch, childGrowth = branch.childGrowth) {
     const isHub = branch.sourceType === 'hub';
-    const center = isHub ? this.hubPositions[branch.sourceIndex] : this.satellitePositions[branch.sourceIndex];
-    const radius = isHub ? this.hubScale[branch.sourceIndex] : this.satelliteScale[branch.sourceIndex];
-    const overlap = Math.max(isMobile ? 0.018 : 0.014, radius * 0.08);
-    const start = center.clone().addScaledVector(branch.direction, Math.max(0, radius - overlap));
-    const terminalCenter = start.clone().addScaledVector(branch.direction, branch.length);
-    const childOverlap = Math.max(isMobile ? 0.012 : 0.01, branch.childSize * 0.08);
-    const end = terminalCenter.clone().addScaledVector(
-      branch.direction,
-      -Math.max(0, branch.childSize - childOverlap) * smoothstep(0, 1, childGrowth),
-    );
-    const control = start.clone().lerp(end, 0.5);
+    const sourceCenter = isHub ? this.hubPositions[branch.sourceIndex] : this.satellitePositions[branch.sourceIndex];
+    const sourceRadius = isHub ? this.hubScale[branch.sourceIndex] : this.satelliteScale[branch.sourceIndex];
+    const sourceOverlap = Math.max(isMobile ? 0.018 : 0.014, sourceRadius * 0.08);
+    const start = sourceCenter.clone().addScaledVector(branch.direction, Math.max(0, sourceRadius - sourceOverlap));
+    const center = start.clone().addScaledVector(branch.direction, branch.length);
+    const growth = smoothstep(0, 1, childGrowth);
+    const radius = branch.childSize * growth;
+
+    const membraneOverlap = Math.min(radius * 0.72, Math.max(isMobile ? 0.018 : 0.014, radius * 0.24));
+    const contactDepth = Math.max(0, radius - membraneOverlap);
+    const end = center.clone();
+    const control = new THREE.Vector3();
+    for (let iteration = 0; iteration < 3; iteration += 1) {
+      control.copy(start).lerp(end, 0.5);
+      control.x += branch.sign * branch.arc * 0.35;
+      control.y += branch.arc;
+      control.z -= branch.arc * 0.28;
+      const incomingDirection = center.clone().sub(control).normalize();
+      end.copy(center).addScaledVector(incomingDirection, -contactDepth);
+    }
+    control.copy(start).lerp(end, 0.5);
     control.x += branch.sign * branch.arc * 0.35;
     control.y += branch.arc;
     control.z -= branch.arc * 0.28;
-    return { start, control, end, terminalCenter };
+    return { start, control, end, center, radius, growth };
+  }
+
+  freeDendriteCurve(branch, childGrowth = 0) {
+    return this.terminalChildGeometry(branch, childGrowth);
+  }
+
+  childHubDendriteCurve(branch, childBranch) {
+    const child = this.terminalChildGeometry(branch);
+    const overlap = Math.min(child.radius * 0.7, Math.max(isMobile ? 0.012 : 0.01, child.radius * 0.18));
+    const start = child.center.clone().addScaledVector(
+      childBranch.direction,
+      Math.max(0, child.radius - overlap),
+    );
+    const length = childBranch.length * child.growth;
+    const end = start.clone().addScaledVector(childBranch.direction, length);
+    const control = start.clone().lerp(end, 0.5);
+    control.x += childBranch.sign * childBranch.arc * 0.35 * child.growth;
+    control.y += childBranch.arc * child.growth;
+    control.z -= childBranch.arc * 0.28 * child.growth;
+    return { start, control, end };
   }
 
   updateFreeDendrites(progress, elapsed) {
@@ -1188,7 +1264,7 @@ class NeuralWorld {
         system,
         curve,
         branch.sourceType === 'hub' ? 0.052 : 0.028,
-        branch.childSize * smoothstep(0, 1, branch.childGrowth),
+        branch.childSize * 0.42 * smoothstep(0, 1, branch.childGrowth),
         visibility * breathing,
         color,
         vertexOffset,
@@ -1200,6 +1276,37 @@ class NeuralWorld {
     system.geometry.attributes.color.needsUpdate = true;
     system.geometry.attributes.normal.needsUpdate = true;
     system.material.uniforms.uOpacity.value = isMobile ? 0.65 : 0.6;
+  }
+
+  updateChildHubDendrites(progress, elapsed) {
+    const system = this.childHubDendriteSystem;
+    const color = new THREE.Color(0.006, 0.13, 0.21);
+    let vertexOffset = 0;
+    this.freeDendrites.forEach((branch, branchIndex) => {
+      if (!branch.childSpawned || branch.childGrowth < 0.16) return;
+      const visibility = this.terminalChildVisibility[branchIndex];
+      if (visibility < 0.08) return;
+      const child = this.terminalChildGeometry(branch);
+      const branchReveal = smoothstep(0.16, 0.82, branch.childGrowth);
+      for (const childBranch of branch.childBranches) {
+        const breathing = 0.72 + Math.sin(elapsed * 0.58 + childBranch.phase) * 0.12;
+        vertexOffset = this.writeTendril(
+          system,
+          this.childHubDendriteCurve(branch, childBranch),
+          Math.max(0.018, child.radius * 0.24),
+          0,
+          visibility * branchReveal * breathing,
+          color,
+          vertexOffset,
+          0,
+        );
+      }
+    });
+    system.geometry.setDrawRange(0, vertexOffset);
+    system.geometry.attributes.position.needsUpdate = true;
+    system.geometry.attributes.color.needsUpdate = true;
+    system.geometry.attributes.normal.needsUpdate = true;
+    system.material.uniforms.uOpacity.value = isMobile ? 0.6 : 0.56;
   }
 
   updateLocalLinks(progress, elapsed) {
@@ -1422,7 +1529,7 @@ class NeuralWorld {
     if (sourceVisibility < 0.18) return false;
     this.group.updateMatrixWorld(true);
     camera.updateMatrixWorld(true);
-    const endpoint = this.freeDendriteCurve(branch).terminalCenter.clone();
+    const endpoint = this.terminalChildGeometry(branch).center.clone();
     endpoint.applyMatrix4(this.group.matrixWorld).project(camera);
     return Math.abs(endpoint.x) < 1.08 && Math.abs(endpoint.y) < 1.08 && endpoint.z > -1 && endpoint.z < 1;
   }
@@ -1545,11 +1652,12 @@ class NeuralWorld {
       this.group.scale.set(portraitScale, portraitScale * lerp(1, 1.26, portraitReveal), portraitScale);
     }
     this.updatePositions(progress, elapsed, travel);
+    this.updateTerminalChildren(delta);
+    this.updateChildHubDendrites(progress, elapsed);
     this.updateLocalLinks(progress, elapsed);
     this.updateFreeDendrites(progress, elapsed);
     this.updateHighways(progress, elapsed);
     this.updatePulses(progress, elapsed, delta);
-    this.updateTerminalChildren(delta);
     this.updateStreaks(progress, travel);
     this.updateMaterials(progress, elapsed, travel);
     this.syncCycleReplica();
