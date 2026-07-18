@@ -21,10 +21,10 @@ const CONFIG = Object.freeze({
   interstitialFogParticleCount: 11,
   localSegments: 12,
   highwaySegments: 34,
-  localRadialSegments: 4,
-  highwayRadialSegments: 5,
+  localRadialSegments: 8,
+  highwayRadialSegments: 8,
   dendriteSegments: 8,
-  dendriteRadialSegments: 4,
+  dendriteRadialSegments: 8,
   depthFar: 96,
   depthNear: 4,
 });
@@ -370,6 +370,7 @@ class NeuralWorld {
 
     this.createHubMeshes();
     this.createSatelliteMeshes();
+    this.createTerminalChildMeshes();
     this.createMicroField();
     this.createAtmosphere();
     this.createLocalLinks();
@@ -472,6 +473,10 @@ class NeuralWorld {
           arc: 0.34 + random() * 0.34,
           sign: branchIndex % 2 === 0 ? 1 : -1,
           phase: cluster.phase + branchIndex,
+          childSpawned: false,
+          childReserved: false,
+          childGrowth: 0,
+          childSize: 0.11 + random() * 0.08,
         });
       }
     });
@@ -486,6 +491,10 @@ class NeuralWorld {
         arc: 0.18 + random() * 0.24,
         sign: satelliteIndex % 2 === 0 ? 1 : -1,
         phase: satellite.phase,
+        childSpawned: false,
+        childReserved: false,
+        childGrowth: 0,
+        childSize: 0.075 + random() * 0.055,
       });
     });
     return branches;
@@ -533,6 +542,24 @@ class NeuralWorld {
     this.satelliteMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.satelliteMesh.frustumCulled = false;
     this.group.add(this.satelliteMesh);
+  }
+
+
+  createTerminalChildMeshes() {
+    const count = this.freeDendrites.length;
+    const geometry = new THREE.IcosahedronGeometry(1, 2);
+    this.terminalChildScale = new Float32Array(count);
+    this.terminalChildPhase = new Float32Array(count);
+    this.terminalChildVisibility = new Float32Array(count);
+    this.terminalChildImpact = new Float32Array(count);
+    geometry.setAttribute('aScale', new THREE.InstancedBufferAttribute(this.terminalChildScale, 1));
+    geometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(this.terminalChildPhase, 1));
+    geometry.setAttribute('aVisibility', new THREE.InstancedBufferAttribute(this.terminalChildVisibility, 1));
+    geometry.setAttribute('aImpact', new THREE.InstancedBufferAttribute(this.terminalChildImpact, 1));
+    this.terminalChildMesh = new THREE.InstancedMesh(geometry, this.satelliteMaterial, count);
+    this.terminalChildMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.terminalChildMesh.frustumCulled = false;
+    this.group.add(this.terminalChildMesh);
   }
 
   createMicroField() {
@@ -663,24 +690,52 @@ class NeuralWorld {
     const vertexCount = maxTendrils * segments * radialSegments * 6;
     const positions = new Float32Array(vertexCount * 3);
     const colors = new Float32Array(vertexCount * 3);
+    const normals = new Float32Array(vertexCount * 3);
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3).setUsage(THREE.DynamicDrawUsage));
+    geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3).setUsage(THREE.DynamicDrawUsage));
     geometry.setDrawRange(0, 0);
-    const material = new THREE.MeshBasicMaterial({
-      vertexColors: true,
+    const material = new THREE.ShaderMaterial({
+      vertexShader: `
+        attribute vec3 color;
+        varying vec3 vColor;
+        varying vec3 vNormal;
+        varying vec3 vViewDirection;
+        void main() {
+          vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
+          vColor = color;
+          vNormal = normalize(normalMatrix * normal);
+          vViewDirection = normalize(-viewPosition.xyz);
+          gl_Position = projectionMatrix * viewPosition;
+        }
+      `,
+      fragmentShader: `
+        uniform float uOpacity;
+        varying vec3 vColor;
+        varying vec3 vNormal;
+        varying vec3 vViewDirection;
+        void main() {
+          vec3 normal = normalize(vNormal);
+          vec3 lightDirection = normalize(vec3(-0.35, 0.62, 0.7));
+          float diffuse = 0.58 + max(dot(normal, lightDirection), 0.0) * 0.42;
+          float rim = pow(1.0 - abs(dot(normal, normalize(vViewDirection))), 1.7);
+          vec3 roundedColor = vColor * diffuse + vColor * rim * 0.48;
+          float alpha = uOpacity * (0.76 + rim * 0.24);
+          gl_FragColor = vec4(roundedColor, alpha);
+        }
+      `,
+      uniforms: { uOpacity: { value: opacity } },
       transparent: true,
-      opacity,
       depthWrite: false,
       depthTest: true,
       side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
-      fog: true,
     });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.frustumCulled = false;
     this.group.add(mesh);
-    return { positions, colors, geometry, material, mesh, segments, radialSegments };
+    return { positions, colors, normals, geometry, material, mesh, segments, radialSegments };
   }
 
   createLocalLinks() {
@@ -748,7 +803,8 @@ class NeuralWorld {
     this.cascadePool = Array.from({ length: CONFIG.cascadeCount }, () => ({
       active: false,
       hubIndex: 0,
-      satelliteIndex: 0,
+      targetType: 'satellite',
+      targetIndex: 0,
       phase: 0,
       speed: 0,
       scale: 0,
@@ -874,6 +930,33 @@ class NeuralWorld {
     ]) attribute.needsUpdate = true;
   }
 
+  updateTerminalChildren(delta) {
+    const matrix = new THREE.Matrix4();
+    const quaternion = new THREE.Quaternion();
+    const hiddenPosition = new THREE.Vector3(0, 0, -120);
+    this.freeDendrites.forEach((branch, index) => {
+      const sourceVisibility = branch.sourceType === 'hub'
+        ? this.hubVisibility[branch.sourceIndex]
+        : this.satelliteVisibility[branch.sourceIndex];
+      if (branch.childSpawned) branch.childGrowth = Math.min(1, branch.childGrowth + delta * 2.8);
+      const growth = smoothstep(0, 1, branch.childGrowth);
+      const curve = this.freeDendriteCurve(branch);
+      const position = branch.childSpawned ? curve.terminalCenter : hiddenPosition;
+      matrix.compose(position, quaternion, new THREE.Vector3(1, 1, 1));
+      this.terminalChildMesh.setMatrixAt(index, matrix);
+      this.terminalChildScale[index] = branch.childSize * growth;
+      this.terminalChildPhase[index] = branch.phase + 1.7;
+      this.terminalChildVisibility[index] = branch.childSpawned ? sourceVisibility * growth : 0;
+    });
+    this.terminalChildMesh.instanceMatrix.needsUpdate = true;
+    for (const attribute of [
+      this.terminalChildMesh.geometry.attributes.aScale,
+      this.terminalChildMesh.geometry.attributes.aPhase,
+      this.terminalChildMesh.geometry.attributes.aVisibility,
+      this.terminalChildMesh.geometry.attributes.aImpact,
+    ]) attribute.needsUpdate = true;
+  }
+
   quadraticControl(start, end, arc, sign, target = new THREE.Vector3()) {
     target.lerpVectors(start, end, 0.5);
     const dx = end.x - start.x;
@@ -914,7 +997,7 @@ class NeuralWorld {
     ).normalize();
   }
 
-  writeTendril(system, curve, startWidth, endWidth, intensity, color, vertexOffset) {
+  writeTendril(system, curve, startWidth, endWidth, intensity, color, vertexOffset, terminalGrowth = 1) {
     const point0 = new THREE.Vector3();
     const point1 = new THREE.Vector3();
     const tangent0 = new THREE.Vector3();
@@ -926,6 +1009,7 @@ class NeuralWorld {
     const up = new THREE.Vector3(0, 1, 0);
     const side = new THREE.Vector3(1, 0, 0);
     const corners = Array.from({ length: 4 }, () => new THREE.Vector3());
+    const cornerNormals = Array.from({ length: 4 }, () => new THREE.Vector3());
 
     const buildFrame = (tangent, normal, binormal) => {
       const reference = Math.abs(tangent.dot(up)) > 0.88 ? side : up;
@@ -944,11 +1028,13 @@ class NeuralWorld {
       buildFrame(tangent1, normal1, binormal1);
 
       const tendrilRadius = (t) => {
+        const taperRadius = lerp(startWidth, endWidth, smoothstep(0, 1, t));
         const membraneRadius = lerp(startWidth, endWidth, t);
         const distanceFromMiddle = Math.abs(t * 2 - 1);
         const membraneWeight = smoothstep(0, 1, Math.pow(distanceFromMiddle, 1.35));
         const middleRadius = Math.min(startWidth, endWidth) * 0.2;
-        return lerp(middleRadius, membraneRadius, membraneWeight);
+        const connectedRadius = lerp(middleRadius, membraneRadius, membraneWeight);
+        return lerp(taperRadius, connectedRadius, terminalGrowth);
       };
       const radius0 = tendrilRadius(t0);
       const radius1 = tendrilRadius(t1);
@@ -958,6 +1044,10 @@ class NeuralWorld {
       for (let radial = 0; radial < system.radialSegments; radial += 1) {
         const angle0 = radial / system.radialSegments * Math.PI * 2;
         const angle1 = (radial + 1) / system.radialSegments * Math.PI * 2;
+        cornerNormals[0].copy(normal0).multiplyScalar(Math.cos(angle0)).addScaledVector(binormal0, Math.sin(angle0)).normalize();
+        cornerNormals[1].copy(normal1).multiplyScalar(Math.cos(angle0)).addScaledVector(binormal1, Math.sin(angle0)).normalize();
+        cornerNormals[2].copy(normal1).multiplyScalar(Math.cos(angle1)).addScaledVector(binormal1, Math.sin(angle1)).normalize();
+        cornerNormals[3].copy(normal0).multiplyScalar(Math.cos(angle1)).addScaledVector(binormal0, Math.sin(angle1)).normalize();
         corners[0].copy(point0).addScaledVector(normal0, Math.cos(angle0) * radius0).addScaledVector(binormal0, Math.sin(angle0) * radius0);
         corners[1].copy(point1).addScaledVector(normal1, Math.cos(angle0) * radius1).addScaledVector(binormal1, Math.sin(angle0) * radius1);
         corners[2].copy(point1).addScaledVector(normal1, Math.cos(angle1) * radius1).addScaledVector(binormal1, Math.sin(angle1) * radius1);
@@ -968,9 +1058,13 @@ class NeuralWorld {
           system.positions[vertexOffset * 3] = point.x;
           system.positions[vertexOffset * 3 + 1] = point.y;
           system.positions[vertexOffset * 3 + 2] = point.z;
+          const radialNormal = cornerNormals[cornerIndex];
           system.colors[vertexOffset * 3] = color.r * segmentIntensity;
           system.colors[vertexOffset * 3 + 1] = color.g * segmentIntensity;
           system.colors[vertexOffset * 3 + 2] = color.b * segmentIntensity;
+          system.normals[vertexOffset * 3] = radialNormal.x;
+          system.normals[vertexOffset * 3 + 1] = radialNormal.y;
+          system.normals[vertexOffset * 3 + 2] = radialNormal.z;
           vertexOffset += 1;
         }
       }
@@ -978,18 +1072,23 @@ class NeuralWorld {
     return vertexOffset;
   }
 
-  freeDendriteCurve(branch) {
+  freeDendriteCurve(branch, childGrowth = 0) {
     const isHub = branch.sourceType === 'hub';
     const center = isHub ? this.hubPositions[branch.sourceIndex] : this.satellitePositions[branch.sourceIndex];
     const radius = isHub ? this.hubScale[branch.sourceIndex] : this.satelliteScale[branch.sourceIndex];
     const overlap = Math.max(isMobile ? 0.018 : 0.014, radius * 0.08);
     const start = center.clone().addScaledVector(branch.direction, Math.max(0, radius - overlap));
-    const end = start.clone().addScaledVector(branch.direction, branch.length);
+    const terminalCenter = start.clone().addScaledVector(branch.direction, branch.length);
+    const childOverlap = Math.max(isMobile ? 0.012 : 0.01, branch.childSize * 0.08);
+    const end = terminalCenter.clone().addScaledVector(
+      branch.direction,
+      -Math.max(0, branch.childSize - childOverlap) * smoothstep(0, 1, childGrowth),
+    );
     const control = start.clone().lerp(end, 0.5);
     control.x += branch.sign * branch.arc * 0.35;
     control.y += branch.arc;
     control.z -= branch.arc * 0.28;
-    return { start, control, end };
+    return { start, control, end, terminalCenter };
   }
 
   updateFreeDendrites(progress, elapsed) {
@@ -1004,18 +1103,20 @@ class NeuralWorld {
       const breathing = 0.72 + Math.sin(elapsed * 0.5 + branch.phase) * 0.12;
       vertexOffset = this.writeTendril(
         system,
-        this.freeDendriteCurve(branch),
+        this.freeDendriteCurve(branch, branch.childGrowth),
         branch.sourceType === 'hub' ? 0.052 : 0.028,
-        0,
+        branch.childSize * smoothstep(0, 1, branch.childGrowth),
         visibility * breathing,
         color,
         vertexOffset,
+        smoothstep(0, 1, branch.childGrowth),
       );
     }
     system.geometry.setDrawRange(0, vertexOffset);
     system.geometry.attributes.position.needsUpdate = true;
     system.geometry.attributes.color.needsUpdate = true;
-    system.material.opacity = isMobile ? 0.65 : 0.6;
+    system.geometry.attributes.normal.needsUpdate = true;
+    system.material.uniforms.uOpacity.value = isMobile ? 0.65 : 0.6;
   }
 
   updateLocalLinks(progress, elapsed) {
@@ -1078,7 +1179,8 @@ class NeuralWorld {
     system.geometry.setDrawRange(0, vertexOffset);
     system.geometry.attributes.position.needsUpdate = true;
     system.geometry.attributes.color.needsUpdate = true;
-    system.material.opacity = isMobile ? 0.58 : 0.52;
+    system.geometry.attributes.normal.needsUpdate = true;
+    system.material.uniforms.uOpacity.value = isMobile ? 0.58 : 0.52;
   }
 
   highwayVisible(highway, progress) {
@@ -1122,7 +1224,8 @@ class NeuralWorld {
     system.geometry.setDrawRange(0, vertexOffset);
     system.geometry.attributes.position.needsUpdate = true;
     system.geometry.attributes.color.needsUpdate = true;
-    system.material.opacity = 0.74;
+    system.geometry.attributes.normal.needsUpdate = true;
+    system.material.uniforms.uOpacity.value = 0.74;
   }
 
   updatePulses(progress, elapsed, delta) {
@@ -1133,6 +1236,9 @@ class NeuralWorld {
     const satelliteImpactDecay = Math.exp(-delta * 7);
     for (let index = 0; index < this.satelliteImpact.length; index += 1) {
       this.satelliteImpact[index] *= satelliteImpactDecay;
+    }
+    for (let index = 0; index < this.terminalChildImpact.length; index += 1) {
+      this.terminalChildImpact[index] *= satelliteImpactDecay;
     }
     const matrix = new THREE.Matrix4();
     const quaternion = new THREE.Quaternion();
@@ -1178,11 +1284,17 @@ class NeuralWorld {
     for (const cascade of this.cascadePool) {
       if (cascade.active) {
         const nextPhase = cascade.phase + delta * cascade.speed;
-        const hub = this.hubPositions[cascade.hubIndex];
-        const sat = this.satellitePositions[cascade.satelliteIndex];
         if (nextPhase >= 1) {
           cascade.active = false;
-          this.satelliteImpact[cascade.satelliteIndex] = 1;
+          if (cascade.targetType === 'terminal') {
+            const branch = this.freeDendrites[cascade.targetIndex];
+            branch.childReserved = false;
+            branch.childSpawned = true;
+            branch.childGrowth = 0;
+            this.terminalChildImpact[cascade.targetIndex] = 1;
+          } else {
+            this.satelliteImpact[cascade.targetIndex] = 1;
+          }
         } else {
           cascade.phase = nextPhase;
         }
@@ -1190,7 +1302,10 @@ class NeuralWorld {
           if (cascadeIndex >= CONFIG.cascadeCount * 3) break;
           const ghostT = Math.max(0, (cascade.active ? cascade.phase : 1) - ghost * 0.04);
           if (cascade.active || ghost === 0) {
-            this.curvePoint(cascade.curve, ghostT, cascadePosition);
+            const curve = cascade.targetType === 'terminal'
+              ? this.freeDendriteCurve(this.freeDendrites[cascade.targetIndex])
+              : cascade.curve;
+            this.curvePoint(curve, ghostT, cascadePosition);
           } else {
             cascadePosition.set(0, 0, -120);
           }
@@ -1218,33 +1333,57 @@ class NeuralWorld {
   }
 
   spawnCascades(hubIndex, progress) {
+    const signalCount = 1 + Math.floor(random() * 3);
     const baseIndex = hubIndex * CONFIG.satellitesPerCluster;
-    const maxCascades = Math.min(CONFIG.satellitesPerCluster, 3 + Math.floor(progress * 4));
-    const offsets = Array.from({ length: CONFIG.satellitesPerCluster }, (_, i) => i);
-    for (let i = offsets.length - 1; i > 0; i -= 1) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [offsets[i], offsets[j]] = [offsets[j], offsets[i]];
+    const satelliteOffsets = Array.from({ length: CONFIG.satellitesPerCluster }, (_, i) => i);
+    for (let i = satelliteOffsets.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(random() * (i + 1));
+      [satelliteOffsets[i], satelliteOffsets[j]] = [satelliteOffsets[j], satelliteOffsets[i]];
     }
+
+    const eligibleTerminalBranches = this.freeDendrites
+      .map((branch, index) => ({ branch, index }))
+      .filter(({ branch }) => branch.sourceType === 'hub' && branch.sourceIndex === hubIndex && !branch.childSpawned && !branch.childReserved)
+      .map(({ index }) => index);
+    const shouldGrowTerminal = eligibleTerminalBranches.length > 0 && random() < 0.05;
     let spawned = 0;
-    for (const offset of offsets) {
-      if (spawned >= maxCascades) break;
-      const satIndex = baseIndex + offset;
-      if (satIndex >= this.satellites.length) break;
-      if (this.satelliteVisibility[satIndex] < 0.05) continue;
-      const pool = this.cascadePool.find((c) => !c.active);
+
+    if (shouldGrowTerminal) {
+      const branchIndex = eligibleTerminalBranches[Math.floor(random() * eligibleTerminalBranches.length)];
+      const pool = this.cascadePool.find((cascade) => !cascade.active);
+      if (pool) {
+        this.freeDendrites[branchIndex].childReserved = true;
+        pool.active = true;
+        pool.hubIndex = hubIndex;
+        pool.targetType = 'terminal';
+        pool.targetIndex = branchIndex;
+        pool.curve = null;
+        pool.phase = 0;
+        pool.speed = 1.05 + random() * 0.75;
+        pool.scale = 0.62 + random() * 0.38;
+        spawned += 1;
+      }
+    }
+
+    for (const offset of satelliteOffsets) {
+      if (spawned >= signalCount) break;
+      const satelliteIndex = baseIndex + offset;
+      if (satelliteIndex >= this.satellites.length) break;
+      if (this.satelliteVisibility[satelliteIndex] < 0.05) continue;
+      const pool = this.cascadePool.find((cascade) => !cascade.active);
       if (!pool) break;
-      const sign = offset % 2 ? 1 : -1;
-      pool.curve = this.surfaceCurve(
-        this.hubPositions[hubIndex], this.satellitePositions[satIndex],
-        this.hubScale[hubIndex], this.satelliteScale[satIndex],
-        0.44, sign,
-      );
       pool.active = true;
       pool.hubIndex = hubIndex;
-      pool.satelliteIndex = satIndex;
+      pool.targetType = 'satellite';
+      pool.targetIndex = satelliteIndex;
+      pool.curve = this.surfaceCurve(
+        this.hubPositions[hubIndex], this.satellitePositions[satelliteIndex],
+        this.hubScale[hubIndex], this.satelliteScale[satelliteIndex],
+        0.72, offset % 2 ? 1 : -1,
+      );
       pool.phase = 0;
-      pool.speed = 1.4 + Math.random() * 1.2;
-      pool.scale = 0.7 + Math.random() * 0.5;
+      pool.speed = 1.4 + random() * 1.2;
+      pool.scale = 0.7 + random() * 0.5;
       spawned += 1;
     }
   }
@@ -1300,6 +1439,7 @@ class NeuralWorld {
     this.updateFreeDendrites(progress, elapsed);
     this.updateHighways(progress, elapsed);
     this.updatePulses(progress, elapsed, delta);
+    this.updateTerminalChildren(delta);
     this.updateStreaks(progress, travel);
     this.updateMaterials(progress, elapsed, travel);
     this.group.rotation.z = Math.sin(elapsed * 0.07) * 0.012;
