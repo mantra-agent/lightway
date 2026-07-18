@@ -16,6 +16,7 @@ const CONFIG = Object.freeze({
   microCount: 1200,
   streakCount: 260,
   pulseCount: 64,
+  cascadeCount: 48,
   hubFogParticleCount: 47,
   interstitialFogParticleCount: 11,
   localSegments: 12,
@@ -728,6 +729,29 @@ class NeuralWorld {
       scale: 1.2 + random() * 0.95,
     }));
     this.group.add(this.pulseMesh);
+
+    // Cascade pulse mesh (hub → satellite)
+    const cascadeGeometry = new THREE.SphereGeometry(0.048, 8, 8);
+    this.cascadeMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 1,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    this.cascadeMesh = new THREE.InstancedMesh(cascadeGeometry, this.cascadeMaterial, CONFIG.cascadeCount * 3);
+    this.cascadeMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.cascadeMesh.frustumCulled = false;
+    this.cascades = [];
+    this.cascadePool = Array.from({ length: CONFIG.cascadeCount }, () => ({
+      active: false,
+      hubIndex: 0,
+      satelliteIndex: 0,
+      phase: 0,
+      speed: 0,
+      scale: 0,
+    }));
+    this.group.add(this.cascadeMesh);
   }
 
   createVelocityStreaks() {
@@ -788,7 +812,9 @@ class NeuralWorld {
     const satelliteMatrix = new THREE.Matrix4();
     const unitQuaternion = new THREE.Quaternion();
 
-    const connectedWorldTravel = reducedMotion ? 0 : travel % this.worldCycleDistance;
+    const velocityScale = 1 + smoothstep(0.1, 0.75, progress) * 5.5;
+    const effectiveCycleDistance = this.worldCycleDistance * velocityScale;
+    const connectedWorldTravel = reducedMotion ? 0 : travel % effectiveCycleDistance;
     this.clusters.forEach((cluster, index) => {
       const z = cluster.z + connectedWorldTravel;
       const drift = 0.028 + smoothstep(0.08, 0.5, progress) * 0.11;
@@ -1096,6 +1122,10 @@ class NeuralWorld {
     for (let index = 0; index < this.hubImpact.length; index += 1) {
       this.hubImpact[index] *= impactDecay;
     }
+    const satelliteImpactDecay = Math.exp(-delta * 7);
+    for (let index = 0; index < this.satelliteImpact.length; index += 1) {
+      this.satelliteImpact[index] *= satelliteImpactDecay;
+    }
     const matrix = new THREE.Matrix4();
     const quaternion = new THREE.Quaternion();
     const position = new THREE.Vector3();
@@ -1110,6 +1140,7 @@ class NeuralWorld {
       pulse.phase = t;
       if (visible && collidedWithDestination) {
         this.hubImpact[highway.to] = 1;
+        this.spawnCascades(highway.to, progress);
       }
       for (let ghost = 0; ghost < 5; ghost += 1) {
         const ghostT = Math.max(0, t - ghost * (0.006 + progress * 0.004));
@@ -1128,6 +1159,71 @@ class NeuralWorld {
     this.pulseMesh.instanceMatrix.needsUpdate = true;
     this.hubFrontMesh.geometry.attributes.aImpact.needsUpdate = true;
     this.pulseMaterial.opacity = 1;
+
+    // Update cascade pulses (hub → satellite)
+    let cascadeIndex = 0;
+    const cascadeMatrix = new THREE.Matrix4();
+    const cascadePosition = new THREE.Vector3();
+    for (const cascade of this.cascadePool) {
+      if (cascade.active) {
+        const nextPhase = cascade.phase + delta * cascade.speed;
+        const hub = this.hubPositions[cascade.hubIndex];
+        const sat = this.satellitePositions[cascade.satelliteIndex];
+        if (nextPhase >= 1) {
+          cascade.active = false;
+          this.satelliteImpact[cascade.satelliteIndex] = 1;
+        } else {
+          cascade.phase = nextPhase;
+        }
+        for (let ghost = 0; ghost < 3; ghost += 1) {
+          if (cascadeIndex >= CONFIG.cascadeCount * 3) break;
+          const ghostT = Math.max(0, (cascade.active ? cascade.phase : 1) - ghost * 0.04);
+          if (cascade.active || ghost === 0) {
+            cascadePosition.lerpVectors(hub, sat, ghostT);
+          } else {
+            cascadePosition.set(0, 0, -120);
+          }
+          const endpointEnvelope = smoothstep(0, 0.08, ghostT) * (1 - smoothstep(0.92, 1, ghostT));
+          const scale = cascade.active
+            ? cascade.scale * (1 - ghost * 0.2) * endpointEnvelope * (isMobile ? 0.6 : 1)
+            : 0;
+          cascadeMatrix.compose(cascadePosition, quaternion, new THREE.Vector3(scale, scale, scale));
+          this.cascadeMesh.setMatrixAt(cascadeIndex, cascadeMatrix);
+          cascadeIndex += 1;
+        }
+      } else {
+        for (let ghost = 0; ghost < 3; ghost += 1) {
+          if (cascadeIndex >= CONFIG.cascadeCount * 3) break;
+          cascadePosition.set(0, 0, -120);
+          cascadeMatrix.compose(cascadePosition, quaternion, new THREE.Vector3(0, 0, 0));
+          this.cascadeMesh.setMatrixAt(cascadeIndex, cascadeMatrix);
+          cascadeIndex += 1;
+        }
+      }
+    }
+    this.cascadeMesh.instanceMatrix.needsUpdate = true;
+    this.satelliteMesh.geometry.attributes.aImpact.needsUpdate = true;
+    this.cascadeMaterial.opacity = 1;
+  }
+
+  spawnCascades(hubIndex, progress) {
+    const baseIndex = hubIndex * CONFIG.satellitesPerCluster;
+    const maxCascades = Math.min(CONFIG.satellitesPerCluster, 3 + Math.floor(progress * 4));
+    let spawned = 0;
+    for (let offset = 0; offset < CONFIG.satellitesPerCluster && spawned < maxCascades; offset += 1) {
+      const satIndex = baseIndex + offset;
+      if (satIndex >= this.satellites.length) break;
+      if (this.satelliteVisibility[satIndex] < 0.05) continue;
+      const pool = this.cascadePool.find((c) => !c.active);
+      if (!pool) break;
+      pool.active = true;
+      pool.hubIndex = hubIndex;
+      pool.satelliteIndex = satIndex;
+      pool.phase = 0;
+      pool.speed = 1.4 + Math.random() * 1.2;
+      pool.scale = 0.7 + Math.random() * 0.5;
+      spawned += 1;
+    }
   }
 
   updateStreaks(progress, travel) {
