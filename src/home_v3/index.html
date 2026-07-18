@@ -245,6 +245,50 @@
         letter-spacing: -0.01em;
       }
 
+      .grouped-card {
+        width: min(620px, calc(100vw - 48px));
+      }
+
+      .idea-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 28px;
+      }
+
+      .idea-panel {
+        min-height: 144px;
+        padding: 20px;
+        border: 1px solid rgba(232, 234, 237, 0.075);
+        border-radius: 12px;
+        background: rgba(4, 16, 25, 0.34);
+        box-shadow: inset 0 1px 0 rgba(232, 234, 237, 0.035);
+      }
+
+      .idea-number {
+        display: block;
+        margin-bottom: 18px;
+        color: rgba(26, 155, 219, 0.78);
+        font-size: 10px;
+        font-weight: 760;
+        letter-spacing: 0.16em;
+      }
+
+      .idea-panel h3 {
+        margin: 0 0 8px;
+        color: rgba(232, 234, 237, 0.96);
+        font-size: 17px;
+        font-weight: 630;
+        letter-spacing: -0.025em;
+      }
+
+      .idea-panel p {
+        margin: 0;
+        color: rgba(232, 234, 237, 0.56);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
       .final-section {
         min-height: 125svh;
         text-align: center;
@@ -343,6 +387,36 @@
         }
 
         .story-card { backdrop-filter: blur(13px) saturate(115%); }
+        .grouped-section {
+          min-height: 125svh;
+          padding: 8svh 0;
+        }
+        .grouped-card {
+          padding: 22px;
+        }
+        .grouped-card h2 {
+          margin-bottom: 14px;
+          font-size: clamp(32px, 10vw, 44px);
+        }
+        .grouped-card .story-copy {
+          font-size: 14px;
+          line-height: 1.5;
+        }
+        .idea-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+          margin-top: 18px;
+        }
+        .idea-panel {
+          min-height: 132px;
+          padding: 14px;
+        }
+        .idea-number { margin-bottom: 10px; }
+        .idea-panel h3 { font-size: 15px; }
+        .idea-panel p {
+          font-size: 11.5px;
+          line-height: 1.42;
+        }
         .scroll-cue { bottom: 42px; }
       }
 
@@ -402,12 +476,33 @@
         </article>
       </section>
 
-      <section class="story-section align-left" data-scene-progress="0.5">
-        <article class="section-content story-card">
+      <section class="story-section align-left grouped-section" data-scene-progress="0.5">
+        <article class="section-content story-card grouped-card">
           <p class="eyebrow">03 · Action</p>
-          <h2>Follow through.</h2>
-          <p class="story-copy">The right next step surfaces with the context to act. Coordination happens underneath, on your agenda.</p>
-          <p class="proof-line">Intention becomes movement.</p>
+          <h2>Mantra moves the work.</h2>
+          <p class="story-copy">One intelligence layer coordinates the small systems that turn intention into momentum.</p>
+          <div class="idea-grid">
+            <section class="idea-panel">
+              <span class="idea-number">01</span>
+              <h3>Prepares</h3>
+              <p>Meetings arrive with the right people, history, and open decisions already assembled.</p>
+            </section>
+            <section class="idea-panel">
+              <span class="idea-number">02</span>
+              <h3>Captures</h3>
+              <p>Ideas, promises, and decisions become durable context instead of disappearing into transcripts.</p>
+            </section>
+            <section class="idea-panel">
+              <span class="idea-number">03</span>
+              <h3>Coordinates</h3>
+              <p>Goals, calendar, relationships, and projects resolve into one coherent next move.</p>
+            </section>
+            <section class="idea-panel">
+              <span class="idea-number">04</span>
+              <h3>Follows through</h3>
+              <p>Open loops return at the right moment, with enough context to close them.</p>
+            </section>
+          </div>
         </article>
       </section>
 

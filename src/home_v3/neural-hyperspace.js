@@ -11,15 +11,19 @@ const narrativeSections = Array.from(document.querySelectorAll('[data-scene-prog
 const isMobile = window.innerWidth < 700;
 
 const CONFIG = Object.freeze({
-  clusterCount: isMobile ? 8 : 11,
-  satellitesPerCluster: isMobile ? 7 : 10,
-  microCount: isMobile ? 1200 : 2600,
-  streakCount: isMobile ? 260 : 560,
-  pulseCount: isMobile ? 64 : 120,
-  hubFogParticleCount: isMobile ? 47 : 100,
-  interstitialFogParticleCount: isMobile ? 11 : 25,
+  clusterCount: 8,
+  satellitesPerCluster: 7,
+  microCount: 1200,
+  streakCount: 260,
+  pulseCount: 64,
+  hubFogParticleCount: 47,
+  interstitialFogParticleCount: 11,
   localSegments: 12,
   highwaySegments: 34,
+  localRadialSegments: 4,
+  highwayRadialSegments: 5,
+  dendriteSegments: 8,
+  dendriteRadialSegments: 4,
   depthFar: 96,
   depthNear: 4,
 });
@@ -91,10 +95,12 @@ const shellVertexShader = `
   attribute float aScale;
   attribute float aPhase;
   attribute float aVisibility;
+  attribute float aImpact;
   varying vec3 vNormal;
   varying vec3 vViewDirection;
   varying float vPhase;
   varying float vVisibility;
+  varying float vImpact;
   varying float vDepthFade;
   uniform float uTime;
   uniform float uProgress;
@@ -106,6 +112,7 @@ const shellVertexShader = `
     vViewDirection = normalize(cameraPosition - worldPosition.xyz);
     vPhase = aPhase;
     vVisibility = aVisibility;
+    vImpact = aImpact;
     vDepthFade = 1.0 - smoothstep(8.0, 68.0, distance(cameraPosition, worldPosition.xyz)) * 0.84;
     gl_Position = projectionMatrix * viewMatrix * worldPosition;
   }
@@ -116,6 +123,7 @@ const shellFragmentShader = `
   varying vec3 vViewDirection;
   varying float vPhase;
   varying float vVisibility;
+  varying float vImpact;
   varying float vDepthFade;
   uniform float uTime;
   uniform float uProgress;
@@ -149,6 +157,9 @@ const shellFragmentShader = `
     float midShellAttenuation = 1.0 - smoothstep(0.24, 0.55, uProgress) * 0.34;
     float alpha = mix(frontAlpha, backAlpha, uBackface) * vVisibility * vDepthFade * midShellAttenuation;
     vec3 radiance = mix(frontRadiance, backRadiance, uBackface) * midShellAttenuation;
+    vec3 impactWhite = vec3(0.94, 0.99, 1.0) * (1.35 + glassRim * 1.2);
+    radiance = mix(radiance, impactWhite, vImpact);
+    alpha = mix(alpha, max(alpha, 0.88), vImpact);
     gl_FragColor = vec4(radiance, alpha);
   }
 `;
@@ -456,7 +467,7 @@ class NeuralWorld {
           sourceType: 'hub',
           sourceIndex: clusterIndex,
           direction: new THREE.Vector3(Math.cos(angle), Math.sin(angle) * 0.72, -0.18 - branchIndex * 0.08).normalize(),
-          length: (1.0 + branchIndex * 0.55 + random() * 0.5) * 3,
+          length: (1.0 + branchIndex * 0.55 + random() * 0.5) * 4.5,
           arc: 0.34 + random() * 0.34,
           sign: branchIndex % 2 === 0 ? 1 : -1,
           phase: cluster.phase + branchIndex,
@@ -470,7 +481,7 @@ class NeuralWorld {
         sourceType: 'satellite',
         sourceIndex: satelliteIndex,
         direction: new THREE.Vector3(Math.cos(angle), Math.sin(angle), -0.12).normalize(),
-        length: (0.48 + random() * 0.52) * 3,
+        length: (0.48 + random() * 0.52) * 4.5,
         arc: 0.18 + random() * 0.24,
         sign: satelliteIndex % 2 === 0 ? 1 : -1,
         phase: satellite.phase,
@@ -485,12 +496,14 @@ class NeuralWorld {
     this.hubScale = new Float32Array(count);
     this.hubPhase = new Float32Array(count);
     this.hubVisibility = new Float32Array(count);
+    this.hubImpact = new Float32Array(count);
     geometry.setAttribute('aScale', new THREE.InstancedBufferAttribute(this.hubScale, 1));
     geometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(this.hubPhase, 1));
     geometry.setAttribute('aVisibility', new THREE.InstancedBufferAttribute(this.hubVisibility, 1));
+    geometry.setAttribute('aImpact', new THREE.InstancedBufferAttribute(this.hubImpact, 1));
 
-    this.hubFrontMaterial = createShellMaterial(THREE.FrontSide, isMobile ? 2.35 : 3.35);
-    this.hubBackMaterial = createShellMaterial(THREE.BackSide, isMobile ? 0.86 : 1.18);
+    this.hubFrontMaterial = createShellMaterial(THREE.FrontSide, 2.35);
+    this.hubBackMaterial = createShellMaterial(THREE.BackSide, 0.86);
     this.hubBackMesh = new THREE.InstancedMesh(geometry, this.hubBackMaterial, count);
     this.hubFrontMesh = new THREE.InstancedMesh(geometry, this.hubFrontMaterial, count);
     for (const mesh of [this.hubBackMesh, this.hubFrontMesh]) {
@@ -508,10 +521,12 @@ class NeuralWorld {
     this.satelliteScale = new Float32Array(count);
     this.satellitePhase = new Float32Array(count);
     this.satelliteVisibility = new Float32Array(count);
+    this.satelliteImpact = new Float32Array(count);
     geometry.setAttribute('aScale', new THREE.InstancedBufferAttribute(this.satelliteScale, 1));
     geometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(this.satellitePhase, 1));
     geometry.setAttribute('aVisibility', new THREE.InstancedBufferAttribute(this.satelliteVisibility, 1));
-    this.satelliteMaterial = createShellMaterial(THREE.FrontSide, isMobile ? 1.46 : 2.05);
+    geometry.setAttribute('aImpact', new THREE.InstancedBufferAttribute(this.satelliteImpact, 1));
+    this.satelliteMaterial = createShellMaterial(THREE.FrontSide, 1.46);
     this.satelliteMesh = new THREE.InstancedMesh(geometry, this.satelliteMaterial, count);
     this.satelliteMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.satelliteMesh.frustumCulled = false;
@@ -670,7 +685,7 @@ class NeuralWorld {
     this.localTendrilSystem = this.createTendrilSystem(
       this.satellites.length * 2,
       CONFIG.localSegments,
-      isMobile ? 4 : 5,
+      CONFIG.localRadialSegments,
       0.62,
     );
   }
@@ -679,7 +694,7 @@ class NeuralWorld {
     this.highwayTendrilSystem = this.createTendrilSystem(
       this.highways.length,
       CONFIG.highwaySegments,
-      isMobile ? 5 : 6,
+      CONFIG.highwayRadialSegments,
       0.78,
     );
   }
@@ -687,16 +702,16 @@ class NeuralWorld {
   createFreeDendritesSystem() {
     this.freeDendriteSystem = this.createTendrilSystem(
       this.freeDendrites.length,
-      isMobile ? 8 : 10,
-      isMobile ? 4 : 5,
+      CONFIG.dendriteSegments,
+      CONFIG.dendriteRadialSegments,
       0.5,
     );
   }
 
   createPulses() {
-    const geometry = new THREE.SphereGeometry(0.064, 10, 10);
+    const geometry = new THREE.SphereGeometry(0.082, 10, 10);
     this.pulseMaterial = new THREE.MeshBasicMaterial({
-      color: 0xd5f4ff,
+      color: 0xffffff,
       transparent: true,
       opacity: 1,
       depthWrite: false,
@@ -710,7 +725,7 @@ class NeuralWorld {
       offset: random(),
       speed: 0.055 + random() * 0.11,
       rank: index / CONFIG.pulseCount,
-      scale: 1.0 + random() * 0.85,
+      scale: 1.2 + random() * 0.95,
     }));
     this.group.add(this.pulseMesh);
   }
@@ -956,7 +971,7 @@ class NeuralWorld {
       vertexOffset = this.writeTendril(
         system,
         this.freeDendriteCurve(branch),
-        branch.sourceType === 'hub' ? (isMobile ? 0.026 : 0.02) : (isMobile ? 0.014 : 0.011),
+        branch.sourceType === 'hub' ? 0.026 : 0.014,
         0.0012,
         visibility * breathing,
         color,
@@ -994,8 +1009,8 @@ class NeuralWorld {
         vertexOffset = this.writeTendril(
           system,
           curve,
-          isMobile ? 0.038 : 0.029,
-          (isMobile ? 0.006 : 0.004) + smoothstep(0.1, 0.5, progress) * (isMobile ? 0.008 : 0.006),
+          0.057,
+          0.009 + smoothstep(0.1, 0.5, progress) * 0.012,
           visibility * (0.38 + fire * 0.22),
           color,
           vertexOffset,
@@ -1017,8 +1032,8 @@ class NeuralWorld {
           vertexOffset = this.writeTendril(
             system,
             curve,
-            isMobile ? 0.024 : 0.016,
-            (isMobile ? 0.004 : 0.003) + smoothstep(0.1, 0.5, progress) * (isMobile ? 0.005 : 0.004),
+            0.036,
+            0.006 + smoothstep(0.1, 0.5, progress) * 0.0075,
             visibility * (0.28 + fire * 0.12),
             color,
             vertexOffset,
@@ -1058,21 +1073,13 @@ class NeuralWorld {
       if (!this.highwayVisible(highway, progress)) return;
       const fire = smoothstep(0.42, 1, Math.sin(elapsed * (0.55 + progress * 1.6) + highway.phase) * 0.5 + 0.5);
       const color = new THREE.Color(0.006, 0.15, 0.24).lerp(new THREE.Color(0.026, 0.34, 0.52), fire * 0.44);
-      const mobileHighwayEnergy = isMobile ? lerp(0.68, 0.86, smoothstep(0.1, 0.55, progress)) : 1;
-      const intensity = (0.62 + progress * 0.68 + fire * 0.3) * mobileHighwayEnergy;
+      const intensity = 0.62 + progress * 0.68 + fire * 0.3;
       const curve = this.highwayCurve(highway);
-      if (isMobile) {
-        const midpointAvoidance = smoothstep(0.2, 0.34, progress) * (1 - smoothstep(0.58, 0.68, progress));
-        const direction = highway.sign > 0 ? 1 : -1;
-        curve.control.x += midpointAvoidance * direction * 0.48;
-        curve.control.y += midpointAvoidance * 0.82;
-      }
-      const mobileHighZoomNarrowing = isMobile ? lerp(1, 0.28, smoothstep(0.58, 0.88, progress)) : 1;
       vertexOffset = this.writeTendril(
         system,
         curve,
-        ((isMobile ? 0.052 : 0.04) + progress * 0.012) * mobileHighZoomNarrowing,
-        ((isMobile ? 0.007 : 0.004) + smoothstep(0.1, 0.5, progress) * (isMobile ? 0.009 : 0.007)) * mobileHighZoomNarrowing,
+        (0.052 + progress * 0.012) * 1.5,
+        (0.007 + smoothstep(0.1, 0.5, progress) * 0.009) * 1.5,
         intensity,
         color,
         vertexOffset,
@@ -1081,10 +1088,14 @@ class NeuralWorld {
     system.geometry.setDrawRange(0, vertexOffset);
     system.geometry.attributes.position.needsUpdate = true;
     system.geometry.attributes.color.needsUpdate = true;
-    system.material.opacity = isMobile ? 0.76 : 0.72;
+    system.material.opacity = 0.74;
   }
 
-  updatePulses(progress, elapsed) {
+  updatePulses(progress, elapsed, delta) {
+    const impactDecay = Math.exp(-delta * 5.5);
+    for (let index = 0; index < this.hubImpact.length; index += 1) {
+      this.hubImpact[index] *= impactDecay;
+    }
     const matrix = new THREE.Matrix4();
     const quaternion = new THREE.Quaternion();
     const position = new THREE.Vector3();
@@ -1094,6 +1105,10 @@ class NeuralWorld {
       const visible = this.highwayVisible(highway, progress) && pulse.rank <= 0.34 + smoothstep(0.0, 0.5, progress) * 0.46 + smoothstep(0.5, 1, progress) * 0.2;
       const speed = pulse.speed * (1 + progress * 4.2);
       const t = (elapsed * speed + pulse.offset) % 1;
+      if (visible) {
+        const impact = smoothstep(0.76, 0.9, t) * (1 - smoothstep(0.985, 1, t));
+        this.hubImpact[highway.to] = Math.max(this.hubImpact[highway.to], impact);
+      }
       for (let ghost = 0; ghost < 5; ghost += 1) {
         const ghostT = Math.max(0, t - ghost * (0.006 + progress * 0.004));
         if (visible) {
@@ -1101,7 +1116,7 @@ class NeuralWorld {
         } else position.set(0, 0, -120);
         const endpointEnvelope = smoothstep(0, 0.045, ghostT) * (1 - smoothstep(0.955, 1, ghostT));
         const scale = visible
-          ? pulse.scale * (1 - ghost * 0.16) * (1.05 + progress * 0.36) * (isMobile ? 0.5 : 1) * endpointEnvelope
+          ? pulse.scale * (1 - ghost * 0.14) * (1.12 + progress * 0.34) * (isMobile ? 0.5 : 1) * endpointEnvelope
           : 0;
         matrix.compose(position, quaternion, new THREE.Vector3(scale, scale, scale));
         this.pulseMesh.setMatrixAt(instanceIndex, matrix);
@@ -1109,12 +1124,13 @@ class NeuralWorld {
       }
     }
     this.pulseMesh.instanceMatrix.needsUpdate = true;
+    this.hubFrontMesh.geometry.attributes.aImpact.needsUpdate = true;
     this.pulseMaterial.opacity = 1;
   }
 
   updateStreaks(progress, travel) {
     const active = smoothstep(0.5, 0.9, progress);
-    const length = 0.22 + Math.pow(progress, 2.15) * (isMobile ? 5.2 : 9.4);
+    const length = 0.22 + Math.pow(progress, 2.15) * 9.4;
     this.streakData.forEach((streak, index) => {
       const z = wrapDepth(streak.z + travel * streak.speed);
       const visible = streak.rank < 0.14 + progress * 0.9 ? active : 0;
@@ -1134,8 +1150,7 @@ class NeuralWorld {
     });
     this.streakGeometry.attributes.position.needsUpdate = true;
     this.streakGeometry.attributes.color.needsUpdate = true;
-    const mobileGraphPriority = isMobile ? 1 - smoothstep(0.64, 0.82, progress) : 1;
-    this.streakMaterial.opacity = active * (isMobile ? 0.32 + progress * 0.28 : 0.48 + progress * 0.42) * mobileGraphPriority;
+    this.streakMaterial.opacity = active * (0.48 + progress * 0.42);
   }
 
   updateMaterials(progress, elapsed, travel) {
@@ -1163,7 +1178,7 @@ class NeuralWorld {
     this.updateLocalLinks(progress, elapsed);
     this.updateFreeDendrites(progress, elapsed);
     this.updateHighways(progress, elapsed);
-    this.updatePulses(progress, elapsed);
+    this.updatePulses(progress, elapsed, delta);
     this.updateStreaks(progress, travel);
     this.updateMaterials(progress, elapsed, travel);
     this.group.rotation.z = Math.sin(elapsed * 0.07) * 0.012;
@@ -1244,7 +1259,7 @@ function updateCamera(progress, elapsed, delta) {
   camera.position.y += (targetY - camera.position.y) * ease;
   camera.position.z += (targetZ - camera.position.z) * ease;
   camera.fov = isMobile
-    ? lerp(62, 72, smoothstep(0.24, 0.94, progress))
+    ? lerp(74, 81, smoothstep(0.24, 0.94, progress))
     : lerp(56, 67, smoothstep(0.24, 0.94, progress));
   camera.updateProjectionMatrix();
   camera.rotation.x = lerp(0, -0.025, progress);
@@ -1264,19 +1279,13 @@ function render(now) {
   world.update(state.progress, state.elapsed, reducedMotion ? 0 : delta, state.travel);
   updateCamera(state.progress, state.elapsed, delta);
 
-  renderer.toneMappingExposure = isMobile
-    ? lerp(0.94, 1.06, smoothstep(0.3, 1, state.progress))
-    : lerp(1.02, 1.62, smoothstep(0.3, 1, state.progress));
-  bloomPass.strength = isMobile
-    ? lerp(0.1, 0.22, smoothstep(0.1, 0.55, state.progress)) * (1 - smoothstep(0.78, 0.96, state.progress) * 0.45)
-    : lerp(0.32, 1.38, smoothstep(0.14, 1, state.progress)) * (1 - smoothstep(0.78, 1, state.progress) * 0.34);
-  bloomPass.radius = isMobile
-    ? lerp(0.26, 0.42, state.progress)
-    : lerp(0.42, 0.88, state.progress) * (1 - smoothstep(0.78, 1, state.progress) * 0.18);
-  bloomPass.threshold = isMobile ? lerp(0.95, 0.9, state.progress) : lerp(0.74, 0.56, state.progress);
+  renderer.toneMappingExposure = lerp(0.98, 1.36, smoothstep(0.3, 1, state.progress));
+  bloomPass.strength = lerp(0.24, 0.92, smoothstep(0.12, 1, state.progress)) * (1 - smoothstep(0.82, 1, state.progress) * 0.26);
+  bloomPass.radius = lerp(0.34, 0.7, state.progress);
+  bloomPass.threshold = lerp(0.86, 0.68, state.progress);
 
-  const finalWhite = smoothstep(isMobile ? 0.91 : 0.965, isMobile ? 0.985 : 1, state.progress);
-  arrival.style.opacity = String(Math.pow(finalWhite, isMobile ? 1.15 : 1.7) * (isMobile ? 1 : 0.93));
+  const finalWhite = smoothstep(0.94, 1, state.progress);
+  arrival.style.opacity = String(Math.pow(finalWhite, 1.35) * 0.97);
   scrollCue.style.opacity = String(1 - smoothstep(0.02, 0.14, state.progress));
 
   composer.render();
