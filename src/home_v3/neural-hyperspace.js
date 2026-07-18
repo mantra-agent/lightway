@@ -722,7 +722,7 @@ class NeuralWorld {
     this.pulseMesh.frustumCulled = false;
     this.pulses = Array.from({ length: CONFIG.pulseCount }, (_, index) => ({
       highwayIndex: index % this.highways.length,
-      offset: random(),
+      phase: random(),
       speed: 0.055 + random() * 0.11,
       rank: index / CONFIG.pulseCount,
       scale: 1.2 + random() * 0.95,
@@ -1104,17 +1104,19 @@ class NeuralWorld {
       const highway = this.highways[pulse.highwayIndex];
       const visible = this.highwayVisible(highway, progress) && pulse.rank <= 0.34 + smoothstep(0.0, 0.5, progress) * 0.46 + smoothstep(0.5, 1, progress) * 0.2;
       const speed = pulse.speed * (1 + progress * 4.2);
-      const t = (elapsed * speed + pulse.offset) % 1;
-      if (visible) {
-        const impact = smoothstep(0.76, 0.9, t) * (1 - smoothstep(0.985, 1, t));
-        this.hubImpact[highway.to] = Math.max(this.hubImpact[highway.to], impact);
+      const nextPhase = pulse.phase + delta * speed;
+      const collidedWithDestination = nextPhase >= 1;
+      const t = nextPhase % 1;
+      pulse.phase = t;
+      if (visible && collidedWithDestination) {
+        this.hubImpact[highway.to] = 1;
       }
       for (let ghost = 0; ghost < 5; ghost += 1) {
         const ghostT = Math.max(0, t - ghost * (0.006 + progress * 0.004));
         if (visible) {
           this.curvePoint(this.highwayCurve(highway), ghostT, position);
         } else position.set(0, 0, -120);
-        const endpointEnvelope = smoothstep(0, 0.045, ghostT) * (1 - smoothstep(0.955, 1, ghostT));
+        const endpointEnvelope = smoothstep(0, 0.045, ghostT) * (1 - smoothstep(0.992, 1, ghostT));
         const scale = visible
           ? pulse.scale * (1 - ghost * 0.14) * (1.12 + progress * 0.34) * (isMobile ? 0.5 : 1) * endpointEnvelope
           : 0;
