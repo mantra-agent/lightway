@@ -728,6 +728,7 @@ class NeuralWorld {
       speed: 0.055 + random() * 0.11,
       rank: index / CONFIG.pulseCount,
       scale: 1.2 + random() * 0.95,
+      reverse: random() > 0.5,
     }));
     this.group.add(this.pulseMesh);
 
@@ -1146,13 +1147,16 @@ class NeuralWorld {
       const t = nextPhase % 1;
       pulse.phase = t;
       if (visible && collidedWithDestination) {
-        this.hubImpact[highway.to] = 1;
-        this.spawnCascades(highway.to, progress);
+        const destHub = pulse.reverse ? highway.from : highway.to;
+        this.hubImpact[destHub] = 1;
+        this.spawnCascades(destHub, progress);
+        pulse.reverse = random() > 0.5;
       }
       for (let ghost = 0; ghost < 5; ghost += 1) {
         const ghostT = Math.max(0, t - ghost * (0.006 + progress * 0.004));
         if (visible) {
-          this.curvePoint(this.highwayCurve(highway), ghostT, position);
+          const curveT = pulse.reverse ? 1 - ghostT : ghostT;
+          this.curvePoint(this.highwayCurve(highway), curveT, position);
         } else position.set(0, 0, -120);
         const endpointEnvelope = smoothstep(0, 0.045, ghostT) * (1 - smoothstep(0.992, 1, ghostT));
         const scale = visible
