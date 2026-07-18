@@ -997,11 +997,10 @@ class NeuralWorld {
     const color = new THREE.Color(0.006, 0.12, 0.2);
     let vertexOffset = 0;
     for (const branch of this.freeDendrites) {
-      const clusterIdx = branch.sourceType === 'hub'
-        ? branch.sourceIndex
-        : this.satellites[branch.sourceIndex].clusterIndex;
-      const visibility = this.clusterVisibility(this.clusters[clusterIdx], progress) * this.hubDepthFade[clusterIdx];
-      if (visibility < 0.02) continue;
+      const visibility = branch.sourceType === 'hub'
+        ? this.hubVisibility[branch.sourceIndex]
+        : this.satelliteVisibility[branch.sourceIndex];
+      if (visibility < 0.08) continue;
       const breathing = 0.72 + Math.sin(elapsed * 0.5 + branch.phase) * 0.12;
       vertexOffset = this.writeTendril(
         system,
