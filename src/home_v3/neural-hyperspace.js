@@ -359,14 +359,14 @@ class NeuralWorld {
     scene.add(this.group);
 
     this.clusters = this.createClusters();
-    this.worldMinDepth = Math.min(...this.clusters.map((cluster) => cluster.z));
-    this.worldExitPadding = isMobile ? 4.2 : 5.2;
-    this.worldCycleDistance = camera.position.z - this.worldMinDepth + this.worldExitPadding;
     this.satellites = this.createSatellites();
     this.hubPositions = this.clusters.map(() => new THREE.Vector3());
     this.satellitePositions = this.satellites.map(() => new THREE.Vector3());
     this.highways = this.createHighways();
     this.freeDendrites = this.createFreeDendrites();
+    this.worldMinDepth = this.computeConnectedGraphMinDepth();
+    this.worldExitPadding = isMobile ? 4.2 : 5.2;
+    this.worldCycleDistance = camera.position.z - this.worldMinDepth + this.worldExitPadding;
     this.terminalGrowthCountdown = 2 + Math.floor(random() * 3);
 
     this.createHubMeshes();
@@ -380,6 +380,7 @@ class NeuralWorld {
     this.createPulses();
     this.createVelocityStreaks();
     this.createDestination();
+    this.createCycleReplica();
     this.update(0, 0, 0.016, 0);
   }
 
@@ -501,13 +502,56 @@ class NeuralWorld {
     return branches;
   }
 
+  computeConnectedGraphMinDepth() {
+    let minimum = Math.min(...this.clusters.map((cluster) => cluster.z - cluster.size));
+    for (const satellite of this.satellites) {
+      const centerZ = this.clusters[satellite.clusterIndex].z + satellite.offsetZ;
+      minimum = Math.min(minimum, centerZ - satellite.size);
+    }
+    for (const branch of this.freeDendrites) {
+      const sourceZ = branch.sourceType === 'hub'
+        ? this.clusters[branch.sourceIndex].z
+        : this.clusters[this.satellites[branch.sourceIndex].clusterIndex].z + this.satellites[branch.sourceIndex].offsetZ;
+      const terminalZ = sourceZ + branch.direction.z * branch.length;
+      const controlZ = lerp(sourceZ, terminalZ, 0.5) - branch.arc * 0.28;
+      minimum = Math.min(minimum, terminalZ - branch.childSize, controlZ);
+    }
+    for (const highway of this.highways) {
+      const start = this.clusters[highway.from];
+      const end = this.clusters[highway.to];
+      const control = this.quadraticControl(
+        new THREE.Vector3(start.x, start.y, start.z),
+        new THREE.Vector3(end.x, end.y, end.z),
+        highway.arc,
+        highway.sign,
+      );
+      minimum = Math.min(minimum, control.z);
+    }
+    return minimum;
+  }
+
+  shellVelocityVisibility(progress) {
+    return 1 - smoothstep(0.92, 0.98, progress);
+  }
+
+  clusterConnectionVisibility(cluster, progress) {
+    return this.clusterVisibility(cluster, progress) * this.shellVelocityVisibility(progress);
+  }
+
+  satelliteConnectionVisibility(satellite, progress) {
+    const satelliteReveal = 0.07 + smoothstep(0.0, 0.5, progress) * 0.72 + smoothstep(0.5, 1, progress) * 0.21;
+    const rankVisibility = 1 - smoothstep(satelliteReveal, satelliteReveal + 0.08, satellite.rank);
+    return this.clusterVisibility(this.clusters[satellite.clusterIndex], progress)
+      * rankVisibility
+      * this.shellVelocityVisibility(progress);
+  }
+
   createHubMeshes() {
     const count = this.clusters.length;
     const geometry = new THREE.IcosahedronGeometry(1, 4);
     this.hubScale = new Float32Array(count);
     this.hubPhase = new Float32Array(count);
     this.hubVisibility = new Float32Array(count);
-    this.hubDepthFade = new Float32Array(count).fill(1);
     this.hubImpact = new Float32Array(count);
     geometry.setAttribute('aScale', new THREE.InstancedBufferAttribute(this.hubScale, 1));
     geometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(this.hubPhase, 1));
@@ -703,11 +747,13 @@ class NeuralWorld {
         varying vec3 vColor;
         varying vec3 vNormal;
         varying vec3 vViewDirection;
+        varying float vViewDepth;
         void main() {
           vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
           vColor = color;
           vNormal = normalize(normalMatrix * normal);
           vViewDirection = normalize(-viewPosition.xyz);
+          vViewDepth = max(0.0, -viewPosition.z);
           gl_Position = projectionMatrix * viewPosition;
         }
       `,
@@ -716,13 +762,15 @@ class NeuralWorld {
         varying vec3 vColor;
         varying vec3 vNormal;
         varying vec3 vViewDirection;
+        varying float vViewDepth;
         void main() {
           vec3 normal = normalize(vNormal);
           vec3 lightDirection = normalize(vec3(-0.35, 0.62, 0.7));
           float diffuse = 0.58 + max(dot(normal, lightDirection), 0.0) * 0.42;
           float rim = pow(1.0 - abs(dot(normal, normalize(vViewDirection))), 1.7);
           vec3 roundedColor = vColor * diffuse + vColor * rim * 0.48;
-          float alpha = uOpacity * (0.76 + rim * 0.24);
+          float farFade = 1.0 - smoothstep(118.0, 148.0, vViewDepth);
+          float alpha = uOpacity * (0.76 + rim * 0.24) * farFade;
           gl_FragColor = vec4(roundedColor, alpha);
         }
       `,
@@ -846,6 +894,43 @@ class NeuralWorld {
     this.group.add(this.streakMesh);
   }
 
+  createCycleReplica() {
+    this.cycleReplica = new THREE.Group();
+    this.cycleReplica.matrixAutoUpdate = false;
+    this.cycleReplicaOffsetMatrix = new THREE.Matrix4().makeTranslation(0, 0, -this.worldCycleDistance);
+    const visuals = [
+      this.hubBackMesh,
+      this.hubFrontMesh,
+      this.satelliteMesh,
+      this.terminalChildMesh,
+      this.localTendrilSystem.mesh,
+      this.freeDendriteSystem.mesh,
+      this.highwayTendrilSystem.mesh,
+      this.pulseMesh,
+      this.cascadeMesh,
+    ];
+    for (const visual of visuals) {
+      const replica = visual.clone();
+      replica.geometry = visual.geometry;
+      replica.material = visual.material;
+      if (visual.isInstancedMesh) {
+        replica.instanceMatrix = visual.instanceMatrix;
+        replica.instanceColor = visual.instanceColor;
+        replica.count = visual.count;
+      }
+      replica.frustumCulled = false;
+      this.cycleReplica.add(replica);
+    }
+    scene.add(this.cycleReplica);
+    this.syncCycleReplica();
+  }
+
+  syncCycleReplica() {
+    this.group.updateMatrix();
+    this.cycleReplica.matrix.multiplyMatrices(this.group.matrix, this.cycleReplicaOffsetMatrix);
+    this.cycleReplica.matrixWorldNeedsUpdate = true;
+  }
+
   createDestination() {
     this.destinationMaterial = new THREE.SpriteMaterial({
       map: createRadialTexture(),
@@ -872,18 +957,16 @@ class NeuralWorld {
     const satelliteMatrix = new THREE.Matrix4();
     const unitQuaternion = new THREE.Quaternion();
 
-    const connectedWorldTravel = reducedMotion ? 0 : travel;
+    const connectedWorldTravel = reducedMotion ? 0 : travel % this.worldCycleDistance;
     this.clusters.forEach((cluster, index) => {
-      const z = wrapDepth(cluster.z + connectedWorldTravel);
+      const z = cluster.z + connectedWorldTravel;
       const drift = 0.028 + smoothstep(0.08, 0.5, progress) * 0.11;
       const x = cluster.x + Math.sin(elapsed * 0.19 + cluster.phase) * drift;
       const y = cluster.y + Math.cos(elapsed * 0.16 + cluster.phase * 1.2) * drift * 0.72;
       const position = this.hubPositions[index].set(x, y, z);
-      const shellVelocityFade = 1 - smoothstep(0.92, 0.98, progress);
-      const nearClipFade = 1 - smoothstep(CONFIG.depthNear - 2, CONFIG.depthNear, z);
       const farClipFade = smoothstep(-CONFIG.depthFar, -CONFIG.depthFar + 6, z);
-      const depthFade = nearClipFade * farClipFade;
-      const visibility = this.clusterVisibility(cluster, progress) * shellVelocityFade * depthFade;
+      const depthFade = farClipFade;
+      const visibility = this.clusterConnectionVisibility(cluster, progress) * depthFade;
       const nearFactor = smoothstep(-34, 4, z);
       const mobileMidEmphasis = isMobile ? lerp(0.94, 1.05, smoothstep(0.1, 0.55, progress)) : 1;
       const scale = cluster.size * (0.86 + nearFactor * 0.44) * mobileMidEmphasis;
@@ -893,7 +976,6 @@ class NeuralWorld {
       this.hubScale[index] = scale;
       this.hubPhase[index] = cluster.phase;
       this.hubVisibility[index] = visibility;
-      this.hubDepthFade[index] = depthFade;
     });
 
     this.satellites.forEach((satellite, index) => {
@@ -904,18 +986,14 @@ class NeuralWorld {
       const z = hub.z + satellite.offsetZ;
       const position = this.satellitePositions[index].set(x, y, z);
       const cluster = this.clusters[satellite.clusterIndex];
-      const clusterVisible = this.clusterVisibility(cluster, progress);
-      const shellVelocityFade = 1 - smoothstep(0.92, 0.98, progress);
-      const satelliteReveal = 0.07 + smoothstep(0.0, 0.5, progress) * 0.72 + smoothstep(0.5, 1, progress) * 0.21;
-      const satNearClipFade = 1 - smoothstep(CONFIG.depthNear - 2, CONFIG.depthNear, z);
       const satFarClipFade = smoothstep(-CONFIG.depthFar, -CONFIG.depthFar + 6, z);
-      const satelliteVisible = (1 - smoothstep(satelliteReveal, satelliteReveal + 0.08, satellite.rank)) * shellVelocityFade * satNearClipFade * satFarClipFade;
+      const satelliteVisible = this.satelliteConnectionVisibility(satellite, progress) * satFarClipFade;
       satelliteMatrix.compose(position, unitQuaternion, new THREE.Vector3(1, 1, 1));
       this.satelliteMesh.setMatrixAt(index, satelliteMatrix);
       const mobileSatelliteEmphasis = isMobile ? lerp(0.9, 1.06, smoothstep(0.1, 0.55, progress)) : 1;
       this.satelliteScale[index] = satellite.size * (0.9 + smoothstep(-30, 4, z) * 0.32) * mobileSatelliteEmphasis;
       this.satellitePhase[index] = satellite.phase;
-      this.satelliteVisibility[index] = clusterVisible * satelliteVisible;
+      this.satelliteVisibility[index] = satelliteVisible;
     });
 
     for (const mesh of [this.hubFrontMesh, this.hubBackMesh, this.satelliteMesh]) {
@@ -937,17 +1015,20 @@ class NeuralWorld {
     const hiddenPosition = new THREE.Vector3(0, 0, -120);
     this.freeDendrites.forEach((branch, index) => {
       const sourceVisibility = branch.sourceType === 'hub'
-        ? this.hubVisibility[branch.sourceIndex]
-        : this.satelliteVisibility[branch.sourceIndex];
+        ? this.clusterConnectionVisibility(this.clusters[branch.sourceIndex], state.progress)
+        : this.satelliteConnectionVisibility(this.satellites[branch.sourceIndex], state.progress);
       if (branch.childSpawned) branch.childGrowth = Math.min(1, branch.childGrowth + delta * 2.8);
       const growth = smoothstep(0, 1, branch.childGrowth);
       const curve = this.freeDendriteCurve(branch);
       const position = branch.childSpawned ? curve.terminalCenter : hiddenPosition;
+      const depthVisibility = branch.childSpawned
+        ? smoothstep(-CONFIG.depthFar, -CONFIG.depthFar + 6, position.z)
+        : 0;
       matrix.compose(position, quaternion, new THREE.Vector3(1, 1, 1));
       this.terminalChildMesh.setMatrixAt(index, matrix);
       this.terminalChildScale[index] = branch.childSize * growth;
       this.terminalChildPhase[index] = branch.phase + 1.7;
-      this.terminalChildVisibility[index] = branch.childSpawned ? sourceVisibility * growth : 0;
+      this.terminalChildVisibility[index] = branch.childSpawned ? sourceVisibility * growth * depthVisibility : 0;
     });
     this.terminalChildMesh.instanceMatrix.needsUpdate = true;
     for (const attribute of [
@@ -1098,13 +1179,14 @@ class NeuralWorld {
     let vertexOffset = 0;
     for (const branch of this.freeDendrites) {
       const visibility = branch.sourceType === 'hub'
-        ? this.hubVisibility[branch.sourceIndex]
-        : this.satelliteVisibility[branch.sourceIndex];
+        ? this.clusterConnectionVisibility(this.clusters[branch.sourceIndex], progress)
+        : this.satelliteConnectionVisibility(this.satellites[branch.sourceIndex], progress);
+      const curve = this.freeDendriteCurve(branch, branch.childGrowth);
       if (visibility < 0.08) continue;
       const breathing = 0.72 + Math.sin(elapsed * 0.5 + branch.phase) * 0.12;
       vertexOffset = this.writeTendril(
         system,
-        this.freeDendriteCurve(branch, branch.childGrowth),
+        curve,
         branch.sourceType === 'hub' ? 0.052 : 0.028,
         branch.childSize * smoothstep(0, 1, branch.childGrowth),
         visibility * breathing,
@@ -1126,7 +1208,7 @@ class NeuralWorld {
     let vertexOffset = 0;
     this.satellites.forEach((satellite, index) => {
       const cluster = this.clusters[satellite.clusterIndex];
-      const visibility = this.clusterVisibility(cluster, progress) * this.hubDepthFade[satellite.clusterIndex];
+      const visibility = this.clusterConnectionVisibility(cluster, progress);
       if (visibility < 0.02 || satellite.rank > 0.38 + progress * 0.58) return;
       const start = this.hubPositions[satellite.clusterIndex];
       const end = this.satellitePositions[index];
@@ -1455,6 +1537,13 @@ class NeuralWorld {
   }
 
   update(progress, elapsed, delta, travel) {
+    this.group.rotation.z = Math.sin(elapsed * 0.07) * 0.012;
+    if (isMobile) {
+      const portraitReveal = smoothstep(0.08, 0.5, progress);
+      this.group.position.y = lerp(0.55, 0.95, portraitReveal);
+      const portraitScale = 0.68 * lerp(1, 1.1, portraitReveal);
+      this.group.scale.set(portraitScale, portraitScale * lerp(1, 1.26, portraitReveal), portraitScale);
+    }
     this.updatePositions(progress, elapsed, travel);
     this.updateLocalLinks(progress, elapsed);
     this.updateFreeDendrites(progress, elapsed);
@@ -1463,13 +1552,7 @@ class NeuralWorld {
     this.updateTerminalChildren(delta);
     this.updateStreaks(progress, travel);
     this.updateMaterials(progress, elapsed, travel);
-    this.group.rotation.z = Math.sin(elapsed * 0.07) * 0.012;
-    if (isMobile) {
-      const portraitReveal = smoothstep(0.08, 0.5, progress);
-      this.group.position.y = lerp(0.55, 0.95, portraitReveal);
-      const portraitScale = 0.68 * lerp(1, 1.1, portraitReveal);
-      this.group.scale.set(portraitScale, portraitScale * lerp(1, 1.26, portraitReveal), portraitScale);
-    }
+    this.syncCycleReplica();
   }
 }
 
@@ -1558,8 +1641,8 @@ function render(now) {
   const velocity = reducedMotion ? 0 : 0.5 + smoothstep(0.02, 0.15, state.progress) * 2.5 + Math.pow(state.progress, 1.6) * 34.9;
   state.travel += velocity * delta;
 
-  world.update(state.progress, state.elapsed, reducedMotion ? 0 : delta, state.travel);
   updateCamera(state.progress, state.elapsed, delta);
+  world.update(state.progress, state.elapsed, reducedMotion ? 0 : delta, state.travel);
 
   renderer.toneMappingExposure = lerp(0.98, 1.36, smoothstep(0.3, 1, state.progress));
   bloomPass.strength = lerp(0.24, 0.92, smoothstep(0.12, 1, state.progress)) * (1 - smoothstep(0.82, 1, state.progress) * 0.26);
