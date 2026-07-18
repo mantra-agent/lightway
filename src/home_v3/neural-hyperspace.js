@@ -497,6 +497,7 @@ class NeuralWorld {
     this.hubScale = new Float32Array(count);
     this.hubPhase = new Float32Array(count);
     this.hubVisibility = new Float32Array(count);
+    this.hubDepthFade = new Float32Array(count).fill(1);
     this.hubImpact = new Float32Array(count);
     geometry.setAttribute('aScale', new THREE.InstancedBufferAttribute(this.hubScale, 1));
     geometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(this.hubPhase, 1));
@@ -821,9 +822,10 @@ class NeuralWorld {
       const y = cluster.y + Math.cos(elapsed * 0.16 + cluster.phase * 1.2) * drift * 0.72;
       const position = this.hubPositions[index].set(x, y, z);
       const shellVelocityFade = 1 - smoothstep(0.92, 0.98, progress);
-      const nearClipFade = 1 - smoothstep(-4, CONFIG.depthNear, z);
-      const farClipFade = smoothstep(-CONFIG.depthFar, -CONFIG.depthFar + 8, z);
-      const visibility = this.clusterVisibility(cluster, progress) * shellVelocityFade * nearClipFade * farClipFade;
+      const nearClipFade = 1 - smoothstep(CONFIG.depthNear - 2, CONFIG.depthNear, z);
+      const farClipFade = smoothstep(-CONFIG.depthFar, -CONFIG.depthFar + 6, z);
+      const depthFade = nearClipFade * farClipFade;
+      const visibility = this.clusterVisibility(cluster, progress) * shellVelocityFade * depthFade;
       const nearFactor = smoothstep(-34, 4, z);
       const mobileMidEmphasis = isMobile ? lerp(0.94, 1.05, smoothstep(0.1, 0.55, progress)) : 1;
       const scale = cluster.size * (0.86 + nearFactor * 0.44) * mobileMidEmphasis;
@@ -833,6 +835,7 @@ class NeuralWorld {
       this.hubScale[index] = scale;
       this.hubPhase[index] = cluster.phase;
       this.hubVisibility[index] = visibility;
+      this.hubDepthFade[index] = depthFade;
     });
 
     this.satellites.forEach((satellite, index) => {
@@ -846,8 +849,8 @@ class NeuralWorld {
       const clusterVisible = this.clusterVisibility(cluster, progress);
       const shellVelocityFade = 1 - smoothstep(0.92, 0.98, progress);
       const satelliteReveal = 0.07 + smoothstep(0.0, 0.5, progress) * 0.72 + smoothstep(0.5, 1, progress) * 0.21;
-      const satNearClipFade = 1 - smoothstep(-4, CONFIG.depthNear, z);
-      const satFarClipFade = smoothstep(-CONFIG.depthFar, -CONFIG.depthFar + 8, z);
+      const satNearClipFade = 1 - smoothstep(CONFIG.depthNear - 2, CONFIG.depthNear, z);
+      const satFarClipFade = smoothstep(-CONFIG.depthFar, -CONFIG.depthFar + 6, z);
       const satelliteVisible = (1 - smoothstep(satelliteReveal, satelliteReveal + 0.08, satellite.rank)) * shellVelocityFade * satNearClipFade * satFarClipFade;
       satelliteMatrix.compose(position, unitQuaternion, new THREE.Vector3(1, 1, 1));
       this.satelliteMesh.setMatrixAt(index, satelliteMatrix);
@@ -992,9 +995,10 @@ class NeuralWorld {
     const color = new THREE.Color(0.006, 0.12, 0.2);
     let vertexOffset = 0;
     for (const branch of this.freeDendrites) {
-      const visibility = branch.sourceType === 'hub'
-        ? this.clusterVisibility(this.clusters[branch.sourceIndex], progress)
-        : this.clusterVisibility(this.clusters[this.satellites[branch.sourceIndex].clusterIndex], progress);
+      const clusterIdx = branch.sourceType === 'hub'
+        ? branch.sourceIndex
+        : this.satellites[branch.sourceIndex].clusterIndex;
+      const visibility = this.clusterVisibility(this.clusters[clusterIdx], progress) * this.hubDepthFade[clusterIdx];
       if (visibility < 0.02) continue;
       const breathing = 0.72 + Math.sin(elapsed * 0.5 + branch.phase) * 0.12;
       vertexOffset = this.writeTendril(
@@ -1019,7 +1023,7 @@ class NeuralWorld {
     let vertexOffset = 0;
     this.satellites.forEach((satellite, index) => {
       const cluster = this.clusters[satellite.clusterIndex];
-      const visibility = this.clusterVisibility(cluster, progress);
+      const visibility = this.clusterVisibility(cluster, progress) * this.hubDepthFade[satellite.clusterIndex];
       if (visibility < 0.02 || satellite.rank > 0.38 + progress * 0.58) return;
       const start = this.hubPositions[satellite.clusterIndex];
       const end = this.satellitePositions[index];
