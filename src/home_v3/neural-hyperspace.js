@@ -1394,7 +1394,7 @@ function render(now) {
   state.lastFrame = now;
   state.elapsed += delta;
   state.progress += (state.targetProgress - state.progress) * (1 - Math.exp(-delta * 6.6));
-  const velocity = reducedMotion ? 0 : 0.035 + smoothstep(0.03, 0.42, state.progress) * 0.42 + Math.pow(state.progress, 2.25) * 17.45;
+  const velocity = reducedMotion ? 0 : 0.5 + smoothstep(0.02, 0.15, state.progress) * 2.5 + Math.pow(state.progress, 1.6) * 34.9;
   state.travel += velocity * delta;
 
   world.update(state.progress, state.elapsed, reducedMotion ? 0 : delta, state.travel);
