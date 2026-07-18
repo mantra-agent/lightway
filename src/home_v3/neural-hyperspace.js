@@ -367,6 +367,7 @@ class NeuralWorld {
     this.satellitePositions = this.satellites.map(() => new THREE.Vector3());
     this.highways = this.createHighways();
     this.freeDendrites = this.createFreeDendrites();
+    this.terminalGrowthCountdown = 2 + Math.floor(random() * 3);
 
     this.createHubMeshes();
     this.createSatelliteMeshes();
@@ -1332,6 +1333,18 @@ class NeuralWorld {
     this.cascadeMaterial.opacity = 1;
   }
 
+  terminalBranchVisible(branch) {
+    const sourceVisibility = branch.sourceType === 'hub'
+      ? this.hubVisibility[branch.sourceIndex]
+      : this.satelliteVisibility[branch.sourceIndex];
+    if (sourceVisibility < 0.18) return false;
+    this.group.updateMatrixWorld(true);
+    camera.updateMatrixWorld(true);
+    const endpoint = this.freeDendriteCurve(branch).terminalCenter.clone();
+    endpoint.applyMatrix4(this.group.matrixWorld).project(camera);
+    return Math.abs(endpoint.x) < 1.08 && Math.abs(endpoint.y) < 1.08 && endpoint.z > -1 && endpoint.z < 1;
+  }
+
   spawnCascades(hubIndex, progress) {
     const signalCount = 1 + Math.floor(random() * 3);
     const baseIndex = hubIndex * CONFIG.satellitesPerCluster;
@@ -1343,9 +1356,16 @@ class NeuralWorld {
 
     const eligibleTerminalBranches = this.freeDendrites
       .map((branch, index) => ({ branch, index }))
-      .filter(({ branch }) => branch.sourceType === 'hub' && branch.sourceIndex === hubIndex && !branch.childSpawned && !branch.childReserved)
+      .filter(({ branch }) => (
+        branch.sourceType === 'hub'
+        && branch.sourceIndex === hubIndex
+        && !branch.childSpawned
+        && !branch.childReserved
+        && this.terminalBranchVisible(branch)
+      ))
       .map(({ index }) => index);
-    const shouldGrowTerminal = eligibleTerminalBranches.length > 0 && random() < 0.05;
+    if (eligibleTerminalBranches.length > 0) this.terminalGrowthCountdown -= 1;
+    const shouldGrowTerminal = eligibleTerminalBranches.length > 0 && this.terminalGrowthCountdown <= 0;
     let spawned = 0;
 
     if (shouldGrowTerminal) {
@@ -1359,8 +1379,9 @@ class NeuralWorld {
         pool.targetIndex = branchIndex;
         pool.curve = null;
         pool.phase = 0;
-        pool.speed = 1.05 + random() * 0.75;
-        pool.scale = 0.62 + random() * 0.38;
+        pool.speed = 0.72 + random() * 0.38;
+        pool.scale = 1.05 + random() * 0.45;
+        this.terminalGrowthCountdown = 2 + Math.floor(random() * 3);
         spawned += 1;
       }
     }
