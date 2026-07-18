@@ -813,11 +813,9 @@ class NeuralWorld {
     const satelliteMatrix = new THREE.Matrix4();
     const unitQuaternion = new THREE.Quaternion();
 
-    const velocityScale = 1 + smoothstep(0.1, 0.75, progress) * 1.5;
-    const effectiveCycleDistance = this.worldCycleDistance * velocityScale;
-    const connectedWorldTravel = reducedMotion ? 0 : travel % effectiveCycleDistance;
+    const connectedWorldTravel = reducedMotion ? 0 : travel;
     this.clusters.forEach((cluster, index) => {
-      const z = cluster.z + connectedWorldTravel;
+      const z = wrapDepth(cluster.z + connectedWorldTravel);
       const drift = 0.028 + smoothstep(0.08, 0.5, progress) * 0.11;
       const x = cluster.x + Math.sin(elapsed * 0.19 + cluster.phase) * drift;
       const y = cluster.y + Math.cos(elapsed * 0.16 + cluster.phase * 1.2) * drift * 0.72;
