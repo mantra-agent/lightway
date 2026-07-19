@@ -444,6 +444,19 @@
           font-size: 11.5px;
           line-height: 1.42;
         }
+        .final-content {
+          position: relative;
+          isolation: isolate;
+        }
+        .final-content::before {
+          position: absolute;
+          inset: -34px -18px;
+          z-index: -1;
+          border-radius: 50%;
+          background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.76) 0%, rgba(0, 0, 0, 0.5) 48%, transparent 78%);
+          content: '';
+          pointer-events: none;
+        }
         .scroll-cue { bottom: 42px; }
       }
 

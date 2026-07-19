@@ -909,8 +909,8 @@ class NeuralWorld {
     slot.active = true;
     slot.generation = generation;
     slot.bornDistance = reverseDistance;
-    slot.x = Math.cos(angle) * radius + Math.sin(generation * 0.37) * (isMobile ? 0.45 : 1.35);
-    slot.y = Math.sin(angle) * radius * (isMobile ? 0.68 : 0.94) + Math.cos(generation * 0.29) * (isMobile ? 0.38 : 1.1) - (isMobile ? 0 : 1.8);
+    slot.x = Math.cos(angle) * radius * (isMobile ? 0.84 : 1) + Math.sin(generation * 0.37) * (isMobile ? 0.35 : 1.35);
+    slot.y = Math.sin(angle) * radius * (isMobile ? 0.86 : 0.94) + Math.cos(generation * 0.29) * (isMobile ? 0.5 : 1.1) - (isMobile ? 0 : 1.8);
     const spawnLead = isMobile ? 12.2 : 17.5;
     slot.z = cameraZ - lerp(spawnLead, spawnLead + (isMobile ? 4.8 : 8), smoothstep(0.12, 1, progress)) - random() * 2.6;
     slot.size = (isMobile ? 0.78 : 0.72) + random() * (isMobile ? 0.5 : 0.58) + progress * (isMobile ? 0.16 : 0.15);
