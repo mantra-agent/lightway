@@ -89,7 +89,7 @@ Canonical palette from Mantra Design Guide (dark mode):
 ### /home_v3 (Narrative Landing Experience)
 - Independent evolution of the corrected `/home_v2` Three.js scene; v2 remains live and byte-frozen during v3 work
 - Owns separate `index.html` and `neural-hyperspace.js` files so section states, copy, foreground layout, and pulse choreography evolve without regressing v2
-- Full-height narrative sections carry explicit `data-scene-progress` anchors; the background interpolates between section-owned states rather than deriving meaning from undifferentiated document percentage
+- Full-height narrative sections carry explicit `data-scene-progress` anchors; the nearest narrative section owns the exact background state, and native `scroll-snap-type: y proximity` provides clear resting points without wheel/touch interception or mandatory scroll trapping
 - Foreground story uses restrained alternating glass cards over the fixed WebGL world; HTML owns copy/accessibility and Three.js owns atmosphere
 - V3 pulse packets use five closely spaced beads; destination hubs flash white only when the pulse head completes the shell-to-shell curve and crosses the destination membrane; V2 retains its original three-bead packet
 - Cascade pulses: highway collision spawns child pulses from hub to visible satellites; satellite shells flash on cascade arrival via `satelliteImpact` attribute
