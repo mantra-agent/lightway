@@ -37,6 +37,16 @@ const state = {
   running: true,
 };
 
+const REVEAL_PHASES = Object.freeze({
+  hubs: Object.freeze({ start: 0, end: 0.88, initial: 0.2 }),
+  satellites: Object.freeze({ start: 0.04, end: 0.82, initial: 0.07 }),
+  particles: Object.freeze({ start: 0, end: 0.82, initial: 0.04 }),
+  highways: Object.freeze({ start: 0.05, end: 0.86, initial: 0.074 }),
+  pulses: Object.freeze({ start: 0.14, end: 0.9, initial: 0.18 }),
+  filaments: Object.freeze({ start: 0.18, end: 0.86, initial: 0.08 }),
+  childHubs: Object.freeze({ start: 0.5, end: 0.92, initial: 0 }),
+});
+
 const clamp = THREE.MathUtils.clamp;
 const lerp = THREE.MathUtils.lerp;
 let randomSeed = 0x6d616e74;
@@ -49,6 +59,11 @@ function random() {
 function smoothstep(edge0, edge1, value) {
   const x = clamp((value - edge0) / (edge1 - edge0), 0, 1);
   return x * x * (3 - 2 * x);
+}
+
+function revealRank(key, progress) {
+  const phase = REVEAL_PHASES[key];
+  return lerp(phase.initial, 1, smoothstep(phase.start, phase.end, progress));
 }
 
 function createRenderer() {
@@ -149,9 +164,9 @@ const shellFragmentShader = `
       + ctaBlue * heartbeat * 0.028;
     vec3 backRadiance = deepGlass + deepBlue * (broadRim * 0.16 + signal * 0.018);
 
-    float midShellAttenuation = 1.0 - smoothstep(0.24, 0.55, uProgress) * 0.34;
-    float alpha = mix(frontAlpha, backAlpha, uBackface) * vVisibility * vDepthFade * midShellAttenuation;
-    vec3 radiance = mix(frontRadiance, backRadiance, uBackface) * midShellAttenuation;
+    float revealClarity = lerp(0.78, 1.0, smoothstep(0.18, 0.88, uProgress));
+    float alpha = mix(frontAlpha, backAlpha, uBackface) * vVisibility * vDepthFade * revealClarity;
+    vec3 radiance = mix(frontRadiance, backRadiance, uBackface) * revealClarity;
     vec3 impactWhite = vec3(0.94, 0.99, 1.0) * (1.35 + glassRim * 1.2);
     radiance = mix(radiance, impactWhite, vImpact);
     alpha = mix(alpha, max(alpha, 0.88), vImpact);
@@ -166,20 +181,18 @@ const microVertexShader = `
   varying float vAlpha;
   varying float vPulse;
   uniform float uTime;
-  uniform float uTravel;
   uniform float uProgress;
+  uniform float uRevealRank;
   uniform float uFieldOpacity;
 
   void main() {
     vec3 p = position;
     p.x += sin(uTime * 0.16 + aPhase) * 0.08;
     p.y += cos(uTime * 0.13 + aPhase * 1.3) * 0.06;
-    float threshold = 0.04 + smoothstep(0.0, 0.48, uProgress) * 0.72 + smoothstep(0.48, 1.0, uProgress) * 0.24;
-    float visible = 1.0 - smoothstep(threshold, threshold + 0.08, aRank);
+    float visible = 1.0 - smoothstep(uRevealRank, uRevealRank + 0.08, aRank);
     float depthFade = 1.0 - smoothstep(10.0, 74.0, -p.z) * 0.88;
     vPulse = 0.48 + 0.52 * sin(uTime * (0.7 + uProgress * 2.4) + aPhase);
     vec4 viewPosition = modelViewMatrix * vec4(p, 1.0);
-    float screenRadius = length(viewPosition.xy / max(1.0, -viewPosition.z));
     vAlpha = visible * depthFade * (0.32 + vPulse * 0.5) * uFieldOpacity;
     gl_PointSize = clamp(aSize * (112.0 / max(1.0, -viewPosition.z)) * (0.86 + uProgress * 0.75), 1.0, 6.5);
     gl_Position = projectionMatrix * viewPosition;
@@ -234,7 +247,7 @@ const fogParticleVertexShader = `
     viewCenter.xy += billboard;
 
     float distanceFade = 1.0 - smoothstep(46.0, 98.0, -viewCenter.z);
-    float scrollFade = 1.0 - smoothstep(0.72, 0.98, uProgress) * 0.72;
+    float scrollFade = 0.72 + smoothstep(0.38, 0.94, uProgress) * 0.28;
     vUv = uv;
     vDensity = aDensity;
     vOpacity = aOpacity;
@@ -348,7 +361,6 @@ class NeuralWorld {
     this.satellitePositions = this.satellites.map(() => new THREE.Vector3());
     this.highways = this.createHighways();
     this.freeDendrites = this.createFreeDendrites();
-    this.worldMinDepth = this.computeConnectedGraphMinDepth();
     this.terminalGrowthCountdown = 2 + Math.floor(random() * 3);
 
     this.createHubMeshes();
@@ -515,51 +527,17 @@ class NeuralWorld {
     return branches;
   }
 
-  computeConnectedGraphMinDepth() {
-    let minimum = Math.min(...this.clusters.map((cluster) => cluster.z - cluster.size));
-    for (const satellite of this.satellites) {
-      const centerZ = this.clusters[satellite.clusterIndex].z + satellite.offsetZ;
-      minimum = Math.min(minimum, centerZ - satellite.size);
-    }
-    for (const branch of this.freeDendrites) {
-      const sourceZ = branch.sourceType === 'hub'
-        ? this.clusters[branch.sourceIndex].z
-        : this.clusters[this.satellites[branch.sourceIndex].clusterIndex].z + this.satellites[branch.sourceIndex].offsetZ;
-      const terminalZ = sourceZ + branch.direction.z * branch.length;
-      const controlZ = lerp(sourceZ, terminalZ, 0.5) - branch.arc * 0.28;
-      minimum = Math.min(minimum, terminalZ - branch.childSize, controlZ);
-      for (const childBranch of branch.childBranches) {
-        minimum = Math.min(minimum, terminalZ + childBranch.direction.z * childBranch.length);
-      }
-    }
-    for (const highway of this.highways) {
-      const start = this.clusters[highway.from];
-      const end = this.clusters[highway.to];
-      const control = this.quadraticControl(
-        new THREE.Vector3(start.x, start.y, start.z),
-        new THREE.Vector3(end.x, end.y, end.z),
-        highway.arc,
-        highway.sign,
-      );
-      minimum = Math.min(minimum, control.z);
-    }
-    return minimum;
-  }
-
-  retreatGraphVisibility(progress) {
-    return 1;
-  }
-
   clusterConnectionVisibility(cluster, progress) {
-    return this.clusterVisibility(cluster, progress) * this.retreatGraphVisibility(progress);
+    return this.clusterVisibility(cluster, progress);
   }
 
   satelliteConnectionVisibility(satellite, progress) {
-    const satelliteReveal = 0.07 + smoothstep(0.0, 0.5, progress) * 0.72 + smoothstep(0.5, 1, progress) * 0.21;
-    const rankVisibility = 1 - smoothstep(satelliteReveal, satelliteReveal + 0.08, satellite.rank);
-    return this.clusterVisibility(this.clusters[satellite.clusterIndex], progress)
-      * rankVisibility
-      * this.retreatGraphVisibility(progress);
+    const rankVisibility = 1 - smoothstep(
+      revealRank('satellites', progress),
+      revealRank('satellites', progress) + 0.08,
+      satellite.rank,
+    );
+    return this.clusterVisibility(this.clusters[satellite.clusterIndex], progress) * rankVisibility;
   }
 
   createHubMeshes() {
@@ -652,8 +630,8 @@ class NeuralWorld {
       fragmentShader: microFragmentShader,
       uniforms: {
         uTime: { value: 0 },
-        uTravel: { value: 0 },
         uProgress: { value: 0 },
+        uRevealRank: { value: REVEAL_PHASES.particles.initial },
         uFieldOpacity: { value: 1 },
       },
       transparent: true,
@@ -935,8 +913,8 @@ class NeuralWorld {
   }
 
   clusterVisibility(cluster, progress) {
-    const threshold = 0.2 + smoothstep(0.0, 0.5, progress) * 0.72 + smoothstep(0.5, 1, progress) * 0.08;
-    return 1 - smoothstep(threshold, threshold + 0.12, cluster.rank);
+    const rank = revealRank('hubs', progress);
+    return 1 - smoothstep(rank, rank + 0.12, cluster.rank);
   }
 
   updatePositions(progress, elapsed) {
@@ -998,7 +976,7 @@ class NeuralWorld {
 
 
   revealTerminalChildren(progress, delta) {
-    const revealBudget = Math.floor(smoothstep(0.5, 0.92, progress) * Math.min(8, this.freeDendrites.length));
+    const revealBudget = Math.floor(revealRank('childHubs', progress) * Math.min(8, this.freeDendrites.length));
     this.freeDendrites.forEach((branch, index) => {
       if (index < revealBudget) branch.childSpawned = true;
     });
@@ -1327,8 +1305,7 @@ class NeuralWorld {
     const start = this.hubPositions[highway.from];
     const end = this.hubPositions[highway.to];
     const separation = Math.abs(start.z - end.z);
-    const threshold = 0.074 + smoothstep(0.0, 0.5, progress) * 0.716 + smoothstep(0.5, 1, progress) * 0.21;
-    return separation < 33 && highway.rank <= threshold;
+    return separation < 33 && highway.rank <= revealRank('highways', progress);
   }
 
   highwayCurve(highway) {
@@ -1386,7 +1363,7 @@ class NeuralWorld {
     let instanceIndex = 0;
     for (const pulse of this.pulses) {
       const highway = this.highways[pulse.highwayIndex];
-      const visible = this.highwayVisible(highway, progress) && pulse.rank <= 0.34 + smoothstep(0.0, 0.5, progress) * 0.46 + smoothstep(0.5, 1, progress) * 0.2;
+      const visible = this.highwayVisible(highway, progress) && pulse.rank <= revealRank('pulses', progress);
       const speed = pulse.speed * (1 + progress * 4.2);
       const nextPhase = pulse.phase + delta * speed;
       const collidedWithDestination = nextPhase >= 1;
@@ -1549,11 +1526,11 @@ class NeuralWorld {
   }
 
   updateAmbientFilaments(progress, elapsed) {
-    const active = smoothstep(0.18, 0.86, progress);
+    const active = smoothstep(REVEAL_PHASES.filaments.start, REVEAL_PHASES.filaments.end, progress);
     const length = 0.1 + progress * 0.55;
     this.filamentData.forEach((filament, index) => {
       const z = filament.z + Math.sin(elapsed * 0.05 + filament.speed * 4.0) * 0.16;
-      const visible = filament.rank < 0.08 + progress * 0.82 ? active : 0;
+      const visible = filament.rank < revealRank('filaments', progress) ? active : 0;
       const base = index * 6;
       this.filamentPositions[base] = filament.x;
       this.filamentPositions[base + 1] = filament.y;
@@ -1579,17 +1556,13 @@ class NeuralWorld {
       material.uniforms.uProgress.value = progress;
     }
     this.microMaterial.uniforms.uTime.value = elapsed;
-    this.microMaterial.uniforms.uTravel.value = 0;
     this.microMaterial.uniforms.uProgress.value = progress;
+    this.microMaterial.uniforms.uRevealRank.value = revealRank('particles', progress);
     this.fogParticleMaterial.uniforms.uTime.value = elapsed;
     this.fogParticleMaterial.uniforms.uProgress.value = progress;
-    const desktopMidpointClear = isMobile
-      ? 0
-      : smoothstep(0.4, 0.5, progress) * (1 - smoothstep(0.5, 0.62, progress));
-    this.microMaterial.uniforms.uFieldOpacity.value = 1 - desktopMidpointClear * 0.68;
-    const destinationProgress = isMobile ? smoothstep(0.955, 1, progress) : smoothstep(0.62, 0.98, progress);
-    const destinationStrength = isMobile ? 0.08 : 0.48;
-    this.destinationMaterial.opacity = destinationProgress * (0.015 + progress * destinationStrength);
+    this.microMaterial.uniforms.uFieldOpacity.value = lerp(0.72, 1.0, smoothstep(0.18, 0.92, progress));
+    const contextGlow = smoothstep(0.62, 1, progress);
+    this.destinationMaterial.opacity = contextGlow * (isMobile ? 0.035 : 0.075);
   }
 
   update(progress, elapsed, delta) {
@@ -1683,8 +1656,8 @@ function render(now) {
   bloomPass.radius = lerp(0.34, 0.7, state.progress);
   bloomPass.threshold = lerp(0.86, 0.68, state.progress);
 
-  const finalWhite = smoothstep(0.94, 1, state.progress);
-  arrival.style.opacity = String(Math.pow(finalWhite, 1.35) * 0.97);
+  const finalContext = smoothstep(0.9, 1, state.progress);
+  arrival.style.opacity = String(finalContext * 0.82);
   scrollCue.style.opacity = String(1 - smoothstep(0.02, 0.14, state.progress));
 
   composer.render();
