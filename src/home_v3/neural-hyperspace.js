@@ -1686,40 +1686,20 @@ function updateScrollProgress() {
   }
 
   const viewportCenter = window.scrollY + window.innerHeight * 0.5;
-  const anchors = narrativeSections.map((section) => ({
-    section,
-    center: section.offsetTop + section.offsetHeight * 0.5,
-    progress: Number(section.dataset.sceneProgress),
-  }));
   let activeIndex = 0;
   let closestDistance = Infinity;
-  for (let index = 0; index < anchors.length; index += 1) {
-    const distance = Math.abs(viewportCenter - anchors[index].center);
+  for (let index = 0; index < narrativeSections.length; index += 1) {
+    const section = narrativeSections[index];
+    const sectionCenter = section.offsetTop + section.offsetHeight * 0.5;
+    const distance = Math.abs(viewportCenter - sectionCenter);
     if (distance < closestDistance) {
       closestDistance = distance;
       activeIndex = index;
     }
   }
-  narrativeSections.forEach((section, index) => section.classList.toggle('is-active', index === activeIndex));
 
-  if (viewportCenter <= anchors[0].center) {
-    state.targetProgress = anchors[0].progress;
-    return;
-  }
-  const lastAnchor = anchors[anchors.length - 1];
-  if (viewportCenter >= lastAnchor.center) {
-    state.targetProgress = lastAnchor.progress;
-    return;
-  }
-  for (let index = 0; index < anchors.length - 1; index += 1) {
-    const current = anchors[index];
-    const next = anchors[index + 1];
-    if (viewportCenter >= current.center && viewportCenter <= next.center) {
-      const localProgress = clamp((viewportCenter - current.center) / (next.center - current.center), 0, 1);
-      state.targetProgress = lerp(current.progress, next.progress, localProgress);
-      return;
-    }
-  }
+  narrativeSections.forEach((section, index) => section.classList.toggle('is-active', index === activeIndex));
+  state.targetProgress = Number(narrativeSections[activeIndex].dataset.sceneProgress);
 }
 
 function updateCamera(progress, elapsed, delta) {
