@@ -106,6 +106,7 @@ Canonical palette from Mantra Design Guide (dark mode):
 - Foreground copy, section anchors, and snap behavior intentionally match V3 until the retreat visual thesis is proven.
 - Camera motion retreats monotonically away from a central opening hub as section progress increases; the neural world itself stays spatially stable except for subtle ambient drift.
 - Reveal is progress-owned and monotonic: hubs, satellites, local links, highways, child hubs, particles, and pulses may appear or intensify by section but must not depend on forward travel, graph recycling, cycle replicas, or velocity streak semantics.
+- The final CTA preserves the complete accumulated graph with a restrained contextual glow; terminal whiteout or density dropout is forbidden.
 
 ### /coaches
 - Uses GSAP + ScrollTrigger + SplitType (CDN)
