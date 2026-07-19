@@ -101,6 +101,12 @@ Canonical palette from Mantra Design Guide (dark mode):
 - V3 uses one mobile-derived population budget on every viewport while retaining the complete feature set: hub shells, satellites, fog clouds, connected tendrils, free dendrites, pulse packets, and hyperspace streaks
 - Responsive branches may change camera framing and foreground layout only; neural population counts and feature lifecycle remain unified
 
+### /home_v4 (Retreat Neural Narrative)
+- Independent copy of the locked `/home_v3` route; do not modify `/home_v2` or `/home_v3` while iterating V4.
+- Foreground copy, section anchors, and snap behavior intentionally match V3 until the retreat visual thesis is proven.
+- Camera motion retreats monotonically away from a central opening hub as section progress increases; the neural world itself stays spatially stable except for subtle ambient drift.
+- Reveal is progress-owned and monotonic: hubs, satellites, local links, highways, child hubs, particles, and pulses may appear or intensify by section but must not depend on forward travel, graph recycling, cycle replicas, or velocity streak semantics.
+
 ### /coaches
 - Uses GSAP + ScrollTrigger + SplitType (CDN)
 - Uses shared styles.css reveal system

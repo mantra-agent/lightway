@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="robots" content="noindex" />
+    <title>Mantra — Reach Your Full Potential</title>
+    <link rel="icon" href="data:," />
+    <style>
+      :root {
+        color-scheme: dark;
+        --canvas: #000000;
+        --foreground: #e8eaed;
+        --muted: #9299a5;
+        --accent: #1a9bdb;
+        --panel: rgba(232, 234, 237, 0.055);
+        --panel-border: rgba(232, 234, 237, 0.1);
+      }
+
+      * { box-sizing: border-box; }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--canvas);
+        scrollbar-width: none;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      html {
+        scroll-snap-type: y proximity;
+        scroll-padding-block: 0;
+      }
+
+      body {
+        overflow-x: hidden;
+      }
+
+      body::-webkit-scrollbar { display: none; }
+
+      .neural-stage {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 45%, rgba(25, 42, 58, 0.12), transparent 42%),
+          var(--canvas);
+      }
+
+      .neural-stage canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: pan-y;
+      }
+
+      .atmosphere,
+      .vignette,
+      .white-arrival,
+      .fallback-graph {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .atmosphere {
+        background:
+          radial-gradient(ellipse at 50% 45%, rgba(141, 212, 240, 0.04), transparent 38%),
+          radial-gradient(ellipse at 20% 80%, rgba(26, 155, 219, 0.02), transparent 38%);
+        mix-blend-mode: screen;
+        opacity: 0.4;
+      }
+
+      .vignette {
+        background: radial-gradient(ellipse at center, transparent 28%, rgba(0, 0, 0, 0.2) 63%, rgba(0, 0, 0, 0.88) 100%);
+      }
+
+      .white-arrival {
+        background: white;
+        opacity: 0;
+        will-change: opacity;
+      }
+
+      .narrative {
+        position: relative;
+        z-index: 2;
+      }
+
+      .story-section {
+        min-height: 100svh;
+        scroll-snap-align: center;
+        scroll-snap-stop: normal;
+        display: grid;
+        grid-template-columns: minmax(24px, 1fr) minmax(0, 620px) minmax(0, 620px) minmax(24px, 1fr);
+        align-items: center;
+        padding: 9svh 0;
+      }
+
+      .hero-section {
+        min-height: 112svh;
+        scroll-snap-align: start;
+        text-align: center;
+      }
+
+      .final-section {
+        scroll-snap-align: end;
+      }
+
+      .section-content {
+        opacity: 0.14;
+        transform: translateY(30px);
+        filter: blur(7px);
+        transition:
+          opacity 650ms cubic-bezier(0.22, 1, 0.36, 1),
+          transform 650ms cubic-bezier(0.22, 1, 0.36, 1),
+          filter 650ms cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: opacity, transform, filter;
+      }
+
+      .story-section.is-active .section-content {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+      }
+
+      .hero-content {
+        grid-column: 2 / 4;
+        width: min(900px, calc(100vw - 48px));
+        justify-self: center;
+      }
+
+      .wordmark {
+        margin: 0 0 28px;
+        color: rgba(232, 234, 237, 0.62);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      p { margin-top: 0; }
+
+      h1 {
+        margin-bottom: 26px;
+        color: var(--foreground);
+        font-size: clamp(54px, 8vw, 116px);
+        font-weight: 520;
+        letter-spacing: -0.065em;
+        line-height: 0.93;
+        text-wrap: balance;
+      }
+
+      .hero-copy {
+        width: min(640px, 100%);
+        margin: 0 auto 36px;
+        color: rgba(232, 234, 237, 0.7);
+        font-size: clamp(18px, 2vw, 24px);
+        line-height: 1.55;
+        text-wrap: balance;
+      }
+
+      .cta {
+        display: inline-flex;
+        min-height: 48px;
+        align-items: center;
+        justify-content: center;
+        padding: 0 24px;
+        border: 1px solid rgba(26, 155, 219, 0.48);
+        border-radius: 999px;
+        background: var(--accent);
+        box-shadow: 0 0 36px rgba(26, 155, 219, 0.2);
+        color: #001018;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        text-decoration: none;
+        pointer-events: auto;
+        transition: transform 180ms ease, box-shadow 180ms ease;
+      }
+
+      .cta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 48px rgba(26, 155, 219, 0.34);
+      }
+
+      .story-card {
+        position: relative;
+        width: min(520px, calc(100vw - 48px));
+        padding: clamp(28px, 4vw, 44px);
+        overflow: hidden;
+        border: 1px solid var(--panel-border);
+        border-radius: 18px;
+        background: var(--panel);
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.34);
+        backdrop-filter: blur(16px) saturate(118%);
+        -webkit-backdrop-filter: blur(16px) saturate(118%);
+      }
+
+      .story-card::before {
+        content: "";
+        position: absolute;
+        inset: 20px auto 20px 0;
+        width: 2px;
+        border-radius: 2px;
+        background: linear-gradient(to bottom, transparent, var(--accent) 28%, var(--accent) 72%, transparent);
+        opacity: 0.8;
+      }
+
+      .align-left .story-card {
+        grid-column: 2;
+        justify-self: start;
+      }
+
+      .align-right .story-card {
+        grid-column: 3;
+        justify-self: end;
+      }
+
+      .eyebrow {
+        margin-bottom: 20px;
+        color: rgba(26, 155, 219, 0.88);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      h2 {
+        margin-bottom: 20px;
+        color: var(--foreground);
+        font-size: clamp(36px, 5vw, 64px);
+        font-weight: 520;
+        letter-spacing: -0.05em;
+        line-height: 0.98;
+        text-wrap: balance;
+      }
+
+      .story-copy {
+        margin-bottom: 0;
+        color: rgba(232, 234, 237, 0.68);
+        font-size: clamp(16px, 1.5vw, 19px);
+        line-height: 1.65;
+      }
+
+      .proof-line {
+        margin: 26px 0 0;
+        padding-top: 20px;
+        border-top: 1px solid rgba(232, 234, 237, 0.08);
+        color: rgba(232, 234, 237, 0.92);
+        font-size: 14px;
+        font-weight: 620;
+        letter-spacing: -0.01em;
+      }
+
+      .grouped-card {
+        width: min(620px, calc(100vw - 48px));
+      }
+
+      .idea-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 28px;
+      }
+
+      .idea-panel {
+        min-height: 144px;
+        padding: 20px;
+        border: 1px solid rgba(232, 234, 237, 0.075);
+        border-radius: 12px;
+        background: rgba(4, 16, 25, 0.34);
+        box-shadow: inset 0 1px 0 rgba(232, 234, 237, 0.035);
+      }
+
+      .idea-number {
+        display: block;
+        margin-bottom: 18px;
+        color: rgba(26, 155, 219, 0.78);
+        font-size: 10px;
+        font-weight: 760;
+        letter-spacing: 0.16em;
+      }
+
+      .idea-panel h3 {
+        margin: 0 0 8px;
+        color: rgba(232, 234, 237, 0.96);
+        font-size: 17px;
+        font-weight: 630;
+        letter-spacing: -0.025em;
+      }
+
+      .idea-panel p {
+        margin: 0;
+        color: rgba(232, 234, 237, 0.56);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .final-section {
+        min-height: 125svh;
+        text-align: center;
+      }
+
+      .final-content {
+        grid-column: 2 / 4;
+        width: min(820px, calc(100vw - 48px));
+        justify-self: center;
+      }
+
+      .final-content h2 {
+        color: #0a1016;
+        font-size: clamp(48px, 7vw, 96px);
+      }
+
+      .final-content p {
+        width: min(560px, 100%);
+        margin: 0 auto 32px;
+        color: rgba(10, 16, 22, 0.68);
+        font-size: clamp(18px, 2vw, 23px);
+        line-height: 1.55;
+      }
+
+      .scroll-cue {
+        position: fixed;
+        left: 50%;
+        bottom: 24px;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transform: translateX(-50%);
+        color: rgba(232, 234, 237, 0.58);
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        transition: opacity 300ms ease;
+        pointer-events: none;
+      }
+
+      .scroll-cue::before {
+        content: "";
+        width: 1px;
+        height: 28px;
+        background: linear-gradient(to bottom, rgba(232, 234, 237, 0.08), rgba(232, 234, 237, 0.8));
+        animation: cue 1.9s ease-in-out infinite;
+      }
+
+      .fallback-message {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        z-index: 4;
+        width: min(28rem, calc(100vw - 48px));
+        transform: translate(-50%, -50%);
+        color: var(--foreground);
+        font-size: 16px;
+        line-height: 1.6;
+        text-align: center;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .webgl-unavailable .fallback-message { opacity: 1; }
+      .webgl-unavailable .fallback-graph { opacity: 1; }
+
+      .fallback-graph {
+        opacity: 0;
+        background:
+          radial-gradient(circle at 24% 31%, transparent 0 14px, rgba(26, 155, 219, 0.42) 15px, transparent 17px),
+          radial-gradient(circle at 52% 43%, transparent 0 20px, rgba(232, 234, 237, 0.4) 21px, transparent 23px),
+          radial-gradient(circle at 76% 65%, transparent 0 12px, rgba(26, 155, 219, 0.38) 13px, transparent 15px);
+      }
+
+      @keyframes cue {
+        0%, 100% { transform: scaleY(0.55); opacity: 0.38; }
+        50% { transform: scaleY(1); opacity: 1; }
+      }
+
+      @media (max-width: 760px) {
+        html {
+          scroll-snap-type: y mandatory;
+        }
+
+        .story-section {
+          scroll-snap-stop: always;
+          grid-template-columns: 24px minmax(0, 1fr) 24px;
+          min-height: 100svh;
+          padding: 8svh 0;
+        }
+
+        .hero-section { min-height: 100svh; }
+        .hero-content,
+        .final-content,
+        .align-left .story-card,
+        .align-right .story-card {
+          grid-column: 2;
+          justify-self: center;
+        }
+
+        .story-card { backdrop-filter: blur(13px) saturate(115%); }
+        .grouped-section {
+          min-height: 100svh;
+          padding: 4svh 0;
+        }
+        .grouped-card {
+          padding: 22px;
+        }
+        .grouped-card h2 {
+          margin-bottom: 14px;
+          font-size: clamp(32px, 10vw, 44px);
+        }
+        .grouped-card .story-copy {
+          font-size: 14px;
+          line-height: 1.5;
+        }
+        .idea-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+          margin-top: 18px;
+        }
+        .idea-panel {
+          min-height: 132px;
+          padding: 14px;
+        }
+        .idea-number { margin-bottom: 10px; }
+        .idea-panel h3 { font-size: 15px; }
+        .idea-panel p {
+          font-size: 11.5px;
+          line-height: 1.42;
+        }
+        .scroll-cue { bottom: 42px; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-snap-type: none; }
+        .section-content {
+          opacity: 1;
+          transform: none;
+          filter: none;
+          transition: none;
+        }
+        .scroll-cue { display: none; }
+        .atmosphere { opacity: 0.3; }
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main class="neural-stage" aria-label="Mantra neural narrative background">
+      <div class="fallback-graph" aria-hidden="true"></div>
+      <div class="atmosphere" aria-hidden="true"></div>
+      <div class="vignette" aria-hidden="true"></div>
+      <div class="white-arrival" aria-hidden="true"></div>
+    </main>
+
+    <div class="narrative">
+      <section class="story-section hero-section is-active" data-scene-progress="0">
+        <div class="section-content hero-content">
+          <p class="wordmark">Mantra</p>
+          <h1>Reach your full potential.</h1>
+          <p class="hero-copy">Your life is complex. Your system should be intelligent.</p>
+          <a class="cta" href="https://mono-prod-8d22.up.railway.app/start?source=lightway">Start With Mantra</a>
+        </div>
+      </section>
+
+      <section class="story-section align-left" data-scene-progress="0.14">
+        <article class="section-content story-card">
+          <p class="eyebrow">01 · Connection</p>
+          <h2>Everything, connected.</h2>
+          <p class="story-copy">Your goals, calendar, relationships, health, money, and decisions stop living in separate systems. The whole picture becomes visible.</p>
+          <p class="proof-line">Connected systems produce judgment.</p>
+        </article>
+      </section>
+
+      <section class="story-section align-right" data-scene-progress="0.32">
+        <article class="section-content story-card">
+          <p class="eyebrow">02 · Continuity</p>
+          <h2>Keep the whole thread.</h2>
+          <p class="story-copy">Every conversation, commitment, and decision stays connected to what came before and what matters next.</p>
+          <p class="proof-line">Memory that gets more valuable over time.</p>
+        </article>
+      </section>
+
+      <section class="story-section align-left grouped-section" data-scene-progress="0.5">
+        <article class="section-content story-card grouped-card">
+          <p class="eyebrow">03 · Action</p>
+          <h2>Mantra moves the work.</h2>
+          <p class="story-copy">One intelligence layer coordinates the small systems that turn intention into momentum.</p>
+          <div class="idea-grid">
+            <section class="idea-panel">
+              <span class="idea-number">01</span>
+              <h3>Prepares</h3>
+              <p>Meetings arrive with the right people, history, and open decisions already assembled.</p>
+            </section>
+            <section class="idea-panel">
+              <span class="idea-number">02</span>
+              <h3>Captures</h3>
+              <p>Ideas, promises, and decisions become durable context instead of disappearing into transcripts.</p>
+            </section>
+            <section class="idea-panel">
+              <span class="idea-number">03</span>
+              <h3>Coordinates</h3>
+              <p>Goals, calendar, relationships, and projects resolve into one coherent next move.</p>
+            </section>
+            <section class="idea-panel">
+              <span class="idea-number">04</span>
+              <h3>Follows through</h3>
+              <p>Open loops return at the right moment, with enough context to close them.</p>
+            </section>
+          </div>
+        </article>
+      </section>
+
+      <section class="story-section align-right" data-scene-progress="0.68">
+        <article class="section-content story-card">
+          <p class="eyebrow">04 · Compounding</p>
+          <h2>Your life compounds.</h2>
+          <p class="story-copy">Every kept habit, hard decision, warm relationship, and finished commitment strengthens the system carrying you forward.</p>
+          <p class="proof-line">Month six should feel different from day one.</p>
+        </article>
+      </section>
+
+      <section class="story-section align-left" data-scene-progress="0.83">
+        <article class="section-content story-card">
+          <p class="eyebrow">05 · Ambient</p>
+          <h2>The interface disappears.</h2>
+          <p class="story-copy">Talk through an idea on a walk. Find it captured, structured, and connected when you sit down. No new behavior required.</p>
+          <p class="proof-line">One intelligence layer. Every surface.</p>
+        </article>
+      </section>
+
+      <section class="story-section final-section" data-scene-progress="1">
+        <div class="section-content final-content">
+          <h2>Your judgment. Multiplied.</h2>
+          <p>Build the intelligence layer your life deserves.</p>
+          <a class="cta" href="https://mono-prod-8d22.up.railway.app/start?source=lightway">Start With Mantra</a>
+        </div>
+      </section>
+    </div>
+
+    <div class="scroll-cue" aria-hidden="true">Scroll to explore</div>
+    <p class="fallback-message" role="status">This visual requires WebGL. The rest of Mantra remains available.</p>
+    <script type="module" src="./neural-hyperspace.js"></script>
+  </body>
+</html>
