@@ -164,7 +164,7 @@ const shellFragmentShader = `
       + ctaBlue * heartbeat * 0.028;
     vec3 backRadiance = deepGlass + deepBlue * (broadRim * 0.16 + signal * 0.018);
 
-    float revealClarity = lerp(0.78, 1.0, smoothstep(0.18, 0.88, uProgress));
+    float revealClarity = mix(0.78, 1.0, smoothstep(0.18, 0.88, uProgress));
     float alpha = mix(frontAlpha, backAlpha, uBackface) * vVisibility * vDepthFade * revealClarity;
     vec3 radiance = mix(frontRadiance, backRadiance, uBackface) * revealClarity;
     vec3 impactWhite = vec3(0.94, 0.99, 1.0) * (1.35 + glassRim * 1.2);
