@@ -383,13 +383,18 @@
       }
 
       @media (max-width: 760px) {
-        .story-section {
-          grid-template-columns: 24px minmax(0, 1fr) 24px;
-          min-height: 110svh;
-          padding: 12svh 0;
+        html {
+          scroll-snap-type: y mandatory;
         }
 
-        .hero-section { min-height: 112svh; }
+        .story-section {
+          scroll-snap-stop: always;
+          grid-template-columns: 24px minmax(0, 1fr) 24px;
+          min-height: 100svh;
+          padding: 8svh 0;
+        }
+
+        .hero-section { min-height: 100svh; }
         .hero-content,
         .final-content,
         .align-left .story-card,
@@ -400,8 +405,8 @@
 
         .story-card { backdrop-filter: blur(13px) saturate(115%); }
         .grouped-section {
-          min-height: 125svh;
-          padding: 8svh 0;
+          min-height: 100svh;
+          padding: 4svh 0;
         }
         .grouped-card {
           padding: 22px;
