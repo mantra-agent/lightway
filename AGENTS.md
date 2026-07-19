@@ -104,8 +104,10 @@ Canonical palette from Mantra Design Guide (dark mode):
 ### /home_v4 (Retreat Neural Narrative)
 - Independent copy of the locked `/home_v3` route; do not modify `/home_v2` or `/home_v3` while iterating V4.
 - Foreground copy, section anchors, and snap behavior intentionally match V3 until the retreat visual thesis is proven.
-- Camera motion retreats monotonically away from a central opening hub as section progress increases; the neural world itself stays spatially stable except for subtle ambient drift.
-- Reveal is progress-owned and monotonic: hubs, satellites, local links, highways, child hubs, particles, and pulses may appear or intensify by section but must not depend on forward travel, graph recycling, cycle replicas, or velocity streak semantics.
+- V4 preserves V3's kinetic equation but reverses its spatial vector: section progress raises reverse travel velocity, cumulative reverse distance directly moves the camera away from the opening center, and camera displacement must never be replaced by a static progress-to-zoom pose.
+- V4 topology generation and motion share cumulative reverse distance as one source of truth. New connected hub neighborhoods spawn at distance thresholds ahead of the retreat; threshold spacing contracts by section so node/connection creation accelerates with travel.
+- The generated topology stream is bounded in memory and unbounded in experience: fixed GPU slots are reused only after each complete generated neighborhood clears the far range, with no heap growth, finite reveal ceiling, empty horizon, or duplicate-world seam.
+- The frozen opening graph remains world-fixed with subtle ambient drift and progress-owned disclosure; generated hubs, satellites, and tendrils extend it continuously as reverse distance accumulates.
 - The final CTA preserves the complete accumulated graph with a restrained contextual glow; terminal whiteout or density dropout is forbidden.
 
 ### /coaches

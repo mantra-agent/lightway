@@ -25,6 +25,10 @@ const CONFIG = Object.freeze({
   highwayRadialSegments: 8,
   dendriteSegments: 8,
   dendriteRadialSegments: 8,
+  generatedHubCapacity: 48,
+  generatedSatellitesPerHub: 4,
+  generatedSpawnLead: 14,
+  generatedRetireDepth: 104,
   depthFar: 96,
   depthNear: 4,
 });
@@ -33,6 +37,8 @@ const state = {
   targetProgress: 0,
   progress: reducedMotion ? 0.16 : 0,
   elapsed: 0,
+  reverseDistance: 0,
+  velocity: 0,
   lastFrame: performance.now(),
   running: true,
 };
@@ -92,7 +98,7 @@ if (!renderer) throw new Error('WebGL unavailable');
 const scene = new THREE.Scene();
 scene.fog = null;
 
-const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 150);
+const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 160);
 camera.position.set(0, 0.08, isMobile ? 8.6 : 7.8);
 
 const composer = new EffectComposer(renderer);
@@ -372,10 +378,11 @@ class NeuralWorld {
     this.createFreeDendritesSystem();
     this.createChildHubDendritesSystem();
     this.createHighwayLinks();
+    this.createGeneratedNetwork();
     this.createPulses();
     this.createAmbientFilaments();
     this.createDestination();
-    this.update(0, 0, 0.016);
+    this.update(0, 0, 0.016, camera.position.z, 0);
   }
 
   createClusters() {
@@ -814,6 +821,304 @@ class NeuralWorld {
       CONFIG.dendriteRadialSegments,
       0.52,
     );
+  }
+
+  createGeneratedNetwork() {
+    const hubCount = CONFIG.generatedHubCapacity;
+    const satelliteCount = hubCount * CONFIG.generatedSatellitesPerHub;
+    const hubGeometry = new THREE.IcosahedronGeometry(1, 2);
+    this.generatedHubScale = new Float32Array(hubCount);
+    this.generatedHubPhase = new Float32Array(hubCount);
+    this.generatedHubVisibility = new Float32Array(hubCount);
+    this.generatedHubImpact = new Float32Array(hubCount);
+    hubGeometry.setAttribute('aScale', new THREE.InstancedBufferAttribute(this.generatedHubScale, 1));
+    hubGeometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(this.generatedHubPhase, 1));
+    hubGeometry.setAttribute('aVisibility', new THREE.InstancedBufferAttribute(this.generatedHubVisibility, 1));
+    hubGeometry.setAttribute('aImpact', new THREE.InstancedBufferAttribute(this.generatedHubImpact, 1));
+    this.generatedHubBackMesh = new THREE.InstancedMesh(hubGeometry, this.hubBackMaterial, hubCount);
+    this.generatedHubFrontMesh = new THREE.InstancedMesh(hubGeometry, this.hubFrontMaterial, hubCount);
+    for (const mesh of [this.generatedHubBackMesh, this.generatedHubFrontMesh]) {
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      mesh.frustumCulled = false;
+      this.group.add(mesh);
+    }
+
+    const satelliteGeometry = new THREE.IcosahedronGeometry(1, 1);
+    this.generatedSatelliteScale = new Float32Array(satelliteCount);
+    this.generatedSatellitePhase = new Float32Array(satelliteCount);
+    this.generatedSatelliteVisibility = new Float32Array(satelliteCount);
+    this.generatedSatelliteImpact = new Float32Array(satelliteCount);
+    satelliteGeometry.setAttribute('aScale', new THREE.InstancedBufferAttribute(this.generatedSatelliteScale, 1));
+    satelliteGeometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(this.generatedSatellitePhase, 1));
+    satelliteGeometry.setAttribute('aVisibility', new THREE.InstancedBufferAttribute(this.generatedSatelliteVisibility, 1));
+    satelliteGeometry.setAttribute('aImpact', new THREE.InstancedBufferAttribute(this.generatedSatelliteImpact, 1));
+    this.generatedSatelliteMesh = new THREE.InstancedMesh(satelliteGeometry, this.satelliteMaterial, satelliteCount);
+    this.generatedSatelliteMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.generatedSatelliteMesh.frustumCulled = false;
+    this.group.add(this.generatedSatelliteMesh);
+
+    this.generatedTendrilSystem = this.createTendrilSystem(
+      hubCount * (CONFIG.generatedSatellitesPerHub + 2),
+      CONFIG.localSegments,
+      CONFIG.localRadialSegments,
+      0.62,
+    );
+    this.generatedHubPositions = Array.from({ length: hubCount }, () => new THREE.Vector3());
+    this.generatedSatellitePositions = Array.from({ length: satelliteCount }, () => new THREE.Vector3());
+    this.generatedSlots = Array.from({ length: hubCount }, (_, slotIndex) => ({
+      slotIndex,
+      active: false,
+      generation: -1,
+      bornDistance: 0,
+      x: 0,
+      y: 0,
+      z: -120,
+      size: 0,
+      phase: 0,
+      satellites: Array.from({ length: CONFIG.generatedSatellitesPerHub }, () => ({
+        offsetX: 0,
+        offsetY: 0,
+        offsetZ: 0,
+        size: 0,
+        phase: 0,
+      })),
+    }));
+    this.generatedSpawnCursor = 0;
+    this.generatedGeneration = 0;
+    this.nextGeneratedDistance = 2.5;
+    this.generatedSpawnCount = 0;
+  }
+
+  claimGeneratedSlot() {
+    for (let offset = 0; offset < this.generatedSlots.length; offset += 1) {
+      const slotIndex = (this.generatedSpawnCursor + offset) % this.generatedSlots.length;
+      const slot = this.generatedSlots[slotIndex];
+      if (slot.active) continue;
+      this.generatedSpawnCursor = (slotIndex + 1) % this.generatedSlots.length;
+      return slot;
+    }
+    return null;
+  }
+
+  spawnGeneratedHub(progress, cameraZ, reverseDistance) {
+    const slot = this.claimGeneratedSlot();
+    if (!slot) return false;
+    const generation = this.generatedGeneration;
+    const angle = generation * 2.399963229728653 + random() * 0.22;
+    const radius = lerp(isMobile ? 3.8 : 6.0, isMobile ? 7.4 : 19.0, smoothstep(0.08, 0.9, progress)) * (0.78 + random() * (isMobile ? 0.22 : 0.3));
+    slot.active = true;
+    slot.generation = generation;
+    slot.bornDistance = reverseDistance;
+    slot.x = Math.cos(angle) * radius + Math.sin(generation * 0.37) * (isMobile ? 0.45 : 1.35);
+    slot.y = Math.sin(angle) * radius * (isMobile ? 0.68 : 0.94) + Math.cos(generation * 0.29) * (isMobile ? 0.38 : 1.1) - (isMobile ? 0 : 1.8);
+    const spawnLead = isMobile ? 12.2 : 17.5;
+    slot.z = cameraZ - lerp(spawnLead, spawnLead + (isMobile ? 4.8 : 8), smoothstep(0.12, 1, progress)) - random() * 2.6;
+    slot.size = (isMobile ? 0.78 : 0.72) + random() * (isMobile ? 0.5 : 0.58) + progress * (isMobile ? 0.16 : 0.15);
+    slot.phase = generation * 0.71 + random() * 0.6;
+    slot.satellites.forEach((satellite, index) => {
+      const satelliteAngle = angle + index / CONFIG.generatedSatellitesPerHub * Math.PI * 2 + random() * 0.34;
+      const satelliteRadius = 0.75 + index * 0.22 + random() * 0.3;
+      satellite.offsetX = Math.cos(satelliteAngle) * satelliteRadius;
+      satellite.offsetY = Math.sin(satelliteAngle) * satelliteRadius * 0.72;
+      satellite.offsetZ = (index % 3 - 1) * 0.42 + (random() - 0.5) * 0.25;
+      satellite.size = (isMobile ? 0.18 : 0.13) + random() * (isMobile ? 0.16 : 0.14);
+      satellite.phase = slot.phase + index * 0.67;
+    });
+    this.generatedGeneration += 1;
+    this.generatedSpawnCount += 1;
+    return true;
+  }
+
+  ensureGeneratedTopology(progress, cameraZ, reverseDistance) {
+    if (progress < 0.08) return;
+    let spawnedThisFrame = 0;
+    while (reverseDistance >= this.nextGeneratedDistance && spawnedThisFrame < 4) {
+      if (!this.spawnGeneratedHub(progress, cameraZ, reverseDistance)) break;
+      const spacing = lerp(10.5, isMobile ? 3.4 : 4.8, smoothstep(0.08, 0.95, progress));
+      this.nextGeneratedDistance += spacing;
+      spawnedThisFrame += 1;
+    }
+    const retireDepth = isMobile ? 102 : 148;
+    for (const slot of this.generatedSlots) {
+      if (slot.active && cameraZ - slot.z > retireDepth) slot.active = false;
+    }
+  }
+
+  updateGeneratedNetwork(progress, elapsed, cameraZ, reverseDistance) {
+    const localCameraZ = cameraZ / Math.max(0.001, this.group.scale.z);
+    this.ensureGeneratedTopology(progress, localCameraZ, reverseDistance);
+    const matrix = new THREE.Matrix4();
+    const quaternion = new THREE.Quaternion();
+    const hidden = new THREE.Vector3(0, 0, -120);
+    const unitScale = new THREE.Vector3(1, 1, 1);
+    const reveal = smoothstep(0.08, 0.2, progress);
+
+    this.generatedSlots.forEach((slot, slotIndex) => {
+      const position = this.generatedHubPositions[slotIndex];
+      const depth = localCameraZ - slot.z;
+      const retireDepth = isMobile ? 102 : 148;
+      const visibility = slot.active
+        ? reveal * smoothstep(0, isMobile ? 1.35 : 6.5, reverseDistance - slot.bornDistance) * (1 - smoothstep(retireDepth - 18, retireDepth, depth))
+        : 0;
+      if (slot.active) {
+        position.set(
+          slot.x + Math.sin(elapsed * 0.17 + slot.phase) * 0.08,
+          slot.y + Math.cos(elapsed * 0.15 + slot.phase) * 0.06,
+          slot.z,
+        );
+      } else position.copy(hidden);
+      matrix.compose(position, quaternion, unitScale);
+      this.generatedHubBackMesh.setMatrixAt(slotIndex, matrix);
+      this.generatedHubFrontMesh.setMatrixAt(slotIndex, matrix);
+      this.generatedHubScale[slotIndex] = slot.size;
+      this.generatedHubPhase[slotIndex] = slot.phase;
+      this.generatedHubVisibility[slotIndex] = visibility;
+
+      slot.satellites.forEach((satellite, localIndex) => {
+        const satelliteIndex = slotIndex * CONFIG.generatedSatellitesPerHub + localIndex;
+        const satellitePosition = this.generatedSatellitePositions[satelliteIndex];
+        if (slot.active) {
+          satellitePosition.set(
+            position.x + satellite.offsetX + Math.sin(elapsed * 0.06 + satellite.phase) * 0.04,
+            position.y + satellite.offsetY + Math.cos(elapsed * 0.055 + satellite.phase) * 0.035,
+            position.z + satellite.offsetZ,
+          );
+        } else satellitePosition.copy(hidden);
+        matrix.compose(satellitePosition, quaternion, unitScale);
+        this.generatedSatelliteMesh.setMatrixAt(satelliteIndex, matrix);
+        this.generatedSatelliteScale[satelliteIndex] = satellite.size;
+        this.generatedSatellitePhase[satelliteIndex] = satellite.phase;
+        this.generatedSatelliteVisibility[satelliteIndex] = visibility;
+      });
+    });
+
+    for (const mesh of [this.generatedHubBackMesh, this.generatedHubFrontMesh, this.generatedSatelliteMesh]) {
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+    for (const attribute of [
+      this.generatedHubFrontMesh.geometry.attributes.aScale,
+      this.generatedHubFrontMesh.geometry.attributes.aPhase,
+      this.generatedHubFrontMesh.geometry.attributes.aVisibility,
+      this.generatedSatelliteMesh.geometry.attributes.aScale,
+      this.generatedSatelliteMesh.geometry.attributes.aPhase,
+      this.generatedSatelliteMesh.geometry.attributes.aVisibility,
+    ]) attribute.needsUpdate = true;
+
+    const system = this.generatedTendrilSystem;
+    const color = new THREE.Color(0.006, 0.14, 0.23);
+    let vertexOffset = 0;
+    const activeSlots = this.generatedSlots.filter((slot) => slot.active).sort((a, b) => a.generation - b.generation);
+    for (const slot of activeSlots) {
+      const slotIndex = slot.slotIndex;
+      const hubPosition = this.generatedHubPositions[slotIndex];
+      const visibility = this.generatedHubVisibility[slotIndex];
+      if (visibility < 0.02) continue;
+      for (let localIndex = 0; localIndex < CONFIG.generatedSatellitesPerHub; localIndex += 1) {
+        const satelliteIndex = slotIndex * CONFIG.generatedSatellitesPerHub + localIndex;
+        const curve = this.surfaceCurve(
+          hubPosition,
+          this.generatedSatellitePositions[satelliteIndex],
+          this.generatedHubScale[slotIndex],
+          this.generatedSatelliteScale[satelliteIndex],
+          0.46 + localIndex * 0.08,
+          localIndex % 2 ? 1 : -1,
+        );
+        vertexOffset = this.writeTendril(
+          system,
+          curve,
+          isMobile ? 0.15 : 0.11,
+          isMobile ? 0.032 : 0.024,
+          visibility * (isMobile ? 1.0 : 0.9),
+          color,
+          vertexOffset,
+        );
+      }
+    }
+    if (activeSlots.length > 0) {
+      const first = activeSlots[0];
+      const firstPosition = this.generatedHubPositions[first.slotIndex];
+      let nearestBaseIndex = 0;
+      let nearestDistance = Infinity;
+      this.hubPositions.forEach((position, index) => {
+        const distance = position.distanceTo(firstPosition);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestBaseIndex = index;
+        }
+      });
+      if (nearestDistance < 26) {
+        const curve = this.surfaceCurve(
+          this.hubPositions[nearestBaseIndex],
+          firstPosition,
+          this.hubScale[nearestBaseIndex],
+          this.generatedHubScale[first.slotIndex],
+          1.2,
+          first.generation % 2 ? 1 : -1,
+        );
+        vertexOffset = this.writeTendril(
+          system,
+          curve,
+          0.12,
+          0.03,
+          this.generatedHubVisibility[first.slotIndex] * 0.82,
+          color,
+          vertexOffset,
+        );
+      }
+    }
+    for (let index = 1; index < activeSlots.length; index += 1) {
+      const from = activeSlots[index - 1];
+      const to = activeSlots[index];
+      const fromPosition = this.generatedHubPositions[from.slotIndex];
+      const toPosition = this.generatedHubPositions[to.slotIndex];
+      if (Math.abs(fromPosition.z - toPosition.z) > 22) continue;
+      const curve = this.surfaceCurve(
+        fromPosition,
+        toPosition,
+        this.generatedHubScale[from.slotIndex],
+        this.generatedHubScale[to.slotIndex],
+        0.95 + (index % 3) * 0.34,
+        index % 2 ? 1 : -1,
+      );
+      vertexOffset = this.writeTendril(
+        system,
+        curve,
+        isMobile ? 0.23 : 0.17,
+        isMobile ? 0.062 : 0.045,
+        Math.min(this.generatedHubVisibility[from.slotIndex], this.generatedHubVisibility[to.slotIndex]) * 0.86,
+        color,
+        vertexOffset,
+      );
+    }
+    for (let index = 2; index < activeSlots.length; index += 1) {
+      const from = activeSlots[index - 2];
+      const to = activeSlots[index];
+      const fromPosition = this.generatedHubPositions[from.slotIndex];
+      const toPosition = this.generatedHubPositions[to.slotIndex];
+      if (Math.abs(fromPosition.z - toPosition.z) > 30) continue;
+      const curve = this.surfaceCurve(
+        fromPosition,
+        toPosition,
+        this.generatedHubScale[from.slotIndex],
+        this.generatedHubScale[to.slotIndex],
+        1.35 + (index % 4) * 0.26,
+        index % 2 ? -1 : 1,
+      );
+      vertexOffset = this.writeTendril(
+        system,
+        curve,
+        isMobile ? 0.16 : 0.12,
+        isMobile ? 0.045 : 0.034,
+        Math.min(this.generatedHubVisibility[from.slotIndex], this.generatedHubVisibility[to.slotIndex]) * 0.62,
+        color,
+        vertexOffset,
+      );
+    }
+    system.geometry.setDrawRange(0, vertexOffset);
+    system.geometry.attributes.position.needsUpdate = true;
+    system.geometry.attributes.color.needsUpdate = true;
+    system.geometry.attributes.normal.needsUpdate = true;
+    system.material.uniforms.uOpacity.value = lerp(isMobile ? 0.64 : 0.54, isMobile ? 1.0 : 0.88, progress);
   }
 
   createPulses() {
@@ -1565,7 +1870,7 @@ class NeuralWorld {
     this.destinationMaterial.opacity = contextGlow * (isMobile ? 0.035 : 0.075);
   }
 
-  update(progress, elapsed, delta) {
+  update(progress, elapsed, delta, cameraZ, reverseDistance) {
     this.group.rotation.z = Math.sin(elapsed * 0.07) * 0.012;
     if (isMobile) {
       const portraitReveal = smoothstep(0.08, 0.5, progress);
@@ -1574,6 +1879,7 @@ class NeuralWorld {
       this.group.scale.set(portraitScale, portraitScale * lerp(1, 1.26, portraitReveal), portraitScale);
     }
     this.updatePositions(progress, elapsed);
+    this.updateGeneratedNetwork(progress, elapsed, cameraZ, reverseDistance);
     this.revealTerminalChildren(progress, delta);
     this.updateChildHubDendrites(progress, elapsed);
     this.updateLocalLinks(progress, elapsed);
@@ -1623,16 +1929,14 @@ function updateScrollProgress() {
   state.targetProgress = Number(narrativeSections[activeIndex].dataset.sceneProgress);
 }
 
-function updateCamera(progress, elapsed, delta) {
+function updateCamera(progress, elapsed, delta, reverseDistance) {
   const mobileScale = isMobile ? 0.54 : 1;
-  const retreat = smoothstep(0.04, 0.94, progress);
   const targetX = lerp(0, isMobile ? 0.34 : 0.95, smoothstep(0.18, 0.86, progress)) * mobileScale;
   const targetY = lerp(0.08, isMobile ? 0.42 : -0.12, smoothstep(0.18, 0.9, progress)) * mobileScale;
-  const targetZ = lerp(isMobile ? 8.6 : 7.8, isMobile ? 35.0 : 31.0, retreat);
   const ease = 1 - Math.exp(-delta * 2.5);
   camera.position.x += (targetX - camera.position.x) * ease;
   camera.position.y += (targetY - camera.position.y) * ease;
-  camera.position.z += (targetZ - camera.position.z) * ease;
+  camera.position.z = (isMobile ? 8.6 : 7.8) + reverseDistance;
   camera.fov = isMobile
     ? lerp(68, 76, smoothstep(0.24, 0.94, progress))
     : lerp(50, 64, smoothstep(0.24, 0.94, progress));
@@ -1648,8 +1952,17 @@ function render(now) {
   state.lastFrame = now;
   state.elapsed += delta;
   state.progress += (state.targetProgress - state.progress) * (1 - Math.exp(-delta * 6.6));
-  updateCamera(state.progress, state.elapsed, delta);
-  world.update(state.progress, state.elapsed, reducedMotion ? 0 : delta);
+  state.velocity = reducedMotion
+    ? 0
+    : 0.5 + smoothstep(0.02, 0.15, state.progress) * 2.5 + Math.pow(state.progress, 1.6) * 34.9;
+  state.reverseDistance += state.velocity * delta;
+  updateCamera(state.progress, state.elapsed, delta, state.reverseDistance);
+  world.update(state.progress, state.elapsed, reducedMotion ? 0 : delta, camera.position.z, state.reverseDistance);
+  stage.dataset.reverseVelocity = state.velocity.toFixed(2);
+  stage.dataset.reverseDistance = state.reverseDistance.toFixed(2);
+  stage.dataset.generatedHubs = String(world.generatedSlots.filter((slot) => slot.active).length);
+  stage.dataset.generatedTotal = String(world.generatedSpawnCount);
+  stage.dataset.cameraZ = camera.position.z.toFixed(2);
 
   renderer.toneMappingExposure = lerp(0.98, 1.36, smoothstep(0.3, 1, state.progress));
   bloomPass.strength = lerp(0.24, 0.92, smoothstep(0.12, 1, state.progress)) * (1 - smoothstep(0.82, 1, state.progress) * 0.26);
