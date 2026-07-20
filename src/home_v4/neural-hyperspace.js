@@ -10,6 +10,10 @@ const scrollCue = document.querySelector('.scroll-cue');
 const narrativeSections = Array.from(document.querySelectorAll('[data-scene-progress]'));
 const ctaLinks = Array.from(document.querySelectorAll('a.cta'));
 const isMobile = window.innerWidth < 700;
+const FORK_DESTINATIONS = Object.freeze({
+  voiceDemo: 'https://app.trymantra.ai/visualizer',
+  waitlist: 'https://app.trymantra.ai/start?source=lightway_v4',
+});
 const MAX_STORY_PROGRESS = 0.83;
 const EXIT_DURATION_SECONDS = reducedMotion ? 0.28 : 0.82;
 
@@ -45,7 +49,8 @@ const state = {
   exitSource: null,
   exitElapsed: 0,
   exitProgress: 0,
-  pendingNavigation: null,
+  spaceHeld: false,
+  forkOutcome: null,
   navigationTimer: null,
   exitDeadlineTimer: null,
 };
@@ -1853,10 +1858,19 @@ function setExitState(nextState) {
   stage.dataset.exitState = nextState;
 }
 
-function completePendingNavigation() {
-  if (!state.pendingNavigation || state.navigationTimer !== null) return;
-  const destination = state.pendingNavigation;
-  state.pendingNavigation = null;
+function resolveForkOutcome() {
+  if (state.forkOutcome) return state.forkOutcome;
+  state.forkOutcome = state.spaceHeld ? 'voice-demo' : 'waitlist';
+  stage.dataset.forkOutcome = state.forkOutcome;
+  return state.forkOutcome;
+}
+
+function completeForkNavigation() {
+  if (state.navigationTimer !== null) return;
+  const outcome = resolveForkOutcome();
+  const destination = outcome === 'voice-demo'
+    ? FORK_DESTINATIONS.voiceDemo
+    : FORK_DESTINATIONS.waitlist;
   state.navigationTimer = window.setTimeout(() => {
     state.navigationTimer = null;
     window.location.assign(destination);
@@ -1870,15 +1884,14 @@ function armExitDeadline() {
   state.exitDeadlineTimer = window.setTimeout(() => finishExit(), remainingMs);
 }
 
-function triggerExit(source = 'scroll', navigationTarget = null) {
-  if (navigationTarget) {
-    state.pendingNavigation = navigationTarget;
+function triggerExit(source = 'scroll') {
+  if (source === 'cta') {
     state.exitSource = 'cta';
   } else if (state.exitSource !== 'cta') {
     state.exitSource = source;
   }
   if (state.exitState === 'terminal') {
-    completePendingNavigation();
+    completeForkNavigation();
     return;
   }
   if (state.exitState === 'running') return;
@@ -1890,12 +1903,14 @@ function triggerExit(source = 'scroll', navigationTarget = null) {
 }
 
 function resetExit() {
-  if (state.exitSource === 'cta' || state.pendingNavigation) return;
+  if (state.exitSource === 'cta') return;
   if (state.navigationTimer !== null) window.clearTimeout(state.navigationTimer);
   if (state.exitDeadlineTimer !== null) window.clearTimeout(state.exitDeadlineTimer);
   state.navigationTimer = null;
   state.exitDeadlineTimer = null;
   state.exitSource = null;
+  state.forkOutcome = null;
+  delete stage.dataset.forkOutcome;
   state.exitElapsed = 0;
   state.exitProgress = 0;
   arrival.style.opacity = '0';
@@ -1989,7 +2004,7 @@ function finishExit() {
   stage.dataset.exitDurationMs = String(Math.round(EXIT_DURATION_SECONDS * 1000));
   setExitState('terminal');
   stopAnimation('terminal');
-  completePendingNavigation();
+  completeForkNavigation();
 }
 
 function render(now) {
@@ -2062,11 +2077,31 @@ function resume() {
   startAnimation();
 }
 
+function isEditableTarget(target) {
+  return target instanceof HTMLElement
+    && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+}
+
+function setSpaceHeld(held) {
+  state.spaceHeld = held;
+  stage.dataset.spaceHeld = String(state.spaceHeld);
+}
+
+window.addEventListener('keydown', (event) => {
+  if (event.code !== 'Space' || isEditableTarget(event.target)) return;
+  event.preventDefault();
+  setSpaceHeld(true);
+});
+window.addEventListener('keyup', (event) => {
+  if (event.code === 'Space') setSpaceHeld(false);
+});
+window.addEventListener('blur', () => setSpaceHeld(false));
+
 ctaLinks.forEach((link) => {
   link.addEventListener('click', (event) => {
-    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (event.defaultPrevented || event.button !== 0) return;
     event.preventDefault();
-    triggerExit('cta', link.href);
+    triggerExit('cta');
   });
 });
 
@@ -2081,11 +2116,19 @@ renderer.domElement.addEventListener('webglcontextrestored', () => {
 });
 window.addEventListener('resize', resize, { passive: true });
 window.addEventListener('scroll', updateScrollProgress, { passive: true });
-document.addEventListener('visibilitychange', () => document.hidden ? pause('hidden') : resume());
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    setSpaceHeld(false);
+    pause('hidden');
+  } else {
+    resume();
+  }
+});
 
 resize();
 updateScrollProgress();
 stage.dataset.animationState = state.animationState;
 stage.dataset.exitState = state.exitState;
 stage.dataset.exitProgress = state.exitProgress.toFixed(3);
+stage.dataset.spaceHeld = String(state.spaceHeld);
 scheduleFrame();
