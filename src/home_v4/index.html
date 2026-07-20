@@ -260,7 +260,7 @@
         grid-column: 2 / 4;
         width: min(1240px, calc(100vw - 48px));
         justify-self: center;
-        padding: clamp(34px, 4vw, 56px);
+        padding: 0 clamp(34px, 4vw, 56px);
         border-radius: 28px;
       }
 
@@ -269,12 +269,11 @@
       .idea-grid {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        border-top: 1px solid rgba(232, 234, 237, 0.09);
       }
 
       .idea-panel {
         min-width: 0;
-        padding: 30px 28px 4px;
+        padding: 30px 28px 26px;
         border-left: 1px solid rgba(232, 234, 237, 0.09);
       }
 
@@ -415,13 +414,12 @@
         .grouped-section .grouped-card {
           grid-column: 2;
           width: min(100%, calc(100vw - 48px));
-          padding: 22px;
+          padding: 0 22px;
           border-radius: 18px;
         }
         /* The mobile Action strip also contains callouts only. */
         .idea-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          border-top: 1px solid rgba(232, 234, 237, 0.09);
         }
         .idea-panel,
         .idea-panel:first-child,
@@ -524,7 +522,7 @@
         </article>
       </section>
 
-      <section class="story-section align-right" data-scene-progress="0.68">
+      <section class="story-section align-left" data-scene-progress="0.68">
         <article class="section-content story-card">
           <h2>Your life compounds.</h2>
           <p class="story-copy">Every kept habit, hard decision, warm relationship, and finished commitment strengthens the system carrying you forward.</p>
@@ -532,7 +530,7 @@
         </article>
       </section>
 
-      <section class="story-section align-left" data-scene-progress="0.83">
+      <section class="story-section align-right" data-scene-progress="0.83">
         <article class="section-content story-card">
           <h2>The interface disappears.</h2>
           <p class="story-copy">Talk through an idea on a walk. Find it captured, structured, and connected when you sit down. No new behavior required.</p>
