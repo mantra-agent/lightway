@@ -263,29 +263,43 @@
         letter-spacing: -0.01em;
       }
 
-      .grouped-card {
-        width: min(620px, calc(100vw - 48px));
+      .grouped-section .grouped-card {
+        grid-column: 2 / 4;
+        width: min(1240px, calc(100vw - 48px));
+        justify-self: center;
+        padding: clamp(34px, 4vw, 56px);
+        border-radius: 28px;
+      }
+
+      .grouped-card h2 {
+        width: min(880px, 100%);
+        margin-bottom: clamp(34px, 4vw, 52px);
       }
 
       .idea-grid {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-        margin-top: 28px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        border-top: 1px solid rgba(232, 234, 237, 0.09);
       }
 
       .idea-panel {
-        min-height: 144px;
-        padding: 20px;
-        border: 1px solid rgba(232, 234, 237, 0.075);
-        border-radius: 12px;
-        background: rgba(4, 16, 25, 0.34);
-        box-shadow: inset 0 1px 0 rgba(232, 234, 237, 0.035);
+        min-width: 0;
+        padding: 30px 28px 4px;
+        border-left: 1px solid rgba(232, 234, 237, 0.09);
+      }
+
+      .idea-panel:first-child {
+        padding-left: 0;
+        border-left: 0;
+      }
+
+      .idea-panel:last-child {
+        padding-right: 0;
       }
 
       .idea-number {
         display: block;
-        margin-bottom: 18px;
+        margin-bottom: 24px;
         color: rgba(26, 155, 219, 0.78);
         font-size: 10px;
         font-weight: 760;
@@ -293,18 +307,19 @@
       }
 
       .idea-panel h3 {
-        margin: 0 0 8px;
+        margin: 0 0 14px;
         color: rgba(232, 234, 237, 0.96);
-        font-size: 17px;
-        font-weight: 630;
-        letter-spacing: -0.025em;
+        font-size: clamp(18px, 1.6vw, 23px);
+        font-weight: 570;
+        letter-spacing: -0.03em;
+        line-height: 1.18;
       }
 
       .idea-panel p {
         margin: 0;
-        color: rgba(232, 234, 237, 0.56);
-        font-size: 13px;
-        line-height: 1.5;
+        color: rgba(232, 234, 237, 0.58);
+        font-size: 14px;
+        line-height: 1.58;
       }
 
       .final-section {
@@ -414,31 +429,48 @@
           min-height: 100svh;
           padding: 4svh 0;
         }
-        .grouped-card {
+        .grouped-section .grouped-card {
+          grid-column: 2;
+          width: min(100%, calc(100vw - 48px));
           padding: 22px;
+          border-radius: 18px;
         }
         .grouped-card h2 {
-          margin-bottom: 14px;
-          font-size: clamp(32px, 10vw, 44px);
-        }
-        .grouped-card .story-copy {
-          font-size: 14px;
-          line-height: 1.5;
+          margin-bottom: 18px;
+          font-size: clamp(30px, 8.8vw, 39px);
+          line-height: 1;
         }
         .idea-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 8px;
-          margin-top: 18px;
+          border-top: 1px solid rgba(232, 234, 237, 0.09);
         }
-        .idea-panel {
-          min-height: 132px;
-          padding: 14px;
+        .idea-panel,
+        .idea-panel:first-child,
+        .idea-panel:last-child {
+          min-height: 118px;
+          padding: 13px 12px 10px;
+          border-left: 1px solid rgba(232, 234, 237, 0.09);
+          border-bottom: 1px solid rgba(232, 234, 237, 0.09);
         }
-        .idea-number { margin-bottom: 10px; }
-        .idea-panel h3 { font-size: 15px; }
+        .idea-panel:nth-child(odd) {
+          padding-left: 0;
+          padding-right: 12px;
+          border-left: 0;
+        }
+        .idea-panel:nth-child(even) {
+          padding-left: 12px;
+          padding-right: 0;
+        }
+        .idea-panel:nth-child(n + 3) { border-bottom: 0; }
+        .idea-number { margin-bottom: 8px; }
+        .idea-panel h3 {
+          margin-bottom: 6px;
+          font-size: 14px;
+          line-height: 1.18;
+        }
         .idea-panel p {
-          font-size: 11.5px;
-          line-height: 1.42;
+          font-size: 10.5px;
+          line-height: 1.34;
         }
         .scroll-cue { bottom: 42px; }
       }
@@ -477,21 +509,41 @@
         <div class="section-content hero-content">
           <p class="wordmark">Mantra</p>
           <h1>Reach your full potential.</h1>
-          <p class="hero-copy">Your life is complex. Your system should be intelligent.</p>
+          <p class="hero-copy">Mantra helps you achieve your goals with a synthetic intelligence that connects your systems and scales your impact</p>
           <a class="cta" href="https://mono-prod-8d22.up.railway.app/start?source=lightway">Start With Mantra</a>
         </div>
       </section>
 
-      <section class="story-section align-left" data-scene-progress="0.14">
-        <article class="section-content story-card">
-          <p class="eyebrow">01 · Connection</p>
-          <h2>Everything, connected.</h2>
-          <p class="story-copy">Your goals, calendar, relationships, health, money, and decisions stop living in separate systems. The whole picture becomes visible.</p>
-          <p class="proof-line">Connected systems produce judgment.</p>
+      <section class="story-section grouped-section" data-scene-progress="0.32">
+        <article class="section-content story-card grouped-card">
+          <p class="eyebrow">01 · Action</p>
+          <h2>You move through your day.<br>Mantra moves your goals forward.</h2>
+          <div class="idea-grid">
+            <section class="idea-panel">
+              <span class="idea-number">01</span>
+              <h3>Coordinates your agenda</h3>
+              <p>Brings your goals, commitments, and calendar into one clear view of what needs your attention.</p>
+            </section>
+            <section class="idea-panel">
+              <span class="idea-number">02</span>
+              <h3>Streamlines your day</h3>
+              <p>Prepares meetings, captures decisions, and turns each conversation into the right next action.</p>
+            </section>
+            <section class="idea-panel">
+              <span class="idea-number">03</span>
+              <h3>Handles your follow-ups</h3>
+              <p>Finds every open loop, remembers who owes what, and brings it back before momentum disappears.</p>
+            </section>
+            <section class="idea-panel">
+              <span class="idea-number">04</span>
+              <h3>Automates your process</h3>
+              <p>Learns the work you repeat, connects the tools it crosses, and runs the routine steps for you.</p>
+            </section>
+          </div>
         </article>
       </section>
 
-      <section class="story-section align-right" data-scene-progress="0.32">
+      <section class="story-section align-right" data-scene-progress="0.5">
         <article class="section-content story-card">
           <p class="eyebrow">02 · Continuity</p>
           <h2>Keep the whole thread.</h2>
@@ -500,39 +552,9 @@
         </article>
       </section>
 
-      <section class="story-section align-left grouped-section" data-scene-progress="0.5">
-        <article class="section-content story-card grouped-card">
-          <p class="eyebrow">03 · Action</p>
-          <h2>Mantra moves the work.</h2>
-          <p class="story-copy">One intelligence layer coordinates the small systems that turn intention into momentum.</p>
-          <div class="idea-grid">
-            <section class="idea-panel">
-              <span class="idea-number">01</span>
-              <h3>Prepares</h3>
-              <p>Meetings arrive with the right people, history, and open decisions already assembled.</p>
-            </section>
-            <section class="idea-panel">
-              <span class="idea-number">02</span>
-              <h3>Captures</h3>
-              <p>Ideas, promises, and decisions become durable context instead of disappearing into transcripts.</p>
-            </section>
-            <section class="idea-panel">
-              <span class="idea-number">03</span>
-              <h3>Coordinates</h3>
-              <p>Goals, calendar, relationships, and projects resolve into one coherent next move.</p>
-            </section>
-            <section class="idea-panel">
-              <span class="idea-number">04</span>
-              <h3>Follows through</h3>
-              <p>Open loops return at the right moment, with enough context to close them.</p>
-            </section>
-          </div>
-        </article>
-      </section>
-
       <section class="story-section align-right" data-scene-progress="0.68">
         <article class="section-content story-card">
-          <p class="eyebrow">04 · Compounding</p>
+          <p class="eyebrow">03 · Compounding</p>
           <h2>Your life compounds.</h2>
           <p class="story-copy">Every kept habit, hard decision, warm relationship, and finished commitment strengthens the system carrying you forward.</p>
           <p class="proof-line">Month six should feel different from day one.</p>
@@ -541,7 +563,7 @@
 
       <section class="story-section align-left" data-scene-progress="0.83">
         <article class="section-content story-card">
-          <p class="eyebrow">05 · Ambient</p>
+          <p class="eyebrow">04 · Ambient</p>
           <h2>The interface disappears.</h2>
           <p class="story-copy">Talk through an idea on a walk. Find it captured, structured, and connected when you sit down. No new behavior required.</p>
           <p class="proof-line">One intelligence layer. Every surface.</p>
