@@ -79,9 +79,8 @@
       }
 
       .white-arrival {
-        background: radial-gradient(circle at 50% 52%, rgba(141, 212, 240, 0.1), rgba(26, 155, 219, 0.025) 32%, transparent 68%);
+        background: white;
         opacity: 0;
-        mix-blend-mode: screen;
         will-change: opacity;
       }
 
@@ -108,15 +107,6 @@
 
       .final-section {
         scroll-snap-align: end;
-      }
-
-      .final-section .section-content h2,
-      .final-section .section-content p {
-        text-shadow: 0 2px 18px rgba(0, 0, 0, 0.92);
-      }
-
-      .final-section .section-content p {
-        color: rgba(232, 234, 237, 0.82);
       }
 
       .section-content {
@@ -323,14 +313,14 @@
       }
 
       .final-content h2 {
-        color: var(--foreground);
+        color: #0a1016;
         font-size: clamp(48px, 7vw, 96px);
       }
 
       .final-content p {
         width: min(560px, 100%);
-        color: rgba(232, 234, 237, 0.82);
         margin: 0 auto 32px;
+        color: rgba(10, 16, 22, 0.68);
         font-size: clamp(18px, 2vw, 23px);
         line-height: 1.55;
       }
@@ -444,19 +434,6 @@
           font-size: 11.5px;
           line-height: 1.42;
         }
-        .final-content {
-          position: relative;
-          isolation: isolate;
-        }
-        .final-content::before {
-          position: absolute;
-          inset: -34px -18px;
-          z-index: -1;
-          border-radius: 50%;
-          background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.76) 0%, rgba(0, 0, 0, 0.5) 48%, transparent 78%);
-          content: '';
-          pointer-events: none;
-        }
         .scroll-cue { bottom: 42px; }
       }
 
@@ -490,7 +467,7 @@
     </main>
 
     <div class="narrative">
-      <section id="hero" class="story-section hero-section is-active" data-scene-progress="0">
+      <section class="story-section hero-section is-active" data-scene-progress="0">
         <div class="section-content hero-content">
           <p class="wordmark">Mantra</p>
           <h1>Reach your full potential.</h1>
@@ -499,7 +476,7 @@
         </div>
       </section>
 
-      <section id="connection" class="story-section align-left" data-scene-progress="0.14">
+      <section class="story-section align-left" data-scene-progress="0.14">
         <article class="section-content story-card">
           <p class="eyebrow">01 · Connection</p>
           <h2>Everything, connected.</h2>
@@ -508,7 +485,7 @@
         </article>
       </section>
 
-      <section id="continuity" class="story-section align-right" data-scene-progress="0.32">
+      <section class="story-section align-right" data-scene-progress="0.32">
         <article class="section-content story-card">
           <p class="eyebrow">02 · Continuity</p>
           <h2>Keep the whole thread.</h2>
@@ -517,7 +494,7 @@
         </article>
       </section>
 
-      <section id="action" class="story-section align-left grouped-section" data-scene-progress="0.5">
+      <section class="story-section align-left grouped-section" data-scene-progress="0.5">
         <article class="section-content story-card grouped-card">
           <p class="eyebrow">03 · Action</p>
           <h2>Mantra moves the work.</h2>
@@ -547,7 +524,7 @@
         </article>
       </section>
 
-      <section id="compounding" class="story-section align-right" data-scene-progress="0.68">
+      <section class="story-section align-right" data-scene-progress="0.68">
         <article class="section-content story-card">
           <p class="eyebrow">04 · Compounding</p>
           <h2>Your life compounds.</h2>
@@ -556,7 +533,7 @@
         </article>
       </section>
 
-      <section id="ambient" class="story-section align-left" data-scene-progress="0.83">
+      <section class="story-section align-left" data-scene-progress="0.83">
         <article class="section-content story-card">
           <p class="eyebrow">05 · Ambient</p>
           <h2>The interface disappears.</h2>
@@ -565,7 +542,7 @@
         </article>
       </section>
 
-      <section id="judgment" class="story-section final-section" data-scene-progress="1">
+      <section class="story-section final-section" data-scene-progress="1">
         <div class="section-content final-content">
           <h2>Your judgment. Multiplied.</h2>
           <p>Build the intelligence layer your life deserves.</p>

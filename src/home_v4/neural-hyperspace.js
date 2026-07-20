@@ -14,7 +14,7 @@ const CONFIG = Object.freeze({
   clusterCount: 8,
   satellitesPerCluster: 7,
   microCount: 1200,
-  ambientFilamentCount: 260,
+  streakCount: 260,
   pulseCount: 64,
   cascadeCount: 48,
   hubFogParticleCount: 47,
@@ -25,10 +25,6 @@ const CONFIG = Object.freeze({
   highwayRadialSegments: 8,
   dendriteSegments: 8,
   dendriteRadialSegments: 8,
-  generatedHubCapacity: 48,
-  generatedSatellitesPerHub: 4,
-  generatedSpawnLead: 14,
-  generatedRetireDepth: 104,
   depthFar: 96,
   depthNear: 4,
 });
@@ -37,21 +33,10 @@ const state = {
   targetProgress: 0,
   progress: reducedMotion ? 0.16 : 0,
   elapsed: 0,
-  reverseDistance: 0,
-  velocity: 0,
+  travel: 0,
   lastFrame: performance.now(),
   running: true,
 };
-
-const REVEAL_PHASES = Object.freeze({
-  hubs: Object.freeze({ start: 0, end: 0.88, initial: 0.2 }),
-  satellites: Object.freeze({ start: 0.04, end: 0.82, initial: 0.07 }),
-  particles: Object.freeze({ start: 0, end: 0.82, initial: 0.04 }),
-  highways: Object.freeze({ start: 0.05, end: 0.86, initial: 0.074 }),
-  pulses: Object.freeze({ start: 0.14, end: 0.9, initial: 0.18 }),
-  filaments: Object.freeze({ start: 0.18, end: 0.86, initial: 0.08 }),
-  childHubs: Object.freeze({ start: 0.5, end: 0.92, initial: 0 }),
-});
 
 const clamp = THREE.MathUtils.clamp;
 const lerp = THREE.MathUtils.lerp;
@@ -67,9 +52,9 @@ function smoothstep(edge0, edge1, value) {
   return x * x * (3 - 2 * x);
 }
 
-function revealRank(key, progress) {
-  const phase = REVEAL_PHASES[key];
-  return lerp(phase.initial, 1, smoothstep(phase.start, phase.end, progress));
+function wrapDepth(value, near = CONFIG.depthNear, far = CONFIG.depthFar) {
+  const span = far + near;
+  return ((((value - near) % span) + span) % span) - far;
 }
 
 function createRenderer() {
@@ -98,8 +83,8 @@ if (!renderer) throw new Error('WebGL unavailable');
 const scene = new THREE.Scene();
 scene.fog = null;
 
-const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 160);
-camera.position.set(0, 0.08, isMobile ? 8.6 : 7.8);
+const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 150);
+camera.position.set(-0.35, 0.15, 7.2);
 
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
@@ -170,9 +155,9 @@ const shellFragmentShader = `
       + ctaBlue * heartbeat * 0.028;
     vec3 backRadiance = deepGlass + deepBlue * (broadRim * 0.16 + signal * 0.018);
 
-    float revealClarity = mix(0.78, 1.0, smoothstep(0.18, 0.88, uProgress));
-    float alpha = mix(frontAlpha, backAlpha, uBackface) * vVisibility * vDepthFade * revealClarity;
-    vec3 radiance = mix(frontRadiance, backRadiance, uBackface) * revealClarity;
+    float midShellAttenuation = 1.0 - smoothstep(0.24, 0.55, uProgress) * 0.34;
+    float alpha = mix(frontAlpha, backAlpha, uBackface) * vVisibility * vDepthFade * midShellAttenuation;
+    vec3 radiance = mix(frontRadiance, backRadiance, uBackface) * midShellAttenuation;
     vec3 impactWhite = vec3(0.94, 0.99, 1.0) * (1.35 + glassRim * 1.2);
     radiance = mix(radiance, impactWhite, vImpact);
     alpha = mix(alpha, max(alpha, 0.88), vImpact);
@@ -187,19 +172,28 @@ const microVertexShader = `
   varying float vAlpha;
   varying float vPulse;
   uniform float uTime;
+  uniform float uTravel;
   uniform float uProgress;
-  uniform float uRevealRank;
   uniform float uFieldOpacity;
 
   void main() {
     vec3 p = position;
+    p.z = mod(p.z - uTravel + 96.0, 100.0) - 96.0;
     p.x += sin(uTime * 0.16 + aPhase) * 0.08;
     p.y += cos(uTime * 0.13 + aPhase * 1.3) * 0.06;
-    float visible = 1.0 - smoothstep(uRevealRank, uRevealRank + 0.08, aRank);
+    float threshold = 0.04 + smoothstep(0.0, 0.48, uProgress) * 0.72 + smoothstep(0.48, 1.0, uProgress) * 0.24;
+    float visible = 1.0 - smoothstep(threshold, threshold + 0.08, aRank);
     float depthFade = 1.0 - smoothstep(10.0, 74.0, -p.z) * 0.88;
     vPulse = 0.48 + 0.52 * sin(uTime * (0.7 + uProgress * 2.4) + aPhase);
     vec4 viewPosition = modelViewMatrix * vec4(p, 1.0);
-    vAlpha = visible * depthFade * (0.32 + vPulse * 0.5) * uFieldOpacity;
+    float screenRadius = length(viewPosition.xy / max(1.0, -viewPosition.z));
+    float convergenceDropout = 1.0;
+    if (uProgress > 0.62) {
+      float centerExclusion = smoothstep(0.16, 0.34, screenRadius);
+      float deterministicKeep = step(0.38 + uProgress * 0.24, fract(sin(aPhase * 91.7 + aRank * 413.1) * 43758.5453));
+      convergenceDropout = mix(1.0, centerExclusion * deterministicKeep, smoothstep(0.62, 0.84, uProgress));
+    }
+    vAlpha = visible * depthFade * convergenceDropout * (0.32 + vPulse * 0.5) * uFieldOpacity;
     gl_PointSize = clamp(aSize * (112.0 / max(1.0, -viewPosition.z)) * (0.86 + uProgress * 0.75), 1.0, 6.5);
     gl_Position = projectionMatrix * viewPosition;
   }
@@ -234,10 +228,13 @@ const fogParticleVertexShader = `
   varying float vOpacity;
   varying float vShape;
   uniform float uTime;
+  uniform float uWorldTravel;
+  uniform float uCycleDistance;
   uniform float uProgress;
 
   void main() {
     vec3 center = aOffset;
+    center.z -= mod(uWorldTravel, uCycleDistance);
     center.x += sin(uTime * 0.075 + aPhase) * 0.16;
     center.y += cos(uTime * 0.061 + aPhase * 1.27) * 0.13;
     center.z += sin(uTime * 0.043 + aPhase * 0.73) * 0.18;
@@ -253,7 +250,7 @@ const fogParticleVertexShader = `
     viewCenter.xy += billboard;
 
     float distanceFade = 1.0 - smoothstep(46.0, 98.0, -viewCenter.z);
-    float scrollFade = 0.72 + smoothstep(0.38, 0.94, uProgress) * 0.28;
+    float scrollFade = 1.0 - smoothstep(0.72, 0.98, uProgress) * 0.72;
     vUv = uv;
     vDensity = aDensity;
     vOpacity = aOpacity;
@@ -367,6 +364,9 @@ class NeuralWorld {
     this.satellitePositions = this.satellites.map(() => new THREE.Vector3());
     this.highways = this.createHighways();
     this.freeDendrites = this.createFreeDendrites();
+    this.worldMinDepth = this.computeConnectedGraphMinDepth();
+    this.worldExitPadding = isMobile ? 4.2 : 5.2;
+    this.worldCycleDistance = camera.position.z - this.worldMinDepth + this.worldExitPadding;
     this.terminalGrowthCountdown = 2 + Math.floor(random() * 3);
 
     this.createHubMeshes();
@@ -378,35 +378,35 @@ class NeuralWorld {
     this.createFreeDendritesSystem();
     this.createChildHubDendritesSystem();
     this.createHighwayLinks();
-    this.createGeneratedNetwork();
     this.createPulses();
-    this.createAmbientFilaments();
+    this.createVelocityStreaks();
     this.createDestination();
-    this.update(0, 0, 0.016, camera.position.z, 0);
+    this.createCycleReplica();
+    this.update(0, 0, 0.016, 0);
   }
 
   createClusters() {
     const positions = isMobile ? [
-      [0.0, 0.0, -5.8, 0.58],
-      [2.9, 2.7, -13.2, 0.32],
-      [-3.1, -2.8, -18.8, 0.34],
-      [2.1, -1.6, -29.0, 0.32],
-      [-2.4, 2.9, -40.0, 0.3],
-      [1.1, -3.7, -52.0, 0.32],
-      [-1.8, 1.2, -65.0, 0.29],
-      [2.0, 3.2, -78.0, 0.3],
+      [-2.35, -0.75, -7.4, 0.38],
+      [5.15, 6.35, -13.0, 0.32],
+      [-5.7, -7.1, -18.0, 0.34],
+      [2.6, -1.1, -30.0, 0.32],
+      [-2.1, 4.7, -42.0, 0.3],
+      [1.0, -5.7, -55.0, 0.32],
+      [-1.6, 1.1, -69.0, 0.29],
+      [1.85, 5.8, -85.0, 0.3],
     ] : [
-      [0.0, -0.2, -5.6, 0.7],
-      [4.6, 2.4, -13.2, 0.35],
-      [-4.9, -2.5, -18.0, 0.37],
-      [6.4, -1.8, -29.0, 0.34],
-      [-6.1, 2.6, -38.0, 0.33],
-      [2.9, 4.3, -48.0, 0.35],
-      [-3.3, -4.1, -59.0, 0.31],
-      [5.0, 0.6, -70.0, 0.33],
-      [-1.25, 1.9, -82.0, 0.3],
-      [5.4, -3.6, -93.0, 0.34],
-      [-5.5, 1.4, -103.0, 0.31],
+      [-5.35, -1.0, -7.0, 0.44],
+      [4.8, 4.9, -12.5, 0.35],
+      [10.5, -4.25, -17.5, 0.37],
+      [-6.2, 3.6, -29.0, 0.34],
+      [0.25, -4.4, -37.0, 0.33],
+      [6.1, 1.5, -46.0, 0.35],
+      [-4.7, -2.9, -56.0, 0.31],
+      [2.5, 4.2, -67.0, 0.33],
+      [-1.25, 0.6, -78.0, 0.3],
+      [5.4, -3.6, -89.0, 0.34],
+      [-5.5, 1.4, -97.0, 0.31],
     ];
     return positions.slice(0, CONFIG.clusterCount).map(([x, y, z, size], index) => ({
       x,
@@ -534,17 +534,51 @@ class NeuralWorld {
     return branches;
   }
 
+  computeConnectedGraphMinDepth() {
+    let minimum = Math.min(...this.clusters.map((cluster) => cluster.z - cluster.size));
+    for (const satellite of this.satellites) {
+      const centerZ = this.clusters[satellite.clusterIndex].z + satellite.offsetZ;
+      minimum = Math.min(minimum, centerZ - satellite.size);
+    }
+    for (const branch of this.freeDendrites) {
+      const sourceZ = branch.sourceType === 'hub'
+        ? this.clusters[branch.sourceIndex].z
+        : this.clusters[this.satellites[branch.sourceIndex].clusterIndex].z + this.satellites[branch.sourceIndex].offsetZ;
+      const terminalZ = sourceZ + branch.direction.z * branch.length;
+      const controlZ = lerp(sourceZ, terminalZ, 0.5) - branch.arc * 0.28;
+      minimum = Math.min(minimum, terminalZ - branch.childSize, controlZ);
+      for (const childBranch of branch.childBranches) {
+        minimum = Math.min(minimum, terminalZ + childBranch.direction.z * childBranch.length);
+      }
+    }
+    for (const highway of this.highways) {
+      const start = this.clusters[highway.from];
+      const end = this.clusters[highway.to];
+      const control = this.quadraticControl(
+        new THREE.Vector3(start.x, start.y, start.z),
+        new THREE.Vector3(end.x, end.y, end.z),
+        highway.arc,
+        highway.sign,
+      );
+      minimum = Math.min(minimum, control.z);
+    }
+    return minimum;
+  }
+
+  shellVelocityVisibility(progress) {
+    return 1 - smoothstep(0.92, 0.98, progress);
+  }
+
   clusterConnectionVisibility(cluster, progress) {
-    return this.clusterVisibility(cluster, progress);
+    return this.clusterVisibility(cluster, progress) * this.shellVelocityVisibility(progress);
   }
 
   satelliteConnectionVisibility(satellite, progress) {
-    const rankVisibility = 1 - smoothstep(
-      revealRank('satellites', progress),
-      revealRank('satellites', progress) + 0.08,
-      satellite.rank,
-    );
-    return this.clusterVisibility(this.clusters[satellite.clusterIndex], progress) * rankVisibility;
+    const satelliteReveal = 0.07 + smoothstep(0.0, 0.5, progress) * 0.72 + smoothstep(0.5, 1, progress) * 0.21;
+    const rankVisibility = 1 - smoothstep(satelliteReveal, satelliteReveal + 0.08, satellite.rank);
+    return this.clusterVisibility(this.clusters[satellite.clusterIndex], progress)
+      * rankVisibility
+      * this.shellVelocityVisibility(progress);
   }
 
   createHubMeshes() {
@@ -621,7 +655,7 @@ class NeuralWorld {
       positions[index * 3] = clustered ? cluster.x + Math.cos(angle) * radius : Math.cos(angle) * radius;
       positions[index * 3 + 1] = clustered ? cluster.y + Math.sin(angle) * radius * 0.68 : Math.sin(angle) * radius * 0.62;
       positions[index * 3 + 2] = clustered
-        ? cluster.z + (random() - 0.5) * 7.5
+        ? wrapDepth(cluster.z + (random() - 0.5) * 7.5)
         : -(random() * 94 + 2);
       phases[index] = random() * Math.PI * 2;
       ranks[index] = random();
@@ -637,8 +671,8 @@ class NeuralWorld {
       fragmentShader: microFragmentShader,
       uniforms: {
         uTime: { value: 0 },
+        uTravel: { value: 0 },
         uProgress: { value: 0 },
-        uRevealRank: { value: REVEAL_PHASES.particles.initial },
         uFieldOpacity: { value: 1 },
       },
       transparent: true,
@@ -717,6 +751,8 @@ class NeuralWorld {
       fragmentShader: fogParticleFragmentShader,
       uniforms: {
         uTime: { value: 0 },
+        uWorldTravel: { value: 0 },
+        uCycleDistance: { value: this.worldCycleDistance },
         uProgress: { value: 0 },
       },
       transparent: true,
@@ -823,304 +859,6 @@ class NeuralWorld {
     );
   }
 
-  createGeneratedNetwork() {
-    const hubCount = CONFIG.generatedHubCapacity;
-    const satelliteCount = hubCount * CONFIG.generatedSatellitesPerHub;
-    const hubGeometry = new THREE.IcosahedronGeometry(1, 2);
-    this.generatedHubScale = new Float32Array(hubCount);
-    this.generatedHubPhase = new Float32Array(hubCount);
-    this.generatedHubVisibility = new Float32Array(hubCount);
-    this.generatedHubImpact = new Float32Array(hubCount);
-    hubGeometry.setAttribute('aScale', new THREE.InstancedBufferAttribute(this.generatedHubScale, 1));
-    hubGeometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(this.generatedHubPhase, 1));
-    hubGeometry.setAttribute('aVisibility', new THREE.InstancedBufferAttribute(this.generatedHubVisibility, 1));
-    hubGeometry.setAttribute('aImpact', new THREE.InstancedBufferAttribute(this.generatedHubImpact, 1));
-    this.generatedHubBackMesh = new THREE.InstancedMesh(hubGeometry, this.hubBackMaterial, hubCount);
-    this.generatedHubFrontMesh = new THREE.InstancedMesh(hubGeometry, this.hubFrontMaterial, hubCount);
-    for (const mesh of [this.generatedHubBackMesh, this.generatedHubFrontMesh]) {
-      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      mesh.frustumCulled = false;
-      this.group.add(mesh);
-    }
-
-    const satelliteGeometry = new THREE.IcosahedronGeometry(1, 1);
-    this.generatedSatelliteScale = new Float32Array(satelliteCount);
-    this.generatedSatellitePhase = new Float32Array(satelliteCount);
-    this.generatedSatelliteVisibility = new Float32Array(satelliteCount);
-    this.generatedSatelliteImpact = new Float32Array(satelliteCount);
-    satelliteGeometry.setAttribute('aScale', new THREE.InstancedBufferAttribute(this.generatedSatelliteScale, 1));
-    satelliteGeometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(this.generatedSatellitePhase, 1));
-    satelliteGeometry.setAttribute('aVisibility', new THREE.InstancedBufferAttribute(this.generatedSatelliteVisibility, 1));
-    satelliteGeometry.setAttribute('aImpact', new THREE.InstancedBufferAttribute(this.generatedSatelliteImpact, 1));
-    this.generatedSatelliteMesh = new THREE.InstancedMesh(satelliteGeometry, this.satelliteMaterial, satelliteCount);
-    this.generatedSatelliteMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    this.generatedSatelliteMesh.frustumCulled = false;
-    this.group.add(this.generatedSatelliteMesh);
-
-    this.generatedTendrilSystem = this.createTendrilSystem(
-      hubCount * (CONFIG.generatedSatellitesPerHub + 2),
-      CONFIG.localSegments,
-      CONFIG.localRadialSegments,
-      0.62,
-    );
-    this.generatedHubPositions = Array.from({ length: hubCount }, () => new THREE.Vector3());
-    this.generatedSatellitePositions = Array.from({ length: satelliteCount }, () => new THREE.Vector3());
-    this.generatedSlots = Array.from({ length: hubCount }, (_, slotIndex) => ({
-      slotIndex,
-      active: false,
-      generation: -1,
-      bornDistance: 0,
-      x: 0,
-      y: 0,
-      z: -120,
-      size: 0,
-      phase: 0,
-      satellites: Array.from({ length: CONFIG.generatedSatellitesPerHub }, () => ({
-        offsetX: 0,
-        offsetY: 0,
-        offsetZ: 0,
-        size: 0,
-        phase: 0,
-      })),
-    }));
-    this.generatedSpawnCursor = 0;
-    this.generatedGeneration = 0;
-    this.nextGeneratedDistance = 2.5;
-    this.generatedSpawnCount = 0;
-  }
-
-  claimGeneratedSlot() {
-    for (let offset = 0; offset < this.generatedSlots.length; offset += 1) {
-      const slotIndex = (this.generatedSpawnCursor + offset) % this.generatedSlots.length;
-      const slot = this.generatedSlots[slotIndex];
-      if (slot.active) continue;
-      this.generatedSpawnCursor = (slotIndex + 1) % this.generatedSlots.length;
-      return slot;
-    }
-    return null;
-  }
-
-  spawnGeneratedHub(progress, cameraZ, reverseDistance) {
-    const slot = this.claimGeneratedSlot();
-    if (!slot) return false;
-    const generation = this.generatedGeneration;
-    const angle = generation * 2.399963229728653 + random() * 0.22;
-    const radius = lerp(isMobile ? 3.8 : 6.0, isMobile ? 7.4 : 19.0, smoothstep(0.08, 0.9, progress)) * (0.78 + random() * (isMobile ? 0.22 : 0.3));
-    slot.active = true;
-    slot.generation = generation;
-    slot.bornDistance = reverseDistance;
-    slot.x = Math.cos(angle) * radius * (isMobile ? 0.84 : 1) + Math.sin(generation * 0.37) * (isMobile ? 0.35 : 1.35);
-    slot.y = Math.sin(angle) * radius * (isMobile ? 0.86 : 0.94) + Math.cos(generation * 0.29) * (isMobile ? 0.5 : 1.1) - (isMobile ? 0 : 1.8);
-    const spawnLead = isMobile ? 12.2 : 17.5;
-    slot.z = cameraZ - lerp(spawnLead, spawnLead + (isMobile ? 4.8 : 8), smoothstep(0.12, 1, progress)) - random() * 2.6;
-    slot.size = (isMobile ? 0.78 : 0.72) + random() * (isMobile ? 0.5 : 0.58) + progress * (isMobile ? 0.16 : 0.15);
-    slot.phase = generation * 0.71 + random() * 0.6;
-    slot.satellites.forEach((satellite, index) => {
-      const satelliteAngle = angle + index / CONFIG.generatedSatellitesPerHub * Math.PI * 2 + random() * 0.34;
-      const satelliteRadius = 0.75 + index * 0.22 + random() * 0.3;
-      satellite.offsetX = Math.cos(satelliteAngle) * satelliteRadius;
-      satellite.offsetY = Math.sin(satelliteAngle) * satelliteRadius * 0.72;
-      satellite.offsetZ = (index % 3 - 1) * 0.42 + (random() - 0.5) * 0.25;
-      satellite.size = (isMobile ? 0.18 : 0.13) + random() * (isMobile ? 0.16 : 0.14);
-      satellite.phase = slot.phase + index * 0.67;
-    });
-    this.generatedGeneration += 1;
-    this.generatedSpawnCount += 1;
-    return true;
-  }
-
-  ensureGeneratedTopology(progress, cameraZ, reverseDistance) {
-    if (progress < 0.08) return;
-    let spawnedThisFrame = 0;
-    while (reverseDistance >= this.nextGeneratedDistance && spawnedThisFrame < 4) {
-      if (!this.spawnGeneratedHub(progress, cameraZ, reverseDistance)) break;
-      const spacing = lerp(10.5, isMobile ? 3.4 : 4.8, smoothstep(0.08, 0.95, progress));
-      this.nextGeneratedDistance += spacing;
-      spawnedThisFrame += 1;
-    }
-    const retireDepth = isMobile ? 102 : 148;
-    for (const slot of this.generatedSlots) {
-      if (slot.active && cameraZ - slot.z > retireDepth) slot.active = false;
-    }
-  }
-
-  updateGeneratedNetwork(progress, elapsed, cameraZ, reverseDistance) {
-    const localCameraZ = cameraZ / Math.max(0.001, this.group.scale.z);
-    this.ensureGeneratedTopology(progress, localCameraZ, reverseDistance);
-    const matrix = new THREE.Matrix4();
-    const quaternion = new THREE.Quaternion();
-    const hidden = new THREE.Vector3(0, 0, -120);
-    const unitScale = new THREE.Vector3(1, 1, 1);
-    const reveal = smoothstep(0.08, 0.2, progress);
-
-    this.generatedSlots.forEach((slot, slotIndex) => {
-      const position = this.generatedHubPositions[slotIndex];
-      const depth = localCameraZ - slot.z;
-      const retireDepth = isMobile ? 102 : 148;
-      const visibility = slot.active
-        ? reveal * smoothstep(0, isMobile ? 1.35 : 6.5, reverseDistance - slot.bornDistance) * (1 - smoothstep(retireDepth - 18, retireDepth, depth))
-        : 0;
-      if (slot.active) {
-        position.set(
-          slot.x + Math.sin(elapsed * 0.17 + slot.phase) * 0.08,
-          slot.y + Math.cos(elapsed * 0.15 + slot.phase) * 0.06,
-          slot.z,
-        );
-      } else position.copy(hidden);
-      matrix.compose(position, quaternion, unitScale);
-      this.generatedHubBackMesh.setMatrixAt(slotIndex, matrix);
-      this.generatedHubFrontMesh.setMatrixAt(slotIndex, matrix);
-      this.generatedHubScale[slotIndex] = slot.size;
-      this.generatedHubPhase[slotIndex] = slot.phase;
-      this.generatedHubVisibility[slotIndex] = visibility;
-
-      slot.satellites.forEach((satellite, localIndex) => {
-        const satelliteIndex = slotIndex * CONFIG.generatedSatellitesPerHub + localIndex;
-        const satellitePosition = this.generatedSatellitePositions[satelliteIndex];
-        if (slot.active) {
-          satellitePosition.set(
-            position.x + satellite.offsetX + Math.sin(elapsed * 0.06 + satellite.phase) * 0.04,
-            position.y + satellite.offsetY + Math.cos(elapsed * 0.055 + satellite.phase) * 0.035,
-            position.z + satellite.offsetZ,
-          );
-        } else satellitePosition.copy(hidden);
-        matrix.compose(satellitePosition, quaternion, unitScale);
-        this.generatedSatelliteMesh.setMatrixAt(satelliteIndex, matrix);
-        this.generatedSatelliteScale[satelliteIndex] = satellite.size;
-        this.generatedSatellitePhase[satelliteIndex] = satellite.phase;
-        this.generatedSatelliteVisibility[satelliteIndex] = visibility;
-      });
-    });
-
-    for (const mesh of [this.generatedHubBackMesh, this.generatedHubFrontMesh, this.generatedSatelliteMesh]) {
-      mesh.instanceMatrix.needsUpdate = true;
-    }
-    for (const attribute of [
-      this.generatedHubFrontMesh.geometry.attributes.aScale,
-      this.generatedHubFrontMesh.geometry.attributes.aPhase,
-      this.generatedHubFrontMesh.geometry.attributes.aVisibility,
-      this.generatedSatelliteMesh.geometry.attributes.aScale,
-      this.generatedSatelliteMesh.geometry.attributes.aPhase,
-      this.generatedSatelliteMesh.geometry.attributes.aVisibility,
-    ]) attribute.needsUpdate = true;
-
-    const system = this.generatedTendrilSystem;
-    const color = new THREE.Color(0.006, 0.14, 0.23);
-    let vertexOffset = 0;
-    const activeSlots = this.generatedSlots.filter((slot) => slot.active).sort((a, b) => a.generation - b.generation);
-    for (const slot of activeSlots) {
-      const slotIndex = slot.slotIndex;
-      const hubPosition = this.generatedHubPositions[slotIndex];
-      const visibility = this.generatedHubVisibility[slotIndex];
-      if (visibility < 0.02) continue;
-      for (let localIndex = 0; localIndex < CONFIG.generatedSatellitesPerHub; localIndex += 1) {
-        const satelliteIndex = slotIndex * CONFIG.generatedSatellitesPerHub + localIndex;
-        const curve = this.surfaceCurve(
-          hubPosition,
-          this.generatedSatellitePositions[satelliteIndex],
-          this.generatedHubScale[slotIndex],
-          this.generatedSatelliteScale[satelliteIndex],
-          0.46 + localIndex * 0.08,
-          localIndex % 2 ? 1 : -1,
-        );
-        vertexOffset = this.writeTendril(
-          system,
-          curve,
-          isMobile ? 0.15 : 0.11,
-          isMobile ? 0.032 : 0.024,
-          visibility * (isMobile ? 1.0 : 0.9),
-          color,
-          vertexOffset,
-        );
-      }
-    }
-    if (activeSlots.length > 0) {
-      const first = activeSlots[0];
-      const firstPosition = this.generatedHubPositions[first.slotIndex];
-      let nearestBaseIndex = 0;
-      let nearestDistance = Infinity;
-      this.hubPositions.forEach((position, index) => {
-        const distance = position.distanceTo(firstPosition);
-        if (distance < nearestDistance) {
-          nearestDistance = distance;
-          nearestBaseIndex = index;
-        }
-      });
-      if (nearestDistance < 26) {
-        const curve = this.surfaceCurve(
-          this.hubPositions[nearestBaseIndex],
-          firstPosition,
-          this.hubScale[nearestBaseIndex],
-          this.generatedHubScale[first.slotIndex],
-          1.2,
-          first.generation % 2 ? 1 : -1,
-        );
-        vertexOffset = this.writeTendril(
-          system,
-          curve,
-          0.12,
-          0.03,
-          this.generatedHubVisibility[first.slotIndex] * 0.82,
-          color,
-          vertexOffset,
-        );
-      }
-    }
-    for (let index = 1; index < activeSlots.length; index += 1) {
-      const from = activeSlots[index - 1];
-      const to = activeSlots[index];
-      const fromPosition = this.generatedHubPositions[from.slotIndex];
-      const toPosition = this.generatedHubPositions[to.slotIndex];
-      if (Math.abs(fromPosition.z - toPosition.z) > 22) continue;
-      const curve = this.surfaceCurve(
-        fromPosition,
-        toPosition,
-        this.generatedHubScale[from.slotIndex],
-        this.generatedHubScale[to.slotIndex],
-        0.95 + (index % 3) * 0.34,
-        index % 2 ? 1 : -1,
-      );
-      vertexOffset = this.writeTendril(
-        system,
-        curve,
-        isMobile ? 0.23 : 0.17,
-        isMobile ? 0.062 : 0.045,
-        Math.min(this.generatedHubVisibility[from.slotIndex], this.generatedHubVisibility[to.slotIndex]) * 0.86,
-        color,
-        vertexOffset,
-      );
-    }
-    for (let index = 2; index < activeSlots.length; index += 1) {
-      const from = activeSlots[index - 2];
-      const to = activeSlots[index];
-      const fromPosition = this.generatedHubPositions[from.slotIndex];
-      const toPosition = this.generatedHubPositions[to.slotIndex];
-      if (Math.abs(fromPosition.z - toPosition.z) > 30) continue;
-      const curve = this.surfaceCurve(
-        fromPosition,
-        toPosition,
-        this.generatedHubScale[from.slotIndex],
-        this.generatedHubScale[to.slotIndex],
-        1.35 + (index % 4) * 0.26,
-        index % 2 ? -1 : 1,
-      );
-      vertexOffset = this.writeTendril(
-        system,
-        curve,
-        isMobile ? 0.16 : 0.12,
-        isMobile ? 0.045 : 0.034,
-        Math.min(this.generatedHubVisibility[from.slotIndex], this.generatedHubVisibility[to.slotIndex]) * 0.62,
-        color,
-        vertexOffset,
-      );
-    }
-    system.geometry.setDrawRange(0, vertexOffset);
-    system.geometry.attributes.position.needsUpdate = true;
-    system.geometry.attributes.color.needsUpdate = true;
-    system.geometry.attributes.normal.needsUpdate = true;
-    system.material.uniforms.uOpacity.value = lerp(isMobile ? 0.64 : 0.54, isMobile ? 1.0 : 0.88, progress);
-  }
-
   createPulses() {
     const geometry = new THREE.SphereGeometry(0.082, 10, 10);
     this.pulseMaterial = new THREE.MeshBasicMaterial({
@@ -1169,8 +907,8 @@ class NeuralWorld {
     this.group.add(this.cascadeMesh);
   }
 
-  createAmbientFilaments() {
-    this.filamentData = Array.from({ length: CONFIG.ambientFilamentCount }, () => {
+  createVelocityStreaks() {
+    this.streakData = Array.from({ length: CONFIG.streakCount }, () => {
       const angle = random() * Math.PI * 2;
       const minimumRadius = isMobile ? 4.1 : 3.5;
       const radius = minimumRadius + Math.pow(random(), 0.62) * (isMobile ? 7.1 : 7.7);
@@ -1182,13 +920,13 @@ class NeuralWorld {
         speed: 0.78 + random() * 0.54,
       };
     });
-    this.filamentPositions = new Float32Array(CONFIG.ambientFilamentCount * 6);
-    this.filamentColors = new Float32Array(CONFIG.ambientFilamentCount * 6);
+    this.streakPositions = new Float32Array(CONFIG.streakCount * 6);
+    this.streakColors = new Float32Array(CONFIG.streakCount * 6);
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(this.filamentPositions, 3).setUsage(THREE.DynamicDrawUsage));
-    geometry.setAttribute('color', new THREE.BufferAttribute(this.filamentColors, 3).setUsage(THREE.DynamicDrawUsage));
-    this.filamentGeometry = geometry;
-    this.filamentMaterial = new THREE.LineBasicMaterial({
+    geometry.setAttribute('position', new THREE.BufferAttribute(this.streakPositions, 3).setUsage(THREE.DynamicDrawUsage));
+    geometry.setAttribute('color', new THREE.BufferAttribute(this.streakColors, 3).setUsage(THREE.DynamicDrawUsage));
+    this.streakGeometry = geometry;
+    this.streakMaterial = new THREE.LineBasicMaterial({
       vertexColors: true,
       transparent: true,
       opacity: 0,
@@ -1196,9 +934,47 @@ class NeuralWorld {
       blending: THREE.AdditiveBlending,
       fog: true,
     });
-    this.filamentMesh = new THREE.LineSegments(geometry, this.filamentMaterial);
-    this.filamentMesh.frustumCulled = false;
-    this.group.add(this.filamentMesh);
+    this.streakMesh = new THREE.LineSegments(geometry, this.streakMaterial);
+    this.streakMesh.frustumCulled = false;
+    this.group.add(this.streakMesh);
+  }
+
+  createCycleReplica() {
+    this.cycleReplica = new THREE.Group();
+    this.cycleReplica.matrixAutoUpdate = false;
+    this.cycleReplicaOffsetMatrix = new THREE.Matrix4().makeTranslation(0, 0, this.worldCycleDistance);
+    const visuals = [
+      this.hubBackMesh,
+      this.hubFrontMesh,
+      this.satelliteMesh,
+      this.terminalChildMesh,
+      this.localTendrilSystem.mesh,
+      this.freeDendriteSystem.mesh,
+      this.childHubDendriteSystem.mesh,
+      this.highwayTendrilSystem.mesh,
+      this.pulseMesh,
+      this.cascadeMesh,
+    ];
+    for (const visual of visuals) {
+      const replica = visual.clone();
+      replica.geometry = visual.geometry;
+      replica.material = visual.material;
+      if (visual.isInstancedMesh) {
+        replica.instanceMatrix = visual.instanceMatrix;
+        replica.instanceColor = visual.instanceColor;
+        replica.count = visual.count;
+      }
+      replica.frustumCulled = false;
+      this.cycleReplica.add(replica);
+    }
+    scene.add(this.cycleReplica);
+    this.syncCycleReplica();
+  }
+
+  syncCycleReplica() {
+    this.group.updateMatrix();
+    this.cycleReplica.matrix.multiplyMatrices(this.group.matrix, this.cycleReplicaOffsetMatrix);
+    this.cycleReplica.matrixWorldNeedsUpdate = true;
   }
 
   createDestination() {
@@ -1218,18 +994,18 @@ class NeuralWorld {
   }
 
   clusterVisibility(cluster, progress) {
-    const rank = revealRank('hubs', progress);
-    return 1 - smoothstep(rank, rank + 0.12, cluster.rank);
+    const threshold = 0.2 + smoothstep(0.0, 0.5, progress) * 0.72 + smoothstep(0.5, 1, progress) * 0.08;
+    return 1 - smoothstep(threshold, threshold + 0.12, cluster.rank);
   }
 
-  updatePositions(progress, elapsed) {
+  updatePositions(progress, elapsed, travel) {
     const hubMatrix = new THREE.Matrix4();
     const satelliteMatrix = new THREE.Matrix4();
     const unitQuaternion = new THREE.Quaternion();
 
-    const stableWorldOffset = 0;
+    const connectedWorldTravel = reducedMotion ? 0 : travel % this.worldCycleDistance;
     this.clusters.forEach((cluster, index) => {
-      const z = cluster.z + stableWorldOffset;
+      const z = cluster.z - connectedWorldTravel;
       const drift = 0.028 + smoothstep(0.08, 0.5, progress) * 0.11;
       const x = cluster.x + Math.sin(elapsed * 0.19 + cluster.phase) * drift;
       const y = cluster.y + Math.cos(elapsed * 0.16 + cluster.phase * 1.2) * drift * 0.72;
@@ -1277,15 +1053,6 @@ class NeuralWorld {
       this.satelliteMesh.geometry.attributes.aPhase,
       this.satelliteMesh.geometry.attributes.aVisibility,
     ]) attribute.needsUpdate = true;
-  }
-
-
-  revealTerminalChildren(progress, delta) {
-    const revealBudget = Math.floor(revealRank('childHubs', progress) * Math.min(8, this.freeDendrites.length));
-    this.freeDendrites.forEach((branch, index) => {
-      if (index < revealBudget) branch.childSpawned = true;
-    });
-    this.updateTerminalChildren(delta);
   }
 
   updateTerminalChildren(delta) {
@@ -1610,7 +1377,8 @@ class NeuralWorld {
     const start = this.hubPositions[highway.from];
     const end = this.hubPositions[highway.to];
     const separation = Math.abs(start.z - end.z);
-    return separation < 33 && highway.rank <= revealRank('highways', progress);
+    const threshold = 0.074 + smoothstep(0.0, 0.5, progress) * 0.716 + smoothstep(0.5, 1, progress) * 0.21;
+    return separation < 33 && highway.rank <= threshold;
   }
 
   highwayCurve(highway) {
@@ -1668,7 +1436,7 @@ class NeuralWorld {
     let instanceIndex = 0;
     for (const pulse of this.pulses) {
       const highway = this.highways[pulse.highwayIndex];
-      const visible = this.highwayVisible(highway, progress) && pulse.rank <= revealRank('pulses', progress);
+      const visible = this.highwayVisible(highway, progress) && pulse.rank <= 0.34 + smoothstep(0.0, 0.5, progress) * 0.46 + smoothstep(0.5, 1, progress) * 0.2;
       const speed = pulse.speed * (1 + progress * 4.2);
       const nextPhase = pulse.phase + delta * speed;
       const collidedWithDestination = nextPhase >= 1;
@@ -1830,47 +1598,52 @@ class NeuralWorld {
     }
   }
 
-  updateAmbientFilaments(progress, elapsed) {
-    const active = smoothstep(REVEAL_PHASES.filaments.start, REVEAL_PHASES.filaments.end, progress);
-    const length = 0.1 + progress * 0.55;
-    this.filamentData.forEach((filament, index) => {
-      const z = filament.z + Math.sin(elapsed * 0.05 + filament.speed * 4.0) * 0.16;
-      const visible = filament.rank < revealRank('filaments', progress) ? active : 0;
+  updateStreaks(progress, travel) {
+    const active = smoothstep(0.5, 0.9, progress);
+    const length = 0.22 + Math.pow(progress, 2.15) * 9.4;
+    this.streakData.forEach((streak, index) => {
+      const z = wrapDepth(streak.z - travel * streak.speed);
+      const visible = streak.rank < 0.14 + progress * 0.9 ? active : 0;
       const base = index * 6;
-      this.filamentPositions[base] = filament.x;
-      this.filamentPositions[base + 1] = filament.y;
-      this.filamentPositions[base + 2] = z - length * 0.5;
-      this.filamentPositions[base + 3] = filament.x;
-      this.filamentPositions[base + 4] = filament.y;
-      this.filamentPositions[base + 5] = z;
-      this.filamentColors[base] = 0.008 * visible;
-      this.filamentColors[base + 1] = 0.12 * visible;
-      this.filamentColors[base + 2] = 0.2 * visible;
-      this.filamentColors[base + 3] = 0.102 * visible;
-      this.filamentColors[base + 4] = (0.5 + progress * 0.108) * visible;
-      this.filamentColors[base + 5] = (0.72 + progress * 0.139) * visible;
+      this.streakPositions[base] = streak.x;
+      this.streakPositions[base + 1] = streak.y;
+      this.streakPositions[base + 2] = z - length * streak.speed;
+      this.streakPositions[base + 3] = streak.x;
+      this.streakPositions[base + 4] = streak.y;
+      this.streakPositions[base + 5] = z;
+      this.streakColors[base] = 0.008 * visible;
+      this.streakColors[base + 1] = 0.12 * visible;
+      this.streakColors[base + 2] = 0.2 * visible;
+      this.streakColors[base + 3] = 0.102 * visible;
+      this.streakColors[base + 4] = (0.5 + progress * 0.108) * visible;
+      this.streakColors[base + 5] = (0.72 + progress * 0.139) * visible;
     });
-    this.filamentGeometry.attributes.position.needsUpdate = true;
-    this.filamentGeometry.attributes.color.needsUpdate = true;
-    this.filamentMaterial.opacity = active * (0.06 + progress * 0.14);
+    this.streakGeometry.attributes.position.needsUpdate = true;
+    this.streakGeometry.attributes.color.needsUpdate = true;
+    this.streakMaterial.opacity = active * (0.48 + progress * 0.42);
   }
 
-  updateMaterials(progress, elapsed) {
+  updateMaterials(progress, elapsed, travel) {
     for (const material of [this.hubFrontMaterial, this.hubBackMaterial, this.satelliteMaterial]) {
       material.uniforms.uTime.value = elapsed;
       material.uniforms.uProgress.value = progress;
     }
     this.microMaterial.uniforms.uTime.value = elapsed;
+    this.microMaterial.uniforms.uTravel.value = travel;
     this.microMaterial.uniforms.uProgress.value = progress;
-    this.microMaterial.uniforms.uRevealRank.value = revealRank('particles', progress);
     this.fogParticleMaterial.uniforms.uTime.value = elapsed;
+    this.fogParticleMaterial.uniforms.uWorldTravel.value = travel;
     this.fogParticleMaterial.uniforms.uProgress.value = progress;
-    this.microMaterial.uniforms.uFieldOpacity.value = lerp(0.72, 1.0, smoothstep(0.18, 0.92, progress));
-    const contextGlow = smoothstep(0.62, 1, progress);
-    this.destinationMaterial.opacity = contextGlow * (isMobile ? 0.035 : 0.075);
+    const desktopMidpointClear = isMobile
+      ? 0
+      : smoothstep(0.4, 0.5, progress) * (1 - smoothstep(0.5, 0.62, progress));
+    this.microMaterial.uniforms.uFieldOpacity.value = 1 - desktopMidpointClear * 0.68;
+    const destinationProgress = isMobile ? smoothstep(0.955, 1, progress) : smoothstep(0.62, 0.98, progress);
+    const destinationStrength = isMobile ? 0.08 : 0.48;
+    this.destinationMaterial.opacity = destinationProgress * (0.015 + progress * destinationStrength);
   }
 
-  update(progress, elapsed, delta, cameraZ, reverseDistance) {
+  update(progress, elapsed, delta, travel) {
     this.group.rotation.z = Math.sin(elapsed * 0.07) * 0.012;
     if (isMobile) {
       const portraitReveal = smoothstep(0.08, 0.5, progress);
@@ -1878,16 +1651,16 @@ class NeuralWorld {
       const portraitScale = 0.68 * lerp(1, 1.1, portraitReveal);
       this.group.scale.set(portraitScale, portraitScale * lerp(1, 1.26, portraitReveal), portraitScale);
     }
-    this.updatePositions(progress, elapsed);
-    this.updateGeneratedNetwork(progress, elapsed, cameraZ, reverseDistance);
-    this.revealTerminalChildren(progress, delta);
+    this.updatePositions(progress, elapsed, travel);
+    this.updateTerminalChildren(delta);
     this.updateChildHubDendrites(progress, elapsed);
     this.updateLocalLinks(progress, elapsed);
     this.updateFreeDendrites(progress, elapsed);
     this.updateHighways(progress, elapsed);
     this.updatePulses(progress, elapsed, delta);
-    this.updateAmbientFilaments(progress, elapsed);
-    this.updateMaterials(progress, elapsed);
+    this.updateStreaks(progress, travel);
+    this.updateMaterials(progress, elapsed, travel);
+    this.syncCycleReplica();
   }
 }
 
@@ -1929,20 +1702,21 @@ function updateScrollProgress() {
   state.targetProgress = Number(narrativeSections[activeIndex].dataset.sceneProgress);
 }
 
-function updateCamera(progress, elapsed, delta, reverseDistance) {
+function updateCamera(progress, elapsed, delta) {
   const mobileScale = isMobile ? 0.54 : 1;
-  const targetX = lerp(0, isMobile ? 0.34 : 0.95, smoothstep(0.18, 0.86, progress)) * mobileScale;
-  const targetY = lerp(0.08, isMobile ? 0.42 : -0.12, smoothstep(0.18, 0.9, progress)) * mobileScale;
+  const targetX = lerp(-0.35, 0.75, smoothstep(0.12, 0.84, progress)) * mobileScale;
+  const targetY = lerp(0.15, -0.3, smoothstep(0.18, 0.9, progress)) * mobileScale;
+  const targetZ = lerp(isMobile ? 8.2 : 7.2, isMobile ? 6.7 : 5.15, smoothstep(0.08, 0.88, progress));
   const ease = 1 - Math.exp(-delta * 2.5);
   camera.position.x += (targetX - camera.position.x) * ease;
   camera.position.y += (targetY - camera.position.y) * ease;
-  camera.position.z = (isMobile ? 8.6 : 7.8) + reverseDistance;
+  camera.position.z += (targetZ - camera.position.z) * ease;
   camera.fov = isMobile
-    ? lerp(68, 76, smoothstep(0.24, 0.94, progress))
-    : lerp(50, 64, smoothstep(0.24, 0.94, progress));
+    ? lerp(74, 81, smoothstep(0.24, 0.94, progress))
+    : lerp(56, 67, smoothstep(0.24, 0.94, progress));
   camera.updateProjectionMatrix();
-  camera.rotation.x = lerp(0, -0.018, progress);
-  camera.rotation.y = lerp(0, 0.032, progress);
+  camera.rotation.x = lerp(0, -0.025, progress);
+  camera.rotation.y = lerp(0, 0.045, progress);
   camera.rotation.z = 0;
 }
 
@@ -1952,25 +1726,19 @@ function render(now) {
   state.lastFrame = now;
   state.elapsed += delta;
   state.progress += (state.targetProgress - state.progress) * (1 - Math.exp(-delta * 6.6));
-  state.velocity = reducedMotion
-    ? 0
-    : 0.5 + smoothstep(0.02, 0.15, state.progress) * 2.5 + Math.pow(state.progress, 1.6) * 34.9;
-  state.reverseDistance += state.velocity * delta;
-  updateCamera(state.progress, state.elapsed, delta, state.reverseDistance);
-  world.update(state.progress, state.elapsed, reducedMotion ? 0 : delta, camera.position.z, state.reverseDistance);
-  stage.dataset.reverseVelocity = state.velocity.toFixed(2);
-  stage.dataset.reverseDistance = state.reverseDistance.toFixed(2);
-  stage.dataset.generatedHubs = String(world.generatedSlots.filter((slot) => slot.active).length);
-  stage.dataset.generatedTotal = String(world.generatedSpawnCount);
-  stage.dataset.cameraZ = camera.position.z.toFixed(2);
+  const velocity = reducedMotion ? 0 : 0.5 + smoothstep(0.02, 0.15, state.progress) * 2.5 + Math.pow(state.progress, 1.6) * 34.9;
+  state.travel += velocity * delta;
+
+  updateCamera(state.progress, state.elapsed, delta);
+  world.update(state.progress, state.elapsed, reducedMotion ? 0 : delta, state.travel);
 
   renderer.toneMappingExposure = lerp(0.98, 1.36, smoothstep(0.3, 1, state.progress));
   bloomPass.strength = lerp(0.24, 0.92, smoothstep(0.12, 1, state.progress)) * (1 - smoothstep(0.82, 1, state.progress) * 0.26);
   bloomPass.radius = lerp(0.34, 0.7, state.progress);
   bloomPass.threshold = lerp(0.86, 0.68, state.progress);
 
-  const finalContext = smoothstep(0.9, 1, state.progress);
-  arrival.style.opacity = String(finalContext * 0.82);
+  const finalWhite = smoothstep(0.94, 1, state.progress);
+  arrival.style.opacity = String(Math.pow(finalWhite, 1.35) * 0.97);
   scrollCue.style.opacity = String(1 - smoothstep(0.02, 0.14, state.progress));
 
   composer.render();
