@@ -1152,7 +1152,7 @@ class NeuralWorld {
 
   updateDestination(progress, exitProgress, elapsed) {
     const reveal = smoothstep(0.66, 0.83, progress);
-    const expansion = smoothstep(0.08, 0.94, exitProgress);
+    const expansion = smoothstep(0.62, 1, exitProgress);
     camera.getWorldDirection(this.destinationDirection);
     const distance = lerp(20, 10, expansion);
     this.destinationPosition.copy(camera.position).addScaledVector(this.destinationDirection, distance);
@@ -2013,17 +2013,25 @@ function render(now) {
   world.update(visualProgress, state.exitProgress, state.elapsed, reducedMotion ? 0 : delta, state.travel);
 
   const highVelocityClarity = smoothstep(0.72, 0.84, visualProgress);
-  const exitBurst = Math.pow(state.exitProgress, 1.7);
+  const kineticExit = smoothstep(0, 0.72, state.exitProgress);
+  const flashExit = smoothstep(0.72, 1, state.exitProgress);
   renderer.toneMappingExposure = lerp(0.98, 1.36, smoothstep(0.3, 1, visualProgress))
     * lerp(1, 0.86, highVelocityClarity)
-    * lerp(1, 1.72, exitBurst);
+    * lerp(1, 1.025, kineticExit)
+    * lerp(1, 1.48, flashExit);
   bloomPass.strength = lerp(0.24, 0.92, smoothstep(0.12, 1, visualProgress))
     * lerp(1, 0.42, highVelocityClarity)
-    + exitBurst * 2.35;
-  bloomPass.radius = lerp(0.34, 0.7, visualProgress) * lerp(1, 0.72, highVelocityClarity) + exitBurst * 0.24;
-  bloomPass.threshold = Math.max(0.18, lerp(0.86, 0.68, visualProgress) + highVelocityClarity * 0.08 - exitBurst * 0.4);
+    + kineticExit * 0.14
+    + flashExit * 1.82;
+  bloomPass.radius = lerp(0.34, 0.7, visualProgress) * lerp(1, 0.72, highVelocityClarity)
+    + kineticExit * 0.025
+    + flashExit * 0.2;
+  bloomPass.threshold = Math.max(0.2, lerp(0.86, 0.68, visualProgress)
+    + highVelocityClarity * 0.08
+    - kineticExit * 0.02
+    - flashExit * 0.28);
 
-  const finalWhite = smoothstep(0.48, 1, state.exitProgress);
+  const finalWhite = smoothstep(0.82, 1, state.exitProgress);
   arrival.style.opacity = String(finalWhite);
   scrollCue.style.opacity = String(1 - smoothstep(0.02, 0.14, state.progress));
   stage.dataset.storyProgress = state.progress.toFixed(3);
