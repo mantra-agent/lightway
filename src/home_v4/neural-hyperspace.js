@@ -36,7 +36,8 @@ const state = {
   elapsed: 0,
   travel: 0,
   lastFrame: performance.now(),
-  running: true,
+  animationState: 'running',
+  frameId: null,
 };
 
 const clamp = THREE.MathUtils.clamp;
@@ -1826,6 +1827,9 @@ function updateScrollProgress() {
 
   narrativeSections.forEach((section, index) => section.classList.toggle('is-active', index === activeIndex));
   state.targetProgress = Number(narrativeSections[activeIndex].dataset.sceneProgress);
+  if (state.animationState === 'terminal' && state.targetProgress < 1 && !document.hidden) {
+    startAnimation();
+  }
 }
 
 function updateCamera(progress, elapsed, delta) {
@@ -1846,12 +1850,39 @@ function updateCamera(progress, elapsed, delta) {
   camera.rotation.z = 0;
 }
 
+function setAnimationState(nextState) {
+  state.animationState = nextState;
+  stage.dataset.animationState = nextState;
+}
+
+function scheduleFrame() {
+  if (state.animationState !== 'running' || state.frameId !== null) return;
+  state.frameId = requestAnimationFrame(render);
+}
+
+function stopAnimation(nextState) {
+  if (state.frameId !== null) cancelAnimationFrame(state.frameId);
+  state.frameId = null;
+  setAnimationState(nextState);
+}
+
+function startAnimation() {
+  if (document.hidden || document.body.classList.contains('webgl-unavailable')) return;
+  if (state.animationState === 'running' && state.frameId !== null) return;
+  setAnimationState('running');
+  state.lastFrame = performance.now();
+  scheduleFrame();
+}
+
 function render(now) {
-  if (!state.running) return;
+  state.frameId = null;
+  if (state.animationState !== 'running') return;
   const delta = Math.min(0.05, (now - state.lastFrame) / 1000);
   state.lastFrame = now;
   state.elapsed += delta;
   state.progress += (state.targetProgress - state.progress) * (1 - Math.exp(-delta * 6.6));
+  const terminalFrame = state.targetProgress === 1 && state.progress >= 0.995;
+  if (terminalFrame) state.progress = 1;
   const velocity = reducedMotion ? 0 : 0.5 + smoothstep(0.02, 0.15, state.progress) * 2.5 + Math.pow(state.progress, 1.6) * 34.9;
   state.travel += velocity * delta;
 
@@ -1864,28 +1895,33 @@ function render(now) {
   bloomPass.radius = lerp(0.34, 0.7, state.progress) * lerp(1, 0.72, highVelocityClarity);
   bloomPass.threshold = lerp(0.86, 0.68, state.progress) + highVelocityClarity * 0.08;
 
-  const finalWhite = smoothstep(0.94, 1, state.progress);
-  arrival.style.opacity = String(Math.pow(finalWhite, 1.35) * 0.97);
+  const finalWhite = terminalFrame ? 1 : smoothstep(0.9, 0.995, state.progress);
+  arrival.style.opacity = String(finalWhite);
   scrollCue.style.opacity = String(1 - smoothstep(0.02, 0.14, state.progress));
 
   composer.render();
-  requestAnimationFrame(render);
+  if (terminalFrame) {
+    stopAnimation('terminal');
+    return;
+  }
+  scheduleFrame();
 }
 
-function pause() {
-  state.running = false;
+function pause(nextState = 'hidden') {
+  stopAnimation(nextState);
 }
 
 function resume() {
-  if (state.running) return;
-  state.running = true;
-  state.lastFrame = performance.now();
-  requestAnimationFrame(render);
+  if (state.progress === 1 && state.targetProgress === 1) {
+    setAnimationState('terminal');
+    return;
+  }
+  startAnimation();
 }
 
 renderer.domElement.addEventListener('webglcontextlost', (event) => {
   event.preventDefault();
-  pause();
+  pause('context-lost');
   document.body.classList.add('webgl-unavailable');
 });
 renderer.domElement.addEventListener('webglcontextrestored', () => {
@@ -1894,8 +1930,9 @@ renderer.domElement.addEventListener('webglcontextrestored', () => {
 });
 window.addEventListener('resize', resize, { passive: true });
 window.addEventListener('scroll', updateScrollProgress, { passive: true });
-document.addEventListener('visibilitychange', () => document.hidden ? pause() : resume());
+document.addEventListener('visibilitychange', () => document.hidden ? pause('hidden') : resume());
 
 resize();
 updateScrollProgress();
-requestAnimationFrame(render);
+stage.dataset.animationState = state.animationState;
+scheduleFrame();
