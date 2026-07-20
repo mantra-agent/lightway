@@ -102,13 +102,11 @@ Canonical palette from Mantra Design Guide (dark mode):
 - Responsive branches may change camera framing and foreground layout only; neural population counts and feature lifecycle remain unified
 
 ### /home_v4 (Retreat Neural Narrative)
-- Independent copy of the locked `/home_v3` route; do not modify `/home_v2` or `/home_v3` while iterating V4.
-- Foreground copy, section anchors, and snap behavior intentionally match V3 until the retreat visual thesis is proven.
-- V4 preserves V3's kinetic equation but reverses its spatial vector: section progress raises reverse travel velocity, cumulative reverse distance directly moves the camera away from the opening center, and camera displacement must never be replaced by a static progress-to-zoom pose.
-- V4 topology generation and motion share cumulative reverse distance as one source of truth. New connected hub neighborhoods spawn at distance thresholds ahead of the retreat; threshold spacing contracts by section so node/connection creation accelerates with travel.
-- The generated topology stream is bounded in memory and unbounded in experience: fixed GPU slots are reused only after each complete generated neighborhood clears the far range, with no heap growth, finite reveal ceiling, empty horizon, or duplicate-world seam.
-- The frozen opening graph remains world-fixed with subtle ambient drift and progress-owned disclosure; generated hubs, satellites, and tendrils extend it continuously as reverse distance accumulates.
-- The final CTA preserves the complete accumulated graph with a restrained contextual glow; terminal whiteout or density dropout is forbidden.
+- Independent copy of locked `/home_v3`; `/home_v2` and `/home_v3` remain byte-frozen while V4 evolves.
+- V4 preserves V3's kinetic equation, narrative, camera framing, main-tunnel population budget, and snap behavior; the baseline world-travel vector is reversed so acceleration carries the connected field away from the camera, while V4-only work is limited to continuity repair and the bounded outer shell.
+- Reversed lifecycle boundaries are geometry-owned. Shared shell/tendril visibility never derives from only the primary cycle instance; each rendered primary or replica instance fades from its own view depth after its complete geometry clears the frustum.
+- Micro-nodes, low-fidelity outer-shell nodes, and fog clouds wrap independently through one reversed cycle distance and fade to zero on both sides of their own wrap boundary. Global modulo resets and progress-owned density dropouts are forbidden.
+- The authored tunnel closes its first major depth interval gradually. A low-detail, bounded outer spherical shell sits beyond the main tunnel and enters the frustum through perspective as reverse travel accumulates; it extends context without becoming a second simulation or obscuring foreground copy.
 
 ### /coaches
 - Uses GSAP + ScrollTrigger + SplitType (CDN)

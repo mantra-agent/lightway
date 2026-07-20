@@ -19,6 +19,7 @@ const CONFIG = Object.freeze({
   cascadeCount: 48,
   hubFogParticleCount: 47,
   interstitialFogParticleCount: 11,
+  outerShellCount: 280,
   localSegments: 12,
   highwaySegments: 34,
   localRadialSegments: 8,
@@ -114,8 +115,12 @@ const shellVertexShader = `
     vPhase = aPhase;
     vVisibility = aVisibility;
     vImpact = aImpact;
-    vDepthFade = 1.0 - smoothstep(8.0, 68.0, distance(cameraPosition, worldPosition.xyz)) * 0.84;
-    gl_Position = projectionMatrix * viewMatrix * worldPosition;
+    vec4 viewPosition = viewMatrix * worldPosition;
+    float viewDepth = -viewPosition.z;
+    float nearFade = smoothstep(1.5, 8.0, viewDepth);
+    float farFade = 1.0 - smoothstep(118.0, 148.0, viewDepth);
+    vDepthFade = nearFade * farFade;
+    gl_Position = projectionMatrix * viewPosition;
   }
 `;
 
@@ -173,28 +178,28 @@ const microVertexShader = `
   varying float vPulse;
   uniform float uTime;
   uniform float uTravel;
+  uniform float uCycleDistance;
   uniform float uProgress;
   uniform float uFieldOpacity;
 
   void main() {
     vec3 p = position;
-    p.z = mod(p.z - uTravel + 96.0, 100.0) - 96.0;
+    float nearDepth = 4.0;
+    float shiftedDepth = p.z - mod(uTravel, uCycleDistance);
+    float cycleDepth = mod(nearDepth - shiftedDepth + uCycleDistance * 2.0, uCycleDistance);
+    p.z = nearDepth - cycleDepth;
     p.x += sin(uTime * 0.16 + aPhase) * 0.08;
     p.y += cos(uTime * 0.13 + aPhase * 1.3) * 0.06;
     float threshold = 0.04 + smoothstep(0.0, 0.48, uProgress) * 0.72 + smoothstep(0.48, 1.0, uProgress) * 0.24;
     float visible = 1.0 - smoothstep(threshold, threshold + 0.08, aRank);
-    float depthFade = 1.0 - smoothstep(10.0, 74.0, -p.z) * 0.88;
+    float cycleFade = smoothstep(2.0, 12.0, cycleDepth)
+      * (1.0 - smoothstep(uCycleDistance - 20.0, uCycleDistance - 3.0, cycleDepth));
     vPulse = 0.48 + 0.52 * sin(uTime * (0.7 + uProgress * 2.4) + aPhase);
     vec4 viewPosition = modelViewMatrix * vec4(p, 1.0);
-    float screenRadius = length(viewPosition.xy / max(1.0, -viewPosition.z));
-    float convergenceDropout = 1.0;
-    if (uProgress > 0.62) {
-      float centerExclusion = smoothstep(0.16, 0.34, screenRadius);
-      float deterministicKeep = step(0.38 + uProgress * 0.24, fract(sin(aPhase * 91.7 + aRank * 413.1) * 43758.5453));
-      convergenceDropout = mix(1.0, centerExclusion * deterministicKeep, smoothstep(0.62, 0.84, uProgress));
-    }
-    vAlpha = visible * depthFade * convergenceDropout * (0.32 + vPulse * 0.5) * uFieldOpacity;
-    gl_PointSize = clamp(aSize * (112.0 / max(1.0, -viewPosition.z)) * (0.86 + uProgress * 0.75), 1.0, 6.5);
+    float viewDepth = -viewPosition.z;
+    float depthFade = smoothstep(1.5, 8.0, viewDepth) * (1.0 - smoothstep(118.0, 148.0, viewDepth));
+    vAlpha = visible * cycleFade * depthFade * (0.32 + vPulse * 0.5) * uFieldOpacity;
+    gl_PointSize = clamp(aSize * (112.0 / max(1.0, viewDepth)) * (0.86 + uProgress * 0.75), 1.0, 6.5);
     gl_Position = projectionMatrix * viewPosition;
   }
 `;
@@ -210,6 +215,53 @@ const microFragmentShader = `
     float halo = 1.0 - smoothstep(0.12, 0.5, distanceFromCenter);
     vec3 color = mix(vec3(0.004, 0.105, 0.18), vec3(0.026, 0.34, 0.52), vPulse);
     gl_FragColor = vec4(color * (core * 1.5 + halo * 0.35), vAlpha * (core + halo * 0.32));
+  }
+`;
+
+const outerShellVertexShader = `
+  attribute float aPhase;
+  attribute float aSize;
+  attribute float aRank;
+  varying float vAlpha;
+  varying float vPulse;
+  uniform float uTime;
+  uniform float uTravel;
+  uniform float uCycleDistance;
+  uniform float uProgress;
+
+  void main() {
+    vec3 p = position;
+    float nearDepth = 4.0;
+    float shiftedDepth = p.z - mod(uTravel, uCycleDistance);
+    float cycleDepth = mod(nearDepth - shiftedDepth + uCycleDistance * 2.0, uCycleDistance);
+    p.z = nearDepth - cycleDepth;
+    p.x += sin(uTime * 0.07 + aPhase) * 0.12;
+    p.y += cos(uTime * 0.06 + aPhase * 1.3) * 0.1;
+    vec4 viewPosition = modelViewMatrix * vec4(p, 1.0);
+    float viewDepth = -viewPosition.z;
+    float cycleFade = smoothstep(4.0, 16.0, cycleDepth)
+      * (1.0 - smoothstep(uCycleDistance - 24.0, uCycleDistance - 4.0, cycleDepth));
+    float depthFade = smoothstep(3.0, 14.0, viewDepth)
+      * (1.0 - smoothstep(112.0, 148.0, viewDepth));
+    float reveal = smoothstep(0.08 + aRank * 0.18, 0.44 + aRank * 0.2, uProgress);
+    vPulse = 0.45 + 0.55 * sin(uTime * 0.32 + aPhase);
+    vAlpha = reveal * cycleFade * depthFade * (0.16 + vPulse * 0.2);
+    gl_PointSize = clamp(aSize * (104.0 / max(1.0, viewDepth)) * (1.0 + uProgress * 0.45), 1.0, 3.6);
+    gl_Position = projectionMatrix * viewPosition;
+  }
+`;
+
+const outerShellFragmentShader = `
+  varying float vAlpha;
+  varying float vPulse;
+
+  void main() {
+    vec2 centered = gl_PointCoord - 0.5;
+    float radius = length(centered);
+    float core = 1.0 - smoothstep(0.18, 0.48, radius);
+    float rim = smoothstep(0.12, 0.34, radius) * (1.0 - smoothstep(0.34, 0.5, radius));
+    vec3 color = mix(vec3(0.003, 0.07, 0.12), vec3(0.016, 0.22, 0.34), vPulse);
+    gl_FragColor = vec4(color * (core * 0.72 + rim * 0.9), vAlpha * (core + rim * 0.52));
   }
 `;
 
@@ -234,7 +286,10 @@ const fogParticleVertexShader = `
 
   void main() {
     vec3 center = aOffset;
-    center.z -= mod(uWorldTravel, uCycleDistance);
+    float nearDepth = -10.0;
+    float shiftedDepth = center.z - mod(uWorldTravel, uCycleDistance);
+    float cycleDepth = mod(nearDepth - shiftedDepth + uCycleDistance * 2.0, uCycleDistance);
+    center.z = nearDepth - cycleDepth;
     center.x += sin(uTime * 0.075 + aPhase) * 0.16;
     center.y += cos(uTime * 0.061 + aPhase * 1.27) * 0.13;
     center.z += sin(uTime * 0.043 + aPhase * 0.73) * 0.18;
@@ -249,13 +304,16 @@ const fogParticleVertexShader = `
     ) * aScale;
     viewCenter.xy += billboard;
 
-    float distanceFade = 1.0 - smoothstep(46.0, 98.0, -viewCenter.z);
-    float scrollFade = 1.0 - smoothstep(0.72, 0.98, uProgress) * 0.72;
+    float viewDepth = -viewCenter.z;
+    float cycleFade = smoothstep(2.0, 24.0, cycleDepth)
+      * (1.0 - smoothstep(uCycleDistance - 28.0, uCycleDistance - 5.0, cycleDepth));
+    float distanceFade = smoothstep(12.0, 30.0, viewDepth)
+      * (1.0 - smoothstep(104.0, 144.0, viewDepth));
     vUv = uv;
     vDensity = aDensity;
     vOpacity = aOpacity;
     vShape = aShape;
-    vAlpha = distanceFade * scrollFade;
+    vAlpha = cycleFade * distanceFade;
     gl_Position = projectionMatrix * viewCenter;
   }
 `;
@@ -373,6 +431,7 @@ class NeuralWorld {
     this.createSatelliteMeshes();
     this.createTerminalChildMeshes();
     this.createMicroField();
+    this.createOuterShell();
     this.createAtmosphere();
     this.createLocalLinks();
     this.createFreeDendritesSystem();
@@ -390,20 +449,20 @@ class NeuralWorld {
       [-2.35, -0.75, -7.4, 0.38],
       [5.15, 6.35, -13.0, 0.32],
       [-5.7, -7.1, -18.0, 0.34],
-      [2.6, -1.1, -30.0, 0.32],
-      [-2.1, 4.7, -42.0, 0.3],
-      [1.0, -5.7, -55.0, 0.32],
-      [-1.6, 1.1, -69.0, 0.29],
-      [1.85, 5.8, -85.0, 0.3],
+      [2.6, -1.1, -24.5, 0.32],
+      [-2.1, 4.7, -32.0, 0.3],
+      [1.0, -5.7, -41.0, 0.32],
+      [-1.6, 1.1, -52.0, 0.29],
+      [1.85, 5.8, -65.0, 0.3],
     ] : [
       [-5.35, -1.0, -7.0, 0.44],
       [4.8, 4.9, -12.5, 0.35],
       [10.5, -4.25, -17.5, 0.37],
-      [-6.2, 3.6, -29.0, 0.34],
-      [0.25, -4.4, -37.0, 0.33],
-      [6.1, 1.5, -46.0, 0.35],
-      [-4.7, -2.9, -56.0, 0.31],
-      [2.5, 4.2, -67.0, 0.33],
+      [-6.2, 3.6, -24.0, 0.34],
+      [0.25, -4.4, -31.5, 0.33],
+      [6.1, 1.5, -40.0, 0.35],
+      [-4.7, -2.9, -50.5, 0.31],
+      [2.5, 4.2, -63.0, 0.33],
       [-1.25, 0.6, -78.0, 0.3],
       [5.4, -3.6, -89.0, 0.34],
       [-5.5, 1.4, -97.0, 0.31],
@@ -565,8 +624,8 @@ class NeuralWorld {
     return minimum;
   }
 
-  shellVelocityVisibility(progress) {
-    return 1 - smoothstep(0.92, 0.98, progress);
+  shellVelocityVisibility() {
+    return 1;
   }
 
   clusterConnectionVisibility(cluster, progress) {
@@ -672,6 +731,7 @@ class NeuralWorld {
       uniforms: {
         uTime: { value: 0 },
         uTravel: { value: 0 },
+        uCycleDistance: { value: this.worldCycleDistance },
         uProgress: { value: 0 },
         uFieldOpacity: { value: 1 },
       },
@@ -682,6 +742,49 @@ class NeuralWorld {
     this.microField = new THREE.Points(geometry, this.microMaterial);
     this.microField.frustumCulled = false;
     this.group.add(this.microField);
+  }
+
+  createOuterShell() {
+    const count = CONFIG.outerShellCount;
+    const positions = new Float32Array(count * 3);
+    const phases = new Float32Array(count);
+    const sizes = new Float32Array(count);
+    const ranks = new Float32Array(count);
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    for (let index = 0; index < count; index += 1) {
+      const normalized = (index + 0.5) / count;
+      const y = 1 - normalized * 2;
+      const radial = Math.sqrt(Math.max(0, 1 - y * y));
+      const angle = index * goldenAngle + random() * 0.18;
+      const radius = 18 + random() * 8;
+      positions[index * 3] = Math.cos(angle) * radial * radius * (isMobile ? 0.82 : 1.08);
+      positions[index * 3 + 1] = y * radius * (isMobile ? 1.04 : 0.82);
+      positions[index * 3 + 2] = -25 + Math.sin(angle) * radial * radius * 0.72;
+      phases[index] = random() * Math.PI * 2;
+      sizes[index] = 0.5 + Math.pow(random(), 1.6) * 1.9;
+      ranks[index] = normalized;
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1));
+    geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+    geometry.setAttribute('aRank', new THREE.BufferAttribute(ranks, 1));
+    this.outerShellMaterial = new THREE.ShaderMaterial({
+      vertexShader: outerShellVertexShader,
+      fragmentShader: outerShellFragmentShader,
+      uniforms: {
+        uTime: { value: 0 },
+        uTravel: { value: 0 },
+        uCycleDistance: { value: this.worldCycleDistance },
+        uProgress: { value: 0 },
+      },
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    this.outerShell = new THREE.Points(geometry, this.outerShellMaterial);
+    this.outerShell.frustumCulled = false;
+    this.group.add(this.outerShell);
   }
 
   createAtmosphere() {
@@ -1010,9 +1113,7 @@ class NeuralWorld {
       const x = cluster.x + Math.sin(elapsed * 0.19 + cluster.phase) * drift;
       const y = cluster.y + Math.cos(elapsed * 0.16 + cluster.phase * 1.2) * drift * 0.72;
       const position = this.hubPositions[index].set(x, y, z);
-      const farClipFade = smoothstep(-CONFIG.depthFar, -CONFIG.depthFar + 6, z);
-      const depthFade = farClipFade;
-      const visibility = this.clusterConnectionVisibility(cluster, progress) * depthFade;
+      const visibility = this.clusterConnectionVisibility(cluster, progress);
       const nearFactor = smoothstep(-34, 4, z);
       const mobileMidEmphasis = isMobile ? lerp(0.94, 1.05, smoothstep(0.1, 0.55, progress)) : 1;
       const scale = cluster.size * (0.86 + nearFactor * 0.44) * mobileMidEmphasis;
@@ -1032,8 +1133,7 @@ class NeuralWorld {
       const z = hub.z + satellite.offsetZ;
       const position = this.satellitePositions[index].set(x, y, z);
       const cluster = this.clusters[satellite.clusterIndex];
-      const satFarClipFade = smoothstep(-CONFIG.depthFar, -CONFIG.depthFar + 6, z);
-      const satelliteVisible = this.satelliteConnectionVisibility(satellite, progress) * satFarClipFade;
+      const satelliteVisible = this.satelliteConnectionVisibility(satellite, progress);
       satelliteMatrix.compose(position, unitQuaternion, new THREE.Vector3(1, 1, 1));
       this.satelliteMesh.setMatrixAt(index, satelliteMatrix);
       const mobileSatelliteEmphasis = isMobile ? lerp(0.9, 1.06, smoothstep(0.1, 0.55, progress)) : 1;
@@ -1067,14 +1167,11 @@ class NeuralWorld {
       const child = this.terminalChildGeometry(branch);
       const growth = child.growth;
       const position = branch.childSpawned ? child.center : hiddenPosition;
-      const depthVisibility = branch.childSpawned
-        ? smoothstep(-CONFIG.depthFar, -CONFIG.depthFar + 6, position.z)
-        : 0;
       matrix.compose(position, quaternion, new THREE.Vector3(1, 1, 1));
       this.terminalChildMesh.setMatrixAt(index, matrix);
       this.terminalChildScale[index] = child.radius;
       this.terminalChildPhase[index] = branch.phase + 1.7;
-      this.terminalChildVisibility[index] = branch.childSpawned ? sourceVisibility * growth * depthVisibility : 0;
+      this.terminalChildVisibility[index] = branch.childSpawned ? sourceVisibility * growth : 0;
     });
     this.terminalChildMesh.instanceMatrix.needsUpdate = true;
     for (const attribute of [
@@ -1631,13 +1728,13 @@ class NeuralWorld {
     this.microMaterial.uniforms.uTime.value = elapsed;
     this.microMaterial.uniforms.uTravel.value = travel;
     this.microMaterial.uniforms.uProgress.value = progress;
+    this.outerShellMaterial.uniforms.uTime.value = elapsed;
+    this.outerShellMaterial.uniforms.uTravel.value = travel;
+    this.outerShellMaterial.uniforms.uProgress.value = progress;
     this.fogParticleMaterial.uniforms.uTime.value = elapsed;
     this.fogParticleMaterial.uniforms.uWorldTravel.value = travel;
     this.fogParticleMaterial.uniforms.uProgress.value = progress;
-    const desktopMidpointClear = isMobile
-      ? 0
-      : smoothstep(0.4, 0.5, progress) * (1 - smoothstep(0.5, 0.62, progress));
-    this.microMaterial.uniforms.uFieldOpacity.value = 1 - desktopMidpointClear * 0.68;
+    this.microMaterial.uniforms.uFieldOpacity.value = 1;
     const destinationProgress = isMobile ? smoothstep(0.955, 1, progress) : smoothstep(0.62, 0.98, progress);
     const destinationStrength = isMobile ? 0.08 : 0.48;
     this.destinationMaterial.opacity = destinationProgress * (0.015 + progress * destinationStrength);
