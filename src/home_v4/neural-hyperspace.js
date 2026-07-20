@@ -106,6 +106,7 @@ const shellVertexShader = `
   varying float vDepthFade;
   uniform float uTime;
   uniform float uProgress;
+  uniform float uCycleDistance;
 
   void main() {
     float breathing = 1.0 + sin(uTime * (1.1 + uProgress) + aPhase) * (0.007 + uProgress * 0.028);
@@ -117,9 +118,14 @@ const shellVertexShader = `
     vImpact = aImpact;
     vec4 viewPosition = viewMatrix * worldPosition;
     float viewDepth = -viewPosition.z;
-    float nearFade = smoothstep(1.5, 8.0, viewDepth);
-    float farFade = 1.0 - smoothstep(118.0, 148.0, viewDepth);
-    vDepthFade = nearFade * farFade;
+    float velocityFade = smoothstep(0.5, 0.8, uProgress);
+    float nearStart = mix(1.5, 8.0, velocityFade);
+    float nearEnd = mix(8.0, 40.0, velocityFade);
+    float nearFade = smoothstep(nearStart, nearEnd, viewDepth);
+    float apparentRadius = aScale / max(1.0, viewDepth);
+    float coverageFade = 1.0 - smoothstep(0.08, 0.2, apparentRadius);
+    float farFade = 1.0 - smoothstep(max(18.0, uCycleDistance - 18.0), uCycleDistance + 4.0, viewDepth);
+    vDepthFade = nearFade * farFade * mix(1.0, coverageFade, velocityFade);
     gl_Position = projectionMatrix * viewPosition;
   }
 `;
@@ -164,8 +170,9 @@ const shellFragmentShader = `
     float alpha = mix(frontAlpha, backAlpha, uBackface) * vVisibility * vDepthFade * midShellAttenuation;
     vec3 radiance = mix(frontRadiance, backRadiance, uBackface) * midShellAttenuation;
     vec3 impactWhite = vec3(0.94, 0.99, 1.0) * (1.35 + glassRim * 1.2);
-    radiance = mix(radiance, impactWhite, vImpact);
-    alpha = mix(alpha, max(alpha, 0.88), vImpact);
+    float boundedImpact = vImpact * vVisibility * vDepthFade;
+    radiance = mix(radiance, impactWhite, boundedImpact);
+    alpha = mix(alpha, max(alpha, 0.88 * vVisibility * vDepthFade), boundedImpact);
     gl_FragColor = vec4(radiance, alpha);
   }
 `;
@@ -378,13 +385,14 @@ const fogParticleFragmentShader = `
   }
 `;
 
-function createShellMaterial(side, intensity) {
+function createShellMaterial(side, intensity, cycleDistance) {
   return new THREE.ShaderMaterial({
     vertexShader: shellVertexShader,
     fragmentShader: shellFragmentShader,
     uniforms: {
       uTime: { value: 0 },
       uProgress: { value: 0 },
+      uCycleDistance: { value: cycleDistance },
       uBackface: { value: side === THREE.BackSide ? 1 : 0 },
       uIntensity: { value: intensity },
     },
@@ -656,8 +664,8 @@ class NeuralWorld {
     geometry.setAttribute('aVisibility', new THREE.InstancedBufferAttribute(this.hubVisibility, 1));
     geometry.setAttribute('aImpact', new THREE.InstancedBufferAttribute(this.hubImpact, 1));
 
-    this.hubFrontMaterial = createShellMaterial(THREE.FrontSide, 2.35);
-    this.hubBackMaterial = createShellMaterial(THREE.BackSide, 0.86);
+    this.hubFrontMaterial = createShellMaterial(THREE.FrontSide, 2.35, this.worldCycleDistance);
+    this.hubBackMaterial = createShellMaterial(THREE.BackSide, 0.86, this.worldCycleDistance);
     this.hubBackMesh = new THREE.InstancedMesh(geometry, this.hubBackMaterial, count);
     this.hubFrontMesh = new THREE.InstancedMesh(geometry, this.hubFrontMaterial, count);
     for (const mesh of [this.hubBackMesh, this.hubFrontMesh]) {
@@ -680,7 +688,7 @@ class NeuralWorld {
     geometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(this.satellitePhase, 1));
     geometry.setAttribute('aVisibility', new THREE.InstancedBufferAttribute(this.satelliteVisibility, 1));
     geometry.setAttribute('aImpact', new THREE.InstancedBufferAttribute(this.satelliteImpact, 1));
-    this.satelliteMaterial = createShellMaterial(THREE.FrontSide, 1.46);
+    this.satelliteMaterial = createShellMaterial(THREE.FrontSide, 1.46, this.worldCycleDistance);
     this.satelliteMesh = new THREE.InstancedMesh(geometry, this.satelliteMaterial, count);
     this.satelliteMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.satelliteMesh.frustumCulled = false;
@@ -905,6 +913,8 @@ class NeuralWorld {
       `,
       fragmentShader: `
         uniform float uOpacity;
+        uniform float uProgress;
+        uniform float uCycleDistance;
         varying vec3 vColor;
         varying vec3 vNormal;
         varying vec3 vViewDirection;
@@ -915,12 +925,20 @@ class NeuralWorld {
           float diffuse = 0.58 + max(dot(normal, lightDirection), 0.0) * 0.42;
           float rim = pow(1.0 - abs(dot(normal, normalize(vViewDirection))), 1.7);
           vec3 roundedColor = vColor * diffuse + vColor * rim * 0.48;
-          float farFade = 1.0 - smoothstep(118.0, 148.0, vViewDepth);
-          float alpha = uOpacity * (0.76 + rim * 0.24) * farFade;
+          float velocityFade = smoothstep(0.5, 0.8, uProgress);
+          float nearStart = mix(1.5, 8.0, velocityFade);
+          float nearEnd = mix(8.0, 40.0, velocityFade);
+          float nearFade = smoothstep(nearStart, nearEnd, vViewDepth);
+          float farFade = 1.0 - smoothstep(max(18.0, uCycleDistance - 18.0), uCycleDistance + 4.0, vViewDepth);
+          float alpha = uOpacity * (0.76 + rim * 0.24) * nearFade * farFade;
           gl_FragColor = vec4(roundedColor, alpha);
         }
       `,
-      uniforms: { uOpacity: { value: opacity } },
+      uniforms: {
+        uOpacity: { value: opacity },
+        uProgress: { value: 0 },
+        uCycleDistance: { value: this.worldCycleDistance },
+      },
       transparent: true,
       depthWrite: false,
       depthTest: true,
@@ -1733,6 +1751,9 @@ class NeuralWorld {
       material.uniforms.uTime.value = elapsed;
       material.uniforms.uProgress.value = progress;
     }
+    for (const system of [this.localTendrilSystem, this.freeDendriteSystem, this.childHubDendriteSystem, this.highwayTendrilSystem]) {
+      system.material.uniforms.uProgress.value = progress;
+    }
     this.microMaterial.uniforms.uTime.value = elapsed;
     this.microMaterial.uniforms.uTravel.value = travel;
     this.microMaterial.uniforms.uProgress.value = progress;
@@ -1837,10 +1858,11 @@ function render(now) {
   updateCamera(state.progress, state.elapsed, delta);
   world.update(state.progress, state.elapsed, reducedMotion ? 0 : delta, state.travel);
 
-  renderer.toneMappingExposure = lerp(0.98, 1.36, smoothstep(0.3, 1, state.progress));
-  bloomPass.strength = lerp(0.24, 0.92, smoothstep(0.12, 1, state.progress)) * (1 - smoothstep(0.82, 1, state.progress) * 0.26);
-  bloomPass.radius = lerp(0.34, 0.7, state.progress);
-  bloomPass.threshold = lerp(0.86, 0.68, state.progress);
+  const highVelocityClarity = smoothstep(0.72, 0.84, state.progress);
+  renderer.toneMappingExposure = lerp(0.98, 1.36, smoothstep(0.3, 1, state.progress)) * lerp(1, 0.86, highVelocityClarity);
+  bloomPass.strength = lerp(0.24, 0.92, smoothstep(0.12, 1, state.progress)) * lerp(1, 0.42, highVelocityClarity);
+  bloomPass.radius = lerp(0.34, 0.7, state.progress) * lerp(1, 0.72, highVelocityClarity);
+  bloomPass.threshold = lerp(0.86, 0.68, state.progress) + highVelocityClarity * 0.08;
 
   const finalWhite = smoothstep(0.94, 1, state.progress);
   arrival.style.opacity = String(Math.pow(finalWhite, 1.35) * 0.97);
