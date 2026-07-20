@@ -107,7 +107,8 @@ Canonical palette from Mantra Design Guide (dark mode):
 - Reversed lifecycle boundaries are geometry-owned. Shared shell/tendril visibility never derives from only the primary cycle instance; each rendered primary or replica instance fades from its own view depth after its complete geometry clears the frustum.
 - Micro-nodes, low-fidelity outer-shell nodes, and fog clouds wrap independently through one reversed cycle distance and fade to zero on both sides of their own wrap boundary. Global modulo resets and progress-owned density dropouts are forbidden.
 - The authored tunnel closes its first major depth interval gradually. A low-detail, bounded outer spherical shell sits beyond the main tunnel and enters the frustum through perspective as reverse travel accumulates; it extends context without becoming a second simulation or obscuring foreground copy.
-- The final white arrival is an explicit terminal render state: opacity reaches exactly `1`, the WebGL scheduler stops, and reverse scrolling resumes the same scene without duplicate animation frames.
+- The white arrival is a discrete, time-owned hyperspace exit. Final-section scroll entry and unmodified CTA clicks cross one replay-safe `triggerExit()` boundary; CTA navigation waits until the opaque terminal frame paints. Normal story progress never interpolates white directly.
+- The bounded outer shell visibly grows with story intensity: later-ranked nodes begin farther beyond the frustum and pull inward toward a broader sphere as retreat and exit progress increase.
 
 ### /coaches
 - Uses GSAP + ScrollTrigger + SplitType (CDN)

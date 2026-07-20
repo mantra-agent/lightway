@@ -8,7 +8,10 @@ const stage = document.querySelector('.neural-stage');
 const arrival = document.querySelector('.white-arrival');
 const scrollCue = document.querySelector('.scroll-cue');
 const narrativeSections = Array.from(document.querySelectorAll('[data-scene-progress]'));
+const ctaLinks = Array.from(document.querySelectorAll('a.cta'));
 const isMobile = window.innerWidth < 700;
+const MAX_STORY_PROGRESS = 0.83;
+const EXIT_DURATION_SECONDS = reducedMotion ? 0.28 : 0.82;
 
 const CONFIG = Object.freeze({
   clusterCount: 8,
@@ -19,7 +22,7 @@ const CONFIG = Object.freeze({
   cascadeCount: 48,
   hubFogParticleCount: 47,
   interstitialFogParticleCount: 11,
-  outerShellCount: 280,
+  outerShellCount: 760,
   localSegments: 12,
   highwaySegments: 34,
   localRadialSegments: 8,
@@ -38,6 +41,13 @@ const state = {
   lastFrame: performance.now(),
   animationState: 'running',
   frameId: null,
+  exitState: 'idle',
+  exitSource: null,
+  exitElapsed: 0,
+  exitProgress: 0,
+  pendingNavigation: null,
+  navigationTimer: null,
+  exitDeadlineTimer: null,
 };
 
 const clamp = THREE.MathUtils.clamp;
@@ -236,9 +246,13 @@ const outerShellVertexShader = `
   uniform float uTravel;
   uniform float uCycleDistance;
   uniform float uProgress;
+  uniform float uExitProgress;
 
   void main() {
     vec3 p = position;
+    float pullIn = clamp(smoothstep(0.14, 0.94, uProgress) + uExitProgress * 0.72, 0.0, 1.0);
+    float radialScale = mix(1.8 + aRank * 1.7, 0.72 + aRank * 0.3, pullIn);
+    p.xy *= radialScale;
     float nearDepth = 4.0;
     float shiftedDepth = p.z - mod(uTravel, uCycleDistance);
     float cycleDepth = mod(nearDepth - shiftedDepth + uCycleDistance * 2.0, uCycleDistance);
@@ -251,10 +265,11 @@ const outerShellVertexShader = `
       * (1.0 - smoothstep(uCycleDistance - 24.0, uCycleDistance - 4.0, cycleDepth));
     float depthFade = smoothstep(3.0, 14.0, viewDepth)
       * (1.0 - smoothstep(112.0, 148.0, viewDepth));
-    float reveal = smoothstep(0.08 + aRank * 0.18, 0.44 + aRank * 0.2, uProgress);
-    vPulse = 0.45 + 0.55 * sin(uTime * 0.32 + aPhase);
-    vAlpha = reveal * cycleFade * depthFade * (0.16 + vPulse * 0.2);
-    gl_PointSize = clamp(aSize * (104.0 / max(1.0, viewDepth)) * (1.0 + uProgress * 0.45), 1.0, 3.6);
+    float revealStart = 0.08 + aRank * 0.62;
+    float reveal = smoothstep(revealStart, revealStart + 0.18, uProgress + uExitProgress * 0.28);
+    vPulse = 0.45 + 0.55 * sin(uTime * (0.32 + uExitProgress * 2.2) + aPhase);
+    vAlpha = reveal * cycleFade * depthFade * (0.12 + vPulse * 0.22) * mix(1.0, 1.55, uExitProgress);
+    gl_PointSize = clamp(aSize * (104.0 / max(1.0, viewDepth)) * (0.82 + uProgress * 0.72 + uExitProgress * 0.7), 0.8, 4.2);
     gl_Position = projectionMatrix * viewPosition;
   }
 `;
@@ -454,7 +469,7 @@ class NeuralWorld {
     this.createVelocityStreaks();
     this.createDestination();
     this.createCycleReplica();
-    this.update(0, 0, 0.016, 0);
+    this.update(0, 0, 0, 0.016, 0);
   }
 
   createClusters() {
@@ -773,10 +788,10 @@ class NeuralWorld {
       const y = 1 - normalized * 2;
       const radial = Math.sqrt(Math.max(0, 1 - y * y));
       const angle = index * goldenAngle + shellRandom(index, 1) * 0.18;
-      const radius = 18 + shellRandom(index, 2) * 8;
-      positions[index * 3] = Math.cos(angle) * radial * radius * (isMobile ? 0.82 : 1.08);
-      positions[index * 3 + 1] = y * radius * (isMobile ? 1.04 : 0.82);
-      positions[index * 3 + 2] = -25 + Math.sin(angle) * radial * radius * 0.72;
+      const radius = 24 + normalized * 30 + shellRandom(index, 2) * 10;
+      positions[index * 3] = Math.cos(angle) * radial * radius * (isMobile ? 0.76 : 1.06);
+      positions[index * 3 + 1] = y * radius * (isMobile ? 0.98 : 0.84);
+      positions[index * 3 + 2] = -34 + Math.sin(angle) * radial * radius * 0.7;
       phases[index] = shellRandom(index, 3) * Math.PI * 2;
       sizes[index] = 0.5 + Math.pow(shellRandom(index, 4), 1.6) * 1.9;
       ranks[index] = normalized;
@@ -794,6 +809,7 @@ class NeuralWorld {
         uTravel: { value: 0 },
         uCycleDistance: { value: this.worldCycleDistance },
         uProgress: { value: 0 },
+        uExitProgress: { value: 0 },
       },
       transparent: true,
       depthWrite: false,
@@ -1108,19 +1124,47 @@ class NeuralWorld {
   }
 
   createDestination() {
-    this.destinationMaterial = new THREE.SpriteMaterial({
-      map: createRadialTexture(),
-      color: 0xe4f7ff,
+    const plasmaTexture = createRadialTexture();
+    this.destinationCoreMaterial = new THREE.SpriteMaterial({
+      map: plasmaTexture,
+      color: 0xffffff,
       transparent: true,
       opacity: 0,
       depthWrite: false,
       depthTest: false,
       blending: THREE.AdditiveBlending,
     });
-    this.destination = new THREE.Sprite(this.destinationMaterial);
-    this.destination.position.set(0.2, 0.6, -62);
-    this.destination.scale.set(158, 108, 1);
-    scene.add(this.destination);
+    this.destinationHaloMaterial = new THREE.SpriteMaterial({
+      map: plasmaTexture,
+      color: 0xbfeeff,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      depthTest: false,
+      blending: THREE.AdditiveBlending,
+    });
+    this.destinationCore = new THREE.Sprite(this.destinationCoreMaterial);
+    this.destinationHalo = new THREE.Sprite(this.destinationHaloMaterial);
+    this.destinationDirection = new THREE.Vector3();
+    this.destinationPosition = new THREE.Vector3();
+    scene.add(this.destinationHalo, this.destinationCore);
+  }
+
+  updateDestination(progress, exitProgress, elapsed) {
+    const reveal = smoothstep(0.66, 0.83, progress);
+    const expansion = smoothstep(0.62, 1, exitProgress);
+    camera.getWorldDirection(this.destinationDirection);
+    const distance = lerp(20, 10, expansion);
+    this.destinationPosition.copy(camera.position).addScaledVector(this.destinationDirection, distance);
+    this.destinationCore.position.copy(this.destinationPosition);
+    this.destinationHalo.position.copy(this.destinationPosition);
+    const pulse = 0.94 + Math.sin(elapsed * (3.2 + exitProgress * 7.5)) * (0.06 + exitProgress * 0.05);
+    const coreSize = lerp(0, isMobile ? 18 : 5.8, reveal) * pulse + expansion * (isMobile ? 36 : 34);
+    const haloSize = coreSize * lerp(isMobile ? 3.7 : 3.2, 2.15, expansion);
+    this.destinationCore.scale.set(coreSize, coreSize, 1);
+    this.destinationHalo.scale.set(haloSize, haloSize, 1);
+    this.destinationCoreMaterial.opacity = clamp(reveal * 0.78 + expansion * 0.72, 0, 1);
+    this.destinationHaloMaterial.opacity = clamp(reveal * 0.2 + expansion * 0.62, 0, 0.86);
   }
 
   clusterVisibility(cluster, progress) {
@@ -1747,7 +1791,7 @@ class NeuralWorld {
     this.streakMaterial.opacity = active * (0.48 + progress * 0.42);
   }
 
-  updateMaterials(progress, elapsed, travel) {
+  updateMaterials(progress, exitProgress, elapsed, travel) {
     for (const material of [this.hubFrontMaterial, this.hubBackMaterial, this.satelliteMaterial]) {
       material.uniforms.uTime.value = elapsed;
       material.uniforms.uProgress.value = progress;
@@ -1761,16 +1805,15 @@ class NeuralWorld {
     this.outerShellMaterial.uniforms.uTime.value = elapsed;
     this.outerShellMaterial.uniforms.uTravel.value = travel;
     this.outerShellMaterial.uniforms.uProgress.value = progress;
+    this.outerShellMaterial.uniforms.uExitProgress.value = exitProgress;
     this.fogParticleMaterial.uniforms.uTime.value = elapsed;
     this.fogParticleMaterial.uniforms.uWorldTravel.value = travel;
     this.fogParticleMaterial.uniforms.uProgress.value = progress;
     this.microMaterial.uniforms.uFieldOpacity.value = 1;
-    const destinationProgress = isMobile ? smoothstep(0.955, 1, progress) : smoothstep(0.62, 0.98, progress);
-    const destinationStrength = isMobile ? 0.08 : 0.48;
-    this.destinationMaterial.opacity = destinationProgress * (0.015 + progress * destinationStrength);
+    this.updateDestination(progress, exitProgress, elapsed);
   }
 
-  update(progress, elapsed, delta, travel) {
+  update(progress, exitProgress, elapsed, delta, travel) {
     this.group.rotation.z = Math.sin(elapsed * 0.07) * 0.012;
     if (isMobile) {
       const portraitReveal = smoothstep(0.08, 0.5, progress);
@@ -1786,7 +1829,7 @@ class NeuralWorld {
     this.updateHighways(progress, elapsed);
     this.updatePulses(progress, elapsed, delta);
     this.updateStreaks(progress, travel);
-    this.updateMaterials(progress, elapsed, travel);
+    this.updateMaterials(progress, exitProgress, elapsed, travel);
     this.syncCycleReplica();
   }
 }
@@ -1805,13 +1848,62 @@ function resize() {
   bloomPass.setSize(width, height);
 }
 
-function updateScrollProgress() {
-  if (reducedMotion) {
-    state.targetProgress = 0.16;
-    narrativeSections.forEach((section, index) => section.classList.toggle('is-active', index === 0));
+function setExitState(nextState) {
+  state.exitState = nextState;
+  stage.dataset.exitState = nextState;
+}
+
+function completePendingNavigation() {
+  if (!state.pendingNavigation || state.navigationTimer !== null) return;
+  const destination = state.pendingNavigation;
+  state.pendingNavigation = null;
+  state.navigationTimer = window.setTimeout(() => {
+    state.navigationTimer = null;
+    window.location.assign(destination);
+  }, 90);
+}
+
+function armExitDeadline() {
+  if (state.exitState !== 'running' || document.hidden) return;
+  if (state.exitDeadlineTimer !== null) window.clearTimeout(state.exitDeadlineTimer);
+  const remainingMs = Math.max(0, (EXIT_DURATION_SECONDS - state.exitElapsed) * 1000);
+  state.exitDeadlineTimer = window.setTimeout(() => finishExit(), remainingMs);
+}
+
+function triggerExit(source = 'scroll', navigationTarget = null) {
+  if (navigationTarget) {
+    state.pendingNavigation = navigationTarget;
+    state.exitSource = 'cta';
+  } else if (state.exitSource !== 'cta') {
+    state.exitSource = source;
+  }
+  if (state.exitState === 'terminal') {
+    completePendingNavigation();
     return;
   }
+  if (state.exitState === 'running') return;
+  state.exitElapsed = 0;
+  state.exitProgress = 0;
+  setExitState('running');
+  armExitDeadline();
+  startAnimation();
+}
 
+function resetExit() {
+  if (state.exitSource === 'cta' || state.pendingNavigation) return;
+  if (state.navigationTimer !== null) window.clearTimeout(state.navigationTimer);
+  if (state.exitDeadlineTimer !== null) window.clearTimeout(state.exitDeadlineTimer);
+  state.navigationTimer = null;
+  state.exitDeadlineTimer = null;
+  state.exitSource = null;
+  state.exitElapsed = 0;
+  state.exitProgress = 0;
+  arrival.style.opacity = '0';
+  setExitState('idle');
+  if (!document.hidden) startAnimation();
+}
+
+function updateScrollProgress() {
   const viewportCenter = window.scrollY + window.innerHeight * 0.5;
   let activeIndex = 0;
   let closestDistance = Infinity;
@@ -1826,10 +1918,22 @@ function updateScrollProgress() {
   }
 
   narrativeSections.forEach((section, index) => section.classList.toggle('is-active', index === activeIndex));
-  state.targetProgress = Number(narrativeSections[activeIndex].dataset.sceneProgress);
-  if (state.animationState === 'terminal' && state.targetProgress < 1 && !document.hidden) {
-    startAnimation();
+  const requestedProgress = Number(narrativeSections[activeIndex].dataset.sceneProgress);
+  const finalSectionActive = requestedProgress >= 1;
+  state.targetProgress = reducedMotion
+    ? Math.min(finalSectionActive ? MAX_STORY_PROGRESS : requestedProgress, 0.32)
+    : Math.min(requestedProgress, MAX_STORY_PROGRESS);
+  if (finalSectionActive) {
+    triggerExit('scroll');
+  } else if (state.exitSource === 'scroll' && state.exitState !== 'idle') {
+    resetExit();
   }
+}
+
+function getVisualProgress(storyProgress, exitProgress) {
+  const lateSectionBoost = smoothstep(0.5, MAX_STORY_PROGRESS, storyProgress) * 0.11;
+  const storyIntensity = clamp(storyProgress + lateSectionBoost, 0, 0.94);
+  return lerp(storyIntensity, 1, smoothstep(0, 0.58, exitProgress));
 }
 
 function updateCamera(progress, elapsed, delta) {
@@ -1874,50 +1978,97 @@ function startAnimation() {
   scheduleFrame();
 }
 
+function finishExit() {
+  if (state.exitState !== 'running') return;
+  if (state.exitDeadlineTimer !== null) window.clearTimeout(state.exitDeadlineTimer);
+  state.exitDeadlineTimer = null;
+  state.exitProgress = 1;
+  arrival.style.opacity = '1';
+  stage.dataset.exitProgress = '1.000';
+  state.exitElapsed = EXIT_DURATION_SECONDS;
+  stage.dataset.exitDurationMs = String(Math.round(EXIT_DURATION_SECONDS * 1000));
+  setExitState('terminal');
+  stopAnimation('terminal');
+  completePendingNavigation();
+}
+
 function render(now) {
   state.frameId = null;
   if (state.animationState !== 'running') return;
-  const delta = Math.min(0.05, (now - state.lastFrame) / 1000);
+  const visibleElapsed = Math.max(0, (now - state.lastFrame) / 1000);
+  const delta = Math.min(0.05, visibleElapsed);
   state.lastFrame = now;
   state.elapsed += delta;
   state.progress += (state.targetProgress - state.progress) * (1 - Math.exp(-delta * 6.6));
-  const terminalFrame = state.targetProgress === 1 && state.progress >= 0.995;
-  if (terminalFrame) state.progress = 1;
-  const velocity = reducedMotion ? 0 : 0.5 + smoothstep(0.02, 0.15, state.progress) * 2.5 + Math.pow(state.progress, 1.6) * 34.9;
-  state.travel += velocity * delta;
+  if (state.exitState === 'running') {
+    state.exitElapsed += visibleElapsed;
+    state.exitProgress = clamp(state.exitElapsed / EXIT_DURATION_SECONDS, 0, 1);
+  }
+  const visualProgress = getVisualProgress(state.progress, state.exitProgress);
+  const baseVelocity = reducedMotion ? 0 : 0.5 + smoothstep(0.02, 0.15, visualProgress) * 2.5 + Math.pow(visualProgress, 1.6) * 34.9;
+  const exitVelocity = reducedMotion ? 0 : Math.pow(state.exitProgress, 2.25) * 140;
+  state.travel += (baseVelocity + exitVelocity) * delta;
 
-  updateCamera(state.progress, state.elapsed, delta);
-  world.update(state.progress, state.elapsed, reducedMotion ? 0 : delta, state.travel);
+  updateCamera(visualProgress, state.elapsed, delta);
+  world.update(visualProgress, state.exitProgress, state.elapsed, reducedMotion ? 0 : delta, state.travel);
 
-  const highVelocityClarity = smoothstep(0.72, 0.84, state.progress);
-  renderer.toneMappingExposure = lerp(0.98, 1.36, smoothstep(0.3, 1, state.progress)) * lerp(1, 0.86, highVelocityClarity);
-  bloomPass.strength = lerp(0.24, 0.92, smoothstep(0.12, 1, state.progress)) * lerp(1, 0.42, highVelocityClarity);
-  bloomPass.radius = lerp(0.34, 0.7, state.progress) * lerp(1, 0.72, highVelocityClarity);
-  bloomPass.threshold = lerp(0.86, 0.68, state.progress) + highVelocityClarity * 0.08;
+  const highVelocityClarity = smoothstep(0.72, 0.84, visualProgress);
+  const kineticExit = smoothstep(0, 0.72, state.exitProgress);
+  const flashExit = smoothstep(0.72, 1, state.exitProgress);
+  renderer.toneMappingExposure = lerp(0.98, 1.36, smoothstep(0.3, 1, visualProgress))
+    * lerp(1, 0.86, highVelocityClarity)
+    * lerp(1, 1.025, kineticExit)
+    * lerp(1, 1.48, flashExit);
+  bloomPass.strength = lerp(0.24, 0.92, smoothstep(0.12, 1, visualProgress))
+    * lerp(1, 0.42, highVelocityClarity)
+    + kineticExit * 0.14
+    + flashExit * 1.82;
+  bloomPass.radius = lerp(0.34, 0.7, visualProgress) * lerp(1, 0.72, highVelocityClarity)
+    + kineticExit * 0.025
+    + flashExit * 0.2;
+  bloomPass.threshold = Math.max(0.2, lerp(0.86, 0.68, visualProgress)
+    + highVelocityClarity * 0.08
+    - kineticExit * 0.02
+    - flashExit * 0.28);
 
-  const finalWhite = terminalFrame ? 1 : smoothstep(0.9, 0.995, state.progress);
+  const finalWhite = smoothstep(0.82, 1, state.exitProgress);
   arrival.style.opacity = String(finalWhite);
   scrollCue.style.opacity = String(1 - smoothstep(0.02, 0.14, state.progress));
+  stage.dataset.storyProgress = state.progress.toFixed(3);
+  stage.dataset.visualProgress = visualProgress.toFixed(3);
+  stage.dataset.exitProgress = state.exitProgress.toFixed(3);
+  stage.dataset.outerVisible = String(Math.round(CONFIG.outerShellCount * clamp((visualProgress - 0.08) / 0.8, 0, 1)));
 
   composer.render();
-  if (terminalFrame) {
-    stopAnimation('terminal');
+  if (state.exitState === 'running' && state.exitProgress >= 1) {
+    finishExit();
     return;
   }
   scheduleFrame();
 }
 
 function pause(nextState = 'hidden') {
+  if (state.exitDeadlineTimer !== null) window.clearTimeout(state.exitDeadlineTimer);
+  state.exitDeadlineTimer = null;
   stopAnimation(nextState);
 }
 
 function resume() {
-  if (state.progress === 1 && state.targetProgress === 1) {
+  if (state.exitState === 'terminal') {
     setAnimationState('terminal');
     return;
   }
+  if (state.exitState === 'running') armExitDeadline();
   startAnimation();
 }
+
+ctaLinks.forEach((link) => {
+  link.addEventListener('click', (event) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    triggerExit('cta', link.href);
+  });
+});
 
 renderer.domElement.addEventListener('webglcontextlost', (event) => {
   event.preventDefault();
@@ -1935,4 +2086,6 @@ document.addEventListener('visibilitychange', () => document.hidden ? pause('hid
 resize();
 updateScrollProgress();
 stage.dataset.animationState = state.animationState;
+stage.dataset.exitState = state.exitState;
+stage.dataset.exitProgress = state.exitProgress.toFixed(3);
 scheduleFrame();
