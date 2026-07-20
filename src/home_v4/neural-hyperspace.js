@@ -286,7 +286,7 @@ const fogParticleVertexShader = `
 
   void main() {
     vec3 center = aOffset;
-    float nearDepth = -10.0;
+    float nearDepth = 4.0;
     float shiftedDepth = center.z - mod(uWorldTravel, uCycleDistance);
     float cycleDepth = mod(nearDepth - shiftedDepth + uCycleDistance * 2.0, uCycleDistance);
     center.z = nearDepth - cycleDepth;
@@ -305,15 +305,19 @@ const fogParticleVertexShader = `
     viewCenter.xy += billboard;
 
     float viewDepth = -viewCenter.z;
-    float cycleFade = smoothstep(2.0, 24.0, cycleDepth)
-      * (1.0 - smoothstep(uCycleDistance - 28.0, uCycleDistance - 5.0, cycleDepth));
-    float distanceFade = smoothstep(12.0, 30.0, viewDepth)
+    float entryDistance = 12.0 + aScale * 1.8;
+    float cycleFade = smoothstep(2.0, 38.0, cycleDepth)
+      * (1.0 - smoothstep(uCycleDistance - 38.0, uCycleDistance - 6.0, cycleDepth));
+    float distanceFade = smoothstep(entryDistance, entryDistance + 34.0, viewDepth)
       * (1.0 - smoothstep(104.0, 144.0, viewDepth));
+    float apparentScale = aScale / max(1.0, viewDepth);
+    float coverageFade = 1.0 - smoothstep(0.2, 0.42, apparentScale);
+    float velocityFade = 1.0 - smoothstep(0.5, 0.8, uProgress);
     vUv = uv;
     vDensity = aDensity;
     vOpacity = aOpacity;
     vShape = aShape;
-    vAlpha = cycleFade * distanceFade;
+    vAlpha = cycleFade * distanceFade * coverageFade * velocityFade;
     gl_Position = projectionMatrix * viewCenter;
   }
 `;
@@ -751,17 +755,21 @@ class NeuralWorld {
     const sizes = new Float32Array(count);
     const ranks = new Float32Array(count);
     const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    const shellRandom = (index, salt) => {
+      const value = Math.sin((index + 1) * 12.9898 + salt * 78.233) * 43758.5453;
+      return value - Math.floor(value);
+    };
     for (let index = 0; index < count; index += 1) {
       const normalized = (index + 0.5) / count;
       const y = 1 - normalized * 2;
       const radial = Math.sqrt(Math.max(0, 1 - y * y));
-      const angle = index * goldenAngle + random() * 0.18;
-      const radius = 18 + random() * 8;
+      const angle = index * goldenAngle + shellRandom(index, 1) * 0.18;
+      const radius = 18 + shellRandom(index, 2) * 8;
       positions[index * 3] = Math.cos(angle) * radial * radius * (isMobile ? 0.82 : 1.08);
       positions[index * 3 + 1] = y * radius * (isMobile ? 1.04 : 0.82);
       positions[index * 3 + 2] = -25 + Math.sin(angle) * radial * radius * 0.72;
-      phases[index] = random() * Math.PI * 2;
-      sizes[index] = 0.5 + Math.pow(random(), 1.6) * 1.9;
+      phases[index] = shellRandom(index, 3) * Math.PI * 2;
+      sizes[index] = 0.5 + Math.pow(shellRandom(index, 4), 1.6) * 1.9;
       ranks[index] = normalized;
     }
     const geometry = new THREE.BufferGeometry();
