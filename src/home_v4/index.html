@@ -309,25 +309,6 @@
         text-align: center;
       }
 
-      .final-content {
-        grid-column: 2 / 4;
-        width: min(820px, calc(100vw - 48px));
-        justify-self: center;
-      }
-
-      .final-content h2 {
-        color: #0a1016;
-        font-size: clamp(48px, 7vw, 96px);
-      }
-
-      .final-content p {
-        width: min(560px, 100%);
-        margin: 0 auto 32px;
-        color: rgba(10, 16, 22, 0.68);
-        font-size: clamp(18px, 2vw, 23px);
-        line-height: 1.55;
-      }
-
       .scroll-cue {
         position: fixed;
         left: 50%;
@@ -399,7 +380,6 @@
 
         .hero-section { min-height: 100svh; }
         .hero-content,
-        .final-content,
         .align-left .story-card,
         .align-right .story-card {
           grid-column: 2;
@@ -487,7 +467,7 @@
           <p class="wordmark">Mantra</p>
           <h1>Reach your full potential.</h1>
           <p class="hero-copy">Mantra helps you achieve your goals with a synthetic intelligence that connects your systems and scales your impact</p>
-          <a class="cta" href="https://mono-prod-8d22.up.railway.app/start?source=lightway">Start With Mantra</a>
+          <a class="cta" href="https://app.trymantra.ai/start?source=lightway_v4">Start With Mantra</a>
         </div>
       </section>
 
@@ -524,7 +504,7 @@
 
       <section class="story-section align-left" data-scene-progress="0.68">
         <article class="section-content story-card">
-          <h2>Everything move faster.</h2>
+          <h2>Everything moves faster.</h2>
           <p class="story-copy">Week one it helps. Month six it's an extension of you. The longer you run, the faster you go.</p>
         </article>
       </section>
@@ -537,13 +517,7 @@
         </article>
       </section>
 
-      <section class="story-section final-section" data-scene-progress="1">
-        <div class="section-content final-content">
-          <h2>Your judgment. Multiplied.</h2>
-          <p>Build the intelligence layer your life deserves.</p>
-          <a class="cta" href="https://mono-prod-8d22.up.railway.app/start?source=lightway">Start With Mantra</a>
-        </div>
-      </section>
+      <section class="story-section final-section" data-scene-progress="1" aria-label="Continue to Mantra"></section>
     </div>
 
     <div class="scroll-cue" aria-hidden="true">Scroll to explore</div>

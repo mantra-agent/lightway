@@ -103,11 +103,11 @@ Canonical palette from Mantra Design Guide (dark mode):
 
 ### /home_v4 (Retreat Neural Narrative)
 - Independent copy of locked `/home_v3`; `/home_v2` and `/home_v3` remain byte-frozen while V4 evolves.
-- V4 preserves V3's kinetic equation, camera framing, main-tunnel population budget, and snap behavior; the baseline world-travel vector is reversed so acceleration carries the connected field away from the camera. V4 owns its foreground story, currently Hero → Action strip → Continuity → Compounding → Ambient → final CTA.
+- V4 preserves V3's kinetic equation, camera framing, main-tunnel population budget, and snap behavior; the baseline world-travel vector is reversed so acceleration carries the connected field away from the camera. V4 owns its foreground story, currently Hero → Action strip → Continuity → Compounding → Ambient → blank exit trigger.
 - Reversed lifecycle boundaries are geometry-owned. Shared shell/tendril visibility never derives from only the primary cycle instance; each rendered primary or replica instance fades from its own view depth after its complete geometry clears the frustum.
 - Micro-nodes, low-fidelity outer-shell nodes, and fog clouds wrap independently through one reversed cycle distance and fade to zero on both sides of their own wrap boundary. Global modulo resets and progress-owned density dropouts are forbidden.
 - The authored tunnel closes its first major depth interval gradually. A low-detail, bounded outer spherical shell sits beyond the main tunnel and enters the frustum through perspective as reverse travel accumulates; it extends context without becoming a second simulation or obscuring foreground copy.
-- The white arrival is a discrete, time-owned hyperspace exit. Final-section scroll entry and unmodified CTA clicks cross one replay-safe `triggerExit()` boundary; CTA navigation waits until the opaque terminal frame paints. Normal story progress never interpolates white directly.
+- The white arrival is a discrete, time-owned hyperspace exit. Final-section scroll entry and CTA clicks cross one replay-safe `triggerExit()` boundary. When the opaque frame lands, one terminal fork is resolved from live input state: Space held opens the public looping `/visualizer`; when Space is not held, the exit opens `/start`. The blank terminal contains no foreground copy or CTA, and navigation waits until after the white frame paints.
 - The bounded outer shell visibly grows with story intensity: later-ranked nodes begin farther beyond the frustum and pull inward toward a broader sphere as retreat and exit progress increase.
 
 ### /coaches
