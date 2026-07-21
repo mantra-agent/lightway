@@ -33,7 +33,8 @@ const CONFIG = Object.freeze({
   clusterCount: 8,
   satellitesPerCluster: 7,
   microCount: 1200,
-  streakCount: 260,
+  baseStreakCount: 260,
+  streakCount: 420,
   pulseCount: 64,
   cascadeCount: 48,
   hubFogParticleCount: 47,
@@ -486,7 +487,7 @@ class NeuralWorld {
     this.createVelocityStreaks();
     this.createDestination();
     this.createCycleReplica();
-    this.update(0, 0, 0, 0.016, 0);
+    this.update(0, 0, 0, 0, 0.016, 0);
   }
 
   createClusters() {
@@ -1073,7 +1074,8 @@ class NeuralWorld {
   }
 
   createVelocityStreaks() {
-    this.streakData = Array.from({ length: CONFIG.streakCount }, () => {
+    const crescendoCount = CONFIG.streakCount - CONFIG.baseStreakCount;
+    this.streakData = Array.from({ length: CONFIG.streakCount }, (_, index) => {
       const angle = random() * Math.PI * 2;
       const minimumRadius = isMobile ? 4.1 : 3.5;
       const radius = minimumRadius + Math.pow(random(), 0.62) * (isMobile ? 7.1 : 7.7);
@@ -1082,6 +1084,9 @@ class NeuralWorld {
         y: Math.sin(angle) * radius * (isMobile ? 0.78 : 0.62),
         z: -(random() * 94 + 2),
         rank: random(),
+        crescendoRank: index < CONFIG.baseStreakCount
+          ? -1
+          : (index - CONFIG.baseStreakCount + 0.5) / crescendoCount,
         speed: 0.78 + random() * 0.54,
       };
     });
@@ -1785,12 +1790,16 @@ class NeuralWorld {
     }
   }
 
-  updateStreaks(progress, travel) {
+  updateStreaks(progress, storyProgress, travel) {
     const active = smoothstep(0.5, 0.9, progress);
-    const length = 0.22 + Math.pow(progress, 2.15) * 9.4;
+    const crescendo = smoothstep(0.83, MAX_STORY_PROGRESS, storyProgress);
+    const length = 0.22 + Math.pow(progress, 2.15) * 9.4 + crescendo * 8.2;
+    const brightness = 1 + crescendo * 0.42;
     this.streakData.forEach((streak, index) => {
       const z = wrapDepth(streak.z - travel * streak.speed);
-      const visible = streak.rank < 0.14 + progress * 0.9 ? active : 0;
+      const baselineVisible = streak.crescendoRank < 0 && streak.rank < 0.14 + progress * 0.9;
+      const crescendoVisible = streak.crescendoRank >= 0 && streak.crescendoRank <= crescendo;
+      const visible = baselineVisible ? active : crescendoVisible ? active * crescendo : 0;
       const base = index * 6;
       this.streakPositions[base] = streak.x;
       this.streakPositions[base + 1] = streak.y;
@@ -1798,16 +1807,16 @@ class NeuralWorld {
       this.streakPositions[base + 3] = streak.x;
       this.streakPositions[base + 4] = streak.y;
       this.streakPositions[base + 5] = z;
-      this.streakColors[base] = 0.008 * visible;
-      this.streakColors[base + 1] = 0.12 * visible;
-      this.streakColors[base + 2] = 0.2 * visible;
-      this.streakColors[base + 3] = 0.102 * visible;
-      this.streakColors[base + 4] = (0.5 + progress * 0.108) * visible;
-      this.streakColors[base + 5] = (0.72 + progress * 0.139) * visible;
+      this.streakColors[base] = 0.008 * visible * brightness;
+      this.streakColors[base + 1] = 0.12 * visible * brightness;
+      this.streakColors[base + 2] = 0.2 * visible * brightness;
+      this.streakColors[base + 3] = 0.102 * visible * brightness;
+      this.streakColors[base + 4] = (0.5 + progress * 0.108) * visible * brightness;
+      this.streakColors[base + 5] = (0.72 + progress * 0.139) * visible * brightness;
     });
     this.streakGeometry.attributes.position.needsUpdate = true;
     this.streakGeometry.attributes.color.needsUpdate = true;
-    this.streakMaterial.opacity = active * (0.48 + progress * 0.42);
+    this.streakMaterial.opacity = active * (0.48 + progress * 0.42 + crescendo * 0.1);
   }
 
   updateMaterials(progress, exitProgress, elapsed, travel) {
@@ -1832,7 +1841,7 @@ class NeuralWorld {
     this.updateDestination(progress, exitProgress, elapsed);
   }
 
-  update(progress, exitProgress, elapsed, delta, travel) {
+  update(progress, storyProgress, exitProgress, elapsed, delta, travel) {
     this.group.rotation.z = Math.sin(elapsed * 0.07) * 0.012;
     if (isMobile) {
       const portraitReveal = smoothstep(0.08, 0.5, progress);
@@ -1847,7 +1856,7 @@ class NeuralWorld {
     this.updateFreeDendrites(progress, elapsed);
     this.updateHighways(progress, elapsed);
     this.updatePulses(progress, elapsed, delta);
-    this.updateStreaks(progress, travel);
+    this.updateStreaks(progress, storyProgress, travel);
     this.updateMaterials(progress, exitProgress, elapsed, travel);
     this.syncCycleReplica();
   }
@@ -2035,11 +2044,12 @@ function render(now) {
   }
   const visualProgress = getVisualProgress(state.progress, state.exitProgress);
   const baseVelocity = reducedMotion ? 0 : 0.5 + smoothstep(0.02, 0.15, visualProgress) * 2.5 + Math.pow(visualProgress, 1.6) * 34.9;
+  const crescendoVelocity = reducedMotion ? 0 : smoothstep(0.83, MAX_STORY_PROGRESS, state.progress) * 22;
   const exitVelocity = reducedMotion ? 0 : Math.pow(state.exitProgress, 2.25) * 140;
-  state.travel += (baseVelocity + exitVelocity) * delta;
+  state.travel += (baseVelocity + crescendoVelocity + exitVelocity) * delta;
 
   updateCamera(visualProgress, state.elapsed, delta);
-  world.update(visualProgress, state.exitProgress, state.elapsed, reducedMotion ? 0 : delta, state.travel);
+  world.update(visualProgress, state.progress, state.exitProgress, state.elapsed, reducedMotion ? 0 : delta, state.travel);
 
   const highVelocityClarity = smoothstep(0.72, 0.84, visualProgress);
   const kineticExit = smoothstep(0, 0.72, state.exitProgress);
