@@ -24,7 +24,7 @@ const FORK_DESTINATIONS = Object.freeze({
   voiceDemo: 'https://app.trymantra.ai/visualizer',
   waitlist: 'https://app.trymantra.ai/start?source=lightway_v4',
 });
-const MAX_STORY_PROGRESS = 0.83;
+const MAX_STORY_PROGRESS = 0.94;
 const EXIT_DURATION_SECONDS = reducedMotion ? 0.28 : 0.82;
 const OPENING_CAMERA_TARGET_Z = isMobile ? 8.2 : 7.2;
 const FIRST_CLUSTER_CAMERA_DISTANCE_SCALE = 0.6;
@@ -1170,7 +1170,7 @@ class NeuralWorld {
   }
 
   updateDestination(progress, exitProgress, elapsed) {
-    const reveal = smoothstep(0.66, 0.83, progress);
+    const reveal = smoothstep(0.78, 0.94, progress);
     const expansion = smoothstep(0.62, 1, exitProgress);
     camera.getWorldDirection(this.destinationDirection);
     const distance = lerp(20, 10, expansion);
