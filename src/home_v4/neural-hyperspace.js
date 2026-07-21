@@ -19,7 +19,7 @@ const FORK_DESTINATIONS = Object.freeze({
 const MAX_STORY_PROGRESS = 0.83;
 const EXIT_DURATION_SECONDS = reducedMotion ? 0.28 : 0.82;
 const OPENING_CAMERA_TARGET_Z = isMobile ? 8.2 : 7.2;
-const FIRST_CLUSTER_CAMERA_DISTANCE_SCALE = 0.8;
+const FIRST_CLUSTER_CAMERA_DISTANCE_SCALE = 0.6;
 
 const CONFIG = Object.freeze({
   clusterCount: 8,
