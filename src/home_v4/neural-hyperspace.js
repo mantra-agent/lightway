@@ -18,6 +18,8 @@ const FORK_DESTINATIONS = Object.freeze({
 });
 const MAX_STORY_PROGRESS = 0.83;
 const EXIT_DURATION_SECONDS = reducedMotion ? 0.28 : 0.82;
+const OPENING_CAMERA_TARGET_Z = isMobile ? 8.2 : 7.2;
+const FIRST_CLUSTER_CAMERA_DISTANCE_SCALE = 0.8;
 
 const CONFIG = Object.freeze({
   clusterCount: 8,
@@ -480,8 +482,10 @@ class NeuralWorld {
   }
 
   createClusters() {
+    const firstClusterZ = OPENING_CAMERA_TARGET_Z
+      - (OPENING_CAMERA_TARGET_Z - (isMobile ? -7.4 : -7.0)) * FIRST_CLUSTER_CAMERA_DISTANCE_SCALE;
     const positions = isMobile ? [
-      [-2.35, -0.75, -7.4, 0.38],
+      [-2.35, -0.75, firstClusterZ, 0.38],
       [5.15, 6.35, -13.0, 0.32],
       [-5.7, -7.1, -18.0, 0.34],
       [2.6, -1.1, -24.5, 0.32],
@@ -490,7 +494,7 @@ class NeuralWorld {
       [-1.6, 1.1, -52.0, 0.29],
       [1.85, 5.8, -65.0, 0.3],
     ] : [
-      [-5.35, -1.0, -7.0, 0.44],
+      [-5.35, -1.0, firstClusterZ, 0.44],
       [4.8, 4.9, -12.5, 0.35],
       [10.5, -4.25, -17.5, 0.37],
       [-6.2, 3.6, -24.0, 0.34],
@@ -1957,7 +1961,7 @@ function updateCamera(progress, elapsed, delta) {
   const mobileScale = isMobile ? 0.54 : 1;
   const targetX = lerp(-0.35, 0.75, smoothstep(0.12, 0.84, progress)) * mobileScale;
   const targetY = lerp(0.15, -0.3, smoothstep(0.18, 0.9, progress)) * mobileScale;
-  const targetZ = lerp(isMobile ? 8.2 : 7.2, isMobile ? 6.7 : 5.15, smoothstep(0.08, 0.88, progress));
+  const targetZ = lerp(OPENING_CAMERA_TARGET_Z, isMobile ? 6.7 : 5.15, smoothstep(0.08, 0.88, progress));
   const ease = 1 - Math.exp(-delta * 2.5);
   camera.position.x += (targetX - camera.position.x) * ease;
   camera.position.y += (targetY - camera.position.y) * ease;
