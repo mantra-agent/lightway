@@ -4,7 +4,15 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const HISTORY_RESTART_PARAM = 'v4_restart';
+const startupUrl = new URL(window.location.href);
+const isHistoryRestart = startupUrl.searchParams.has(HISTORY_RESTART_PARAM);
 if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
+if (isHistoryRestart) {
+  startupUrl.searchParams.delete(HISTORY_RESTART_PARAM);
+  window.history.replaceState(window.history.state, '', `${startupUrl.pathname}${startupUrl.search}${startupUrl.hash}`);
+  window.scrollTo(0, 0);
+}
 
 const stage = document.querySelector('.neural-stage');
 const arrival = document.querySelector('.white-arrival');
@@ -2123,18 +2131,27 @@ renderer.domElement.addEventListener('webglcontextrestored', () => {
 window.addEventListener('resize', resize, { passive: true });
 window.addEventListener('scroll', updateScrollProgress, { passive: true });
 window.addEventListener('pageshow', (event) => {
+  if (isHistoryRestart) {
+    window.scrollTo(0, 0);
+    updateScrollProgress();
+    return;
+  }
+
   const navigationEntry = window.performance.getEntriesByType('navigation').at(-1);
   const restoredFromHistory = event.persisted || navigationEntry?.type === 'back_forward';
   if (!restoredFromHistory) return;
 
-  window.scrollTo(0, 0);
-  if (event.persisted) {
-    arrival.style.opacity = '0';
-    window.location.reload();
-    return;
-  }
+  if (state.navigationTimer !== null) window.clearTimeout(state.navigationTimer);
+  if (state.exitDeadlineTimer !== null) window.clearTimeout(state.exitDeadlineTimer);
+  state.navigationTimer = null;
+  state.exitDeadlineTimer = null;
+  arrival.style.opacity = '0';
+  stopAnimation('history-restart');
 
-  updateScrollProgress();
+  const restartUrl = new URL(window.location.href);
+  restartUrl.searchParams.set(HISTORY_RESTART_PARAM, String(Date.now()));
+  restartUrl.hash = '';
+  window.location.replace(restartUrl.href);
 });
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
