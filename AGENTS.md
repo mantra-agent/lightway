@@ -109,7 +109,7 @@ Canonical palette from Mantra Design Guide (dark mode):
 - The authored tunnel closes its first major depth interval gradually. A low-detail, bounded outer spherical shell sits beyond the main tunnel and enters the frustum through perspective as reverse travel accumulates; it extends context without becoming a second simulation or obscuring foreground copy.
 - The white arrival is a discrete, time-owned hyperspace exit. Final-section scroll entry and CTA clicks cross one replay-safe `triggerExit()` boundary. When the opaque frame lands, one terminal fork is resolved from live input state: Space held opens the public looping `/visualizer`; when Space is not held, the exit opens `/start`. The blank terminal contains no foreground copy or CTA, and navigation waits until after the white frame paints.
 - The bounded outer shell visibly grows with story intensity: later-ranked nodes begin farther beyond the frustum and pull inward toward a broader sphere as retreat and exit progress increase.
-- Browser history traversal always restarts V4 from the top. Scroll restoration is manual, and a back-forward-cache restore reloads the document so terminal animation and generated world state cannot replay into another fork navigation.
+- Browser history traversal always restarts V4 from the top. Scroll restoration is manual, and any restored V4 history entry is replaced with a uniquely cache-busted fresh document so terminal animation, generated world state, and restored scroll cannot replay into another fork navigation.
 
 ### /coaches
 - Uses GSAP + ScrollTrigger + SplitType (CDN)
