@@ -28,7 +28,7 @@ const FORK_DESTINATIONS = Object.freeze({
 const MAX_STORY_PROGRESS = 0.94;
 const EXIT_DURATION_SECONDS = reducedMotion ? 0.28 : 0.82;
 const DESKTOP_WHEEL_THRESHOLD = 18;
-const DESKTOP_WHEEL_LOCK_MS = 680;
+const DESKTOP_WHEEL_FALLBACK_MS = 1200;
 const OPENING_CAMERA_TARGET_Z = isMobile ? 8.2 : 7.2;
 const FIRST_CLUSTER_CAMERA_DISTANCE_SCALE = 0.6;
 
@@ -2126,9 +2126,9 @@ function releaseDesktopWheelLock() {
   state.wheelDirection = 0;
 }
 
-function scheduleDesktopWheelUnlock() {
+function scheduleDesktopWheelFallback() {
   if (state.wheelLockTimer !== null) window.clearTimeout(state.wheelLockTimer);
-  state.wheelLockTimer = window.setTimeout(releaseDesktopWheelLock, DESKTOP_WHEEL_LOCK_MS);
+  state.wheelLockTimer = window.setTimeout(releaseDesktopWheelLock, DESKTOP_WHEEL_FALLBACK_MS);
 }
 
 function normalizeWheelDelta(event) {
@@ -2140,11 +2140,13 @@ function normalizeWheelDelta(event) {
 function navigateDesktopChapter(direction) {
   const currentIndex = getClosestNarrativeIndex();
   const targetIndex = clamp(currentIndex + direction, 0, narrativeSections.length - 1);
+  if (targetIndex === currentIndex) return false;
   const target = narrativeSections[targetIndex];
   const block = target.classList.contains('hero-section')
     ? 'start'
     : target.classList.contains('final-section') ? 'end' : 'center';
   target.scrollIntoView({ behavior: 'smooth', block, inline: 'nearest' });
+  return true;
 }
 
 function handleDesktopWheel(event) {
@@ -2152,10 +2154,7 @@ function handleDesktopWheel(event) {
   if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
   event.preventDefault();
 
-  if (state.wheelLocked) {
-    scheduleDesktopWheelUnlock();
-    return;
-  }
+  if (state.wheelLocked) return;
 
   const delta = normalizeWheelDelta(event);
   const direction = Math.sign(delta);
@@ -2165,11 +2164,11 @@ function handleDesktopWheel(event) {
   state.wheelDelta += delta;
   if (Math.abs(state.wheelDelta) < DESKTOP_WHEEL_THRESHOLD) return;
 
-  state.wheelLocked = true;
   state.wheelDelta = 0;
   state.wheelDirection = 0;
-  navigateDesktopChapter(direction);
-  scheduleDesktopWheelUnlock();
+  if (!navigateDesktopChapter(direction)) return;
+  state.wheelLocked = true;
+  scheduleDesktopWheelFallback();
 }
 
 function setSpaceHeld(held) {
@@ -2190,6 +2189,7 @@ window.addEventListener('blur', () => {
   releaseDesktopWheelLock();
 });
 window.addEventListener('wheel', handleDesktopWheel, { passive: false });
+document.addEventListener('scrollend', releaseDesktopWheelLock, { passive: true });
 
 ctaLinks.forEach((link) => {
   link.addEventListener('click', (event) => {
