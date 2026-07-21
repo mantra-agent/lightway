@@ -16,7 +16,7 @@ Multi-page static site. Each page is a standalone HTML file under `src/`. No bun
 
 ```
 src/
-  index.html          # Splash / root redirect
+  index.html          # Legacy splash source; Cloudflare proxies / to canonical /home_v4/
   styles.css          # Shared CSS (CTA, reveal, orbs, dividers, progress bar)
   brand/              # Logo assets
   home/index.html     # /home landing page
@@ -102,6 +102,7 @@ Canonical palette from Mantra Design Guide (dark mode):
 - Responsive branches may change camera framing and foreground layout only; neural population counts and feature lifecycle remain unified
 
 ### /home_v4 (Retreat Neural Narrative)
+- Canonical production landing experience. Cloudflare proxies `/` to `/home_v4/` with status 200 so visitors keep the root URL; `/home_v4/` remains a compatible direct route, and its metadata declares `https://www.trymantra.ai/` canonical.
 - Independent copy of locked `/home_v3`; `/home_v2` and `/home_v3` remain byte-frozen while V4 evolves.
 - V4 preserves V3's camera framing and neural topology budget; the baseline world-travel vector is reversed so acceleration carries the connected field away from the camera. Mobile retains native mandatory section snapping. Desktop wheel input is chapter-owned: one deliberate vertical wheel gesture advances exactly one section to its authored snap alignment, while trackpad momentum is locked to that target until the landing completes. A bounded velocity-streak reserve may reveal only across the final narrative transition, creating a crescendo without changing earlier-section density or neural topology. V4 owns its foreground story, currently Hero → Action strip → Continuity → Compounding → Ambient → blank exit trigger.
 - Reversed lifecycle boundaries are geometry-owned. Shared shell/tendril visibility never derives from only the primary cycle instance; each rendered primary or replica instance fades from its own view depth after its complete geometry clears the frustum.

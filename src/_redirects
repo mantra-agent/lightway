@@ -1,2 +1,5 @@
 # Apex to www redirect (Cloudflare Pages)
 https://trymantra.ai/* https://www.trymantra.ai/:splat 301
+
+# Serve the canonical V4 experience at www.trymantra.ai without changing the browser URL
+/ /home_v4/ 200
