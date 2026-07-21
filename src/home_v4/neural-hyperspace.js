@@ -20,12 +20,15 @@ const scrollCue = document.querySelector('.scroll-cue');
 const narrativeSections = Array.from(document.querySelectorAll('[data-scene-progress]'));
 const ctaLinks = Array.from(document.querySelectorAll('a.cta'));
 const isMobile = window.innerWidth < 700;
+const desktopWheelQuery = window.matchMedia('(min-width: 761px)');
 const FORK_DESTINATIONS = Object.freeze({
   voiceDemo: 'https://app.trymantra.ai/visualizer',
   waitlist: 'https://app.trymantra.ai/start?source=lightway_v4',
 });
 const MAX_STORY_PROGRESS = 0.94;
 const EXIT_DURATION_SECONDS = reducedMotion ? 0.28 : 0.82;
+const DESKTOP_WHEEL_THRESHOLD = 18;
+const DESKTOP_WHEEL_LOCK_MS = 680;
 const OPENING_CAMERA_TARGET_Z = isMobile ? 8.2 : 7.2;
 const FIRST_CLUSTER_CAMERA_DISTANCE_SCALE = 0.6;
 
@@ -66,6 +69,10 @@ const state = {
   forkOutcome: null,
   navigationTimer: null,
   exitDeadlineTimer: null,
+  wheelDelta: 0,
+  wheelDirection: 0,
+  wheelLocked: false,
+  wheelLockTimer: null,
 };
 
 const clamp = THREE.MathUtils.clamp;
@@ -1867,6 +1874,7 @@ const world = new NeuralWorld();
 function resize() {
   const width = window.innerWidth;
   const height = window.innerHeight;
+  if (!desktopWheelQuery.matches) releaseDesktopWheelLock();
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
@@ -1941,7 +1949,7 @@ function resetExit() {
   if (!document.hidden) startAnimation();
 }
 
-function updateScrollProgress() {
+function getClosestNarrativeIndex() {
   const viewportCenter = window.scrollY + window.innerHeight * 0.5;
   let activeIndex = 0;
   let closestDistance = Infinity;
@@ -1954,7 +1962,11 @@ function updateScrollProgress() {
       activeIndex = index;
     }
   }
+  return activeIndex;
+}
 
+function updateScrollProgress() {
+  const activeIndex = getClosestNarrativeIndex();
   narrativeSections.forEach((section, index) => section.classList.toggle('is-active', index === activeIndex));
   const requestedProgress = Number(narrativeSections[activeIndex].dataset.sceneProgress);
   const finalSectionActive = requestedProgress >= 1;
@@ -2106,6 +2118,60 @@ function isEditableTarget(target) {
     && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
 }
 
+function releaseDesktopWheelLock() {
+  if (state.wheelLockTimer !== null) window.clearTimeout(state.wheelLockTimer);
+  state.wheelLockTimer = null;
+  state.wheelLocked = false;
+  state.wheelDelta = 0;
+  state.wheelDirection = 0;
+}
+
+function scheduleDesktopWheelUnlock() {
+  if (state.wheelLockTimer !== null) window.clearTimeout(state.wheelLockTimer);
+  state.wheelLockTimer = window.setTimeout(releaseDesktopWheelLock, DESKTOP_WHEEL_LOCK_MS);
+}
+
+function normalizeWheelDelta(event) {
+  if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) return event.deltaY * 16;
+  if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) return event.deltaY * window.innerHeight;
+  return event.deltaY;
+}
+
+function navigateDesktopChapter(direction) {
+  const currentIndex = getClosestNarrativeIndex();
+  const targetIndex = clamp(currentIndex + direction, 0, narrativeSections.length - 1);
+  const target = narrativeSections[targetIndex];
+  const block = target.classList.contains('hero-section')
+    ? 'start'
+    : target.classList.contains('final-section') ? 'end' : 'center';
+  target.scrollIntoView({ behavior: 'smooth', block, inline: 'nearest' });
+}
+
+function handleDesktopWheel(event) {
+  if (!desktopWheelQuery.matches || reducedMotion || event.ctrlKey || event.metaKey || event.shiftKey) return;
+  if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+  event.preventDefault();
+
+  if (state.wheelLocked) {
+    scheduleDesktopWheelUnlock();
+    return;
+  }
+
+  const delta = normalizeWheelDelta(event);
+  const direction = Math.sign(delta);
+  if (direction === 0) return;
+  if (state.wheelDirection !== 0 && direction !== state.wheelDirection) state.wheelDelta = 0;
+  state.wheelDirection = direction;
+  state.wheelDelta += delta;
+  if (Math.abs(state.wheelDelta) < DESKTOP_WHEEL_THRESHOLD) return;
+
+  state.wheelLocked = true;
+  state.wheelDelta = 0;
+  state.wheelDirection = 0;
+  navigateDesktopChapter(direction);
+  scheduleDesktopWheelUnlock();
+}
+
 function setSpaceHeld(held) {
   state.spaceHeld = held;
   stage.dataset.spaceHeld = String(state.spaceHeld);
@@ -2119,7 +2185,11 @@ window.addEventListener('keydown', (event) => {
 window.addEventListener('keyup', (event) => {
   if (event.code === 'Space') setSpaceHeld(false);
 });
-window.addEventListener('blur', () => setSpaceHeld(false));
+window.addEventListener('blur', () => {
+  setSpaceHeld(false);
+  releaseDesktopWheelLock();
+});
+window.addEventListener('wheel', handleDesktopWheel, { passive: false });
 
 ctaLinks.forEach((link) => {
   link.addEventListener('click', (event) => {
@@ -2153,6 +2223,7 @@ window.addEventListener('pageshow', (event) => {
 
   if (state.navigationTimer !== null) window.clearTimeout(state.navigationTimer);
   if (state.exitDeadlineTimer !== null) window.clearTimeout(state.exitDeadlineTimer);
+  releaseDesktopWheelLock();
   state.navigationTimer = null;
   state.exitDeadlineTimer = null;
   arrival.style.opacity = '0';
@@ -2166,6 +2237,7 @@ window.addEventListener('pageshow', (event) => {
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     setSpaceHeld(false);
+    releaseDesktopWheelLock();
     pause('hidden');
   } else {
     resume();
