@@ -4,6 +4,8 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
+
 const stage = document.querySelector('.neural-stage');
 const arrival = document.querySelector('.white-arrival');
 const scrollCue = document.querySelector('.scroll-cue');
@@ -2116,6 +2118,20 @@ renderer.domElement.addEventListener('webglcontextrestored', () => {
 });
 window.addEventListener('resize', resize, { passive: true });
 window.addEventListener('scroll', updateScrollProgress, { passive: true });
+window.addEventListener('pageshow', (event) => {
+  const navigationEntry = window.performance.getEntriesByType('navigation').at(-1);
+  const restoredFromHistory = event.persisted || navigationEntry?.type === 'back_forward';
+  if (!restoredFromHistory) return;
+
+  window.scrollTo(0, 0);
+  if (event.persisted) {
+    arrival.style.opacity = '0';
+    window.location.reload();
+    return;
+  }
+
+  updateScrollProgress();
+});
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     setSpaceHeld(false);
