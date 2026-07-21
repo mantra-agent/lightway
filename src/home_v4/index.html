@@ -30,7 +30,7 @@
       }
 
       html {
-        scroll-snap-type: y proximity;
+        scroll-snap-type: y mandatory;
         scroll-padding-block: 0;
       }
 
@@ -92,7 +92,7 @@
       .story-section {
         min-height: 100svh;
         scroll-snap-align: center;
-        scroll-snap-stop: normal;
+        scroll-snap-stop: always;
         display: grid;
         grid-template-columns: minmax(24px, 1fr) minmax(0, 620px) minmax(0, 620px) minmax(24px, 1fr);
         align-items: center;
