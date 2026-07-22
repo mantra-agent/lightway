@@ -22,7 +22,7 @@ const ctaLinks = Array.from(document.querySelectorAll('a.cta'));
 const isMobile = window.innerWidth < 700;
 const desktopWheelQuery = window.matchMedia('(min-width: 761px)');
 const FORK_DESTINATIONS = Object.freeze({
-  voiceDemo: 'https://app.trymantra.ai/visualizer',
+  voiceDemo: 'https://app.trymantra.ai/visualizer?state=entrance',
   waitlist: 'https://app.trymantra.ai/start?source=lightway_v4',
 });
 const MAX_STORY_PROGRESS = 0.94;
