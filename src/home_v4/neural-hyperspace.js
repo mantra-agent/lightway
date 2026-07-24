@@ -5,8 +5,13 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const HISTORY_RESTART_PARAM = 'v4_restart';
+const ONBOARDING_TOKEN_PARAM = 'i';
 const startupUrl = new URL(window.location.href);
 const isHistoryRestart = startupUrl.searchParams.has(HISTORY_RESTART_PARAM);
+const rawOnboardingToken = startupUrl.searchParams.get(ONBOARDING_TOKEN_PARAM);
+const onboardingToken = rawOnboardingToken && /^[A-Za-z0-9_-]{16,128}$/.test(rawOnboardingToken)
+  ? rawOnboardingToken
+  : null;
 if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
 if (isHistoryRestart) {
   startupUrl.searchParams.delete(HISTORY_RESTART_PARAM);
@@ -1891,17 +1896,23 @@ function setExitState(nextState) {
 
 function resolveForkOutcome() {
   if (state.forkOutcome) return state.forkOutcome;
-  state.forkOutcome = state.spaceHeld ? 'voice-demo' : 'waitlist';
+  state.forkOutcome = state.spaceHeld || onboardingToken ? 'voice-demo' : 'waitlist';
   stage.dataset.forkOutcome = state.forkOutcome;
   return state.forkOutcome;
+}
+
+function buildForkDestination(outcome) {
+  if (outcome !== 'voice-demo') return FORK_DESTINATIONS.waitlist;
+  if (!onboardingToken) return FORK_DESTINATIONS.voiceDemo;
+  const url = new URL(FORK_DESTINATIONS.voiceDemo);
+  url.searchParams.set(ONBOARDING_TOKEN_PARAM, onboardingToken);
+  return url.href;
 }
 
 function completeForkNavigation() {
   if (state.navigationTimer !== null) return;
   const outcome = resolveForkOutcome();
-  const destination = outcome === 'voice-demo'
-    ? FORK_DESTINATIONS.voiceDemo
-    : FORK_DESTINATIONS.waitlist;
+  const destination = buildForkDestination(outcome);
   state.navigationTimer = window.setTimeout(() => {
     state.navigationTimer = null;
     window.location.assign(destination);
